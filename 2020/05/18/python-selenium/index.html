@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.0.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.0.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.0.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.0.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.0.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.0.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: true,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="前言在北京摇号摇了18次了，下次开始就是四倍概率。然后，中签还是遥遥无期，隔壁坐的同事摇了两年就摇到了，万分羡慕。有时候晚上想去溜达一下，要去找gofun共享汽车还要走1公里多，还车还要走1公里。于是就有了想买一辆摩托车的想法。 要买车，肯定得有驾照，挑选完以后，报了海淀驾校，小区门口就有驾校的班车，关键是便宜，只要1000块。在我家那18线城市的小地方也得800多。于是报名，开始上法陪课。但法陪">
+<meta name="keywords" content="python,selenium">
+<meta property="og:type" content="article">
+<meta property="og:title" content="python+selenium为你自动挂海淀驾校法陪课">
+<meta property="og:url" content="http://www.lefo.me/2020/05/18/python-selenium/index.html">
+<meta property="og:site_name" content="lefo&#39;s blog">
+<meta property="og:description" content="前言在北京摇号摇了18次了，下次开始就是四倍概率。然后，中签还是遥遥无期，隔壁坐的同事摇了两年就摇到了，万分羡慕。有时候晚上想去溜达一下，要去找gofun共享汽车还要走1公里多，还车还要走1公里。于是就有了想买一辆摩托车的想法。 要买车，肯定得有驾照，挑选完以后，报了海淀驾校，小区门口就有驾校的班车，关键是便宜，只要1000块。在我家那18线城市的小地方也得800多。于是报名，开始上法陪课。但法陪">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2021-04-21T07:37:45.415Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="python+selenium为你自动挂海淀驾校法陪课">
+<meta name="twitter:description" content="前言在北京摇号摇了18次了，下次开始就是四倍概率。然后，中签还是遥遥无期，隔壁坐的同事摇了两年就摇到了，万分羡慕。有时候晚上想去溜达一下，要去找gofun共享汽车还要走1公里多，还车还要走1公里。于是就有了想买一辆摩托车的想法。 要买车，肯定得有驾照，挑选完以后，报了海淀驾校，小区门口就有驾校的班车，关键是便宜，只要1000块。在我家那18线城市的小地方也得800多。于是报名，开始上法陪课。但法陪">
+
+
+
+  <link rel="alternate" href="/atom.xml" title="lefo's blog" type="application/atom+xml">
+
+
+
+  
+  
+  <link rel="canonical" href="http://www.lefo.me/2020/05/18/python-selenium/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>python+selenium为你自动挂海淀驾校法陪课 | lefo's blog</title>
+  
+
+
+
+
+  <script async src="//www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script>
+    var host = window.location.hostname;
+    if (host !== "localhost" || !true) {
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-65991901-1');
+    }
+  </script>
+
+
+
+
+
+
+
+
+
+  <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({
+          google_ad_client: "ca-pub-6334086715606061",
+          enable_page_level_ads: true
+     });
+</script>
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lefo's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">又一个android开发人员</p>
+      
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-sitemap">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/sitemap.xml" rel="section"><i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br>站点地图</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+<div style="text-align:center">
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle" style="display:inline-block;width:200px;height:200px" data-ad-client="ca-pub-6334086715606061" data-ad-slot="1986102848"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</div>
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.lefo.me/2020/05/18/python-selenium/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lefo">
+      <meta itemprop="description" content="android java 开发 编程">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">python+selenium为你自动挂海淀驾校法陪课
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-05-18 20:25:12" itemprop="dateCreated datePublished" datetime="2020-05-18T20:25:12+00:00">2020-05-18</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2021-04-21 07:37:45" itemprop="dateModified" datetime="2021-04-21T07:37:45+00:00">2021-04-21</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/python/" itemprop="url" rel="index"><span itemprop="name">python</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+      
+    <div style="
+        margin: auto;
+        width: 728px;
+    ">
+    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <!-- BLOG-FOOT -->
+    <ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-6334086715606061" data-ad-slot="3007730447"></ins>
+    <script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+    </div>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>在北京摇号摇了18次了，下次开始就是四倍概率。然后，中签还是遥遥无期，隔壁坐的同事摇了两年就摇到了，万分羡慕。有时候晚上想去溜达一下，要去找gofun共享汽车还要走1公里多，还车还要走1公里。于是就有了想买一辆摩托车的想法。</p>
+<p>要买车，肯定得有驾照，挑选完以后，报了海淀驾校，小区门口就有驾校的班车，关键是便宜，只要1000块。在我家那18线城市的小地方也得800多。于是报名，开始上法陪课。但法陪课每一章节必须自已手动点开始，很是麻烦，于是就想写个程序代替自己手点。</p>
+<a id="more"></a>
+<h2 id="手机端"><a href="#手机端" class="headerlink" title="手机端"></a>手机端</h2><p>法陪课可以在网页上上，也可以在APP上上，没自动播放，估计也是想让你好好学习，怕你偷懒吧。</p>
+<p>因为我是做安卓的，起先打算拿在手机上搞，发现手机上是个自定义控件，基本不能用辅助功能（类似微信抢红包插件的技术）下手。唯一可用的就是</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">adb -s device_name shell input tap x y</span><br></pre></td></tr></table></figure>
+<p>然后多久发一次命令又是个问题，于是就打算从网页上下手。</p>
+<h2 id="网页端"><a href="#网页端" class="headerlink" title="网页端"></a>网页端</h2><p>网页上看，播放视频是一个flash，想用javascript也就没办法搞了，只得用selenium。</p>
+<p>准备工作：</p>
+<ul>
+<li>Python：不解释</li>
+<li>selenium: pip3 install selenium安装</li>
+<li>Firefox：浏览器，本来我使用的是chrome，发现chrome对flash做了个优化，切后台后，flash不自动加载，换火狐就没问题了。</li>
+<li>geckodriver:火狐浏览器的驱动，供selenium调用</li>
+</ul>
+<h1 id="放代码"><a href="#放代码" class="headerlink" title="放代码"></a>放代码</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line">from selenium import webdriver</span><br><span class="line">from selenium.webdriver.common.action_chains import ActionChains</span><br><span class="line">from selenium.webdriver import FirefoxOptions</span><br><span class="line">from selenium.webdriver.support.wait import WebDriverWait</span><br><span class="line">import re</span><br><span class="line">import time</span><br><span class="line"></span><br><span class="line">def findTime(dr):</span><br><span class="line">    timeText = driver.find_element_by_class_name(&apos;playing&apos;).text</span><br><span class="line">    p1 = re.compile(r&apos;[(](.*?)[)]&apos;, re.S)</span><br><span class="line">    timeList = re.findall(p1, timeText)</span><br><span class="line">    if len(timeList) == 0:</span><br><span class="line">        return 0</span><br><span class="line">    else:</span><br><span class="line">        timearr = timeList[0].split(&apos;:&apos;)</span><br><span class="line">        return int(timearr[1]) * 60 + int(timearr[2])</span><br><span class="line"></span><br><span class="line">#flash的事件不能通过element触发 </span><br><span class="line">def click_locxy(dr, x, y, left_click=True):</span><br><span class="line">    &apos;&apos;&apos;</span><br><span class="line">    dr:浏览器</span><br><span class="line">    x:页面x坐标</span><br><span class="line">    y:页面y坐标</span><br><span class="line">    left_click:True为鼠标左键点击，否则为右键点击</span><br><span class="line">    &apos;&apos;&apos;</span><br><span class="line">    if left_click:</span><br><span class="line">        ActionChains(dr).move_by_offset(x, y).click().perform()</span><br><span class="line">    else:</span><br><span class="line">        ActionChains(dr).move_by_offset(x, y).context_click().perform()</span><br><span class="line">    ActionChains(dr).move_by_offset(-x, -y).perform()  # 将鼠标位置恢复到移动前</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">opts = FirefoxOptions()</span><br><span class="line">#opts.add_argument(&quot;--headless&quot;)</span><br><span class="line">option_profile = webdriver.FirefoxProfile()</span><br><span class="line">option_profile.set_preference(&quot;plugin.state.flash&quot;,2)</span><br><span class="line"></span><br><span class="line">path = &quot;/Users/lefo/Documents/dev/chrome/geckodriver&quot;# 注意这个路径需要时可执行路径（chmod 777 dir or 755 dir）</span><br><span class="line">driver = webdriver.Firefox(executable_path=path,options=opts)</span><br><span class="line">driver.get(&apos;http://www.xuechebu.com/sign.html&apos;)</span><br><span class="line">def playing():</span><br><span class="line">    playing = WebDriverWait(driver,60,1).until(lambda x:x.find_element_by_class_name(&apos;playing&apos;)) #等一分钟，直到获取到正在播放的控件</span><br><span class="line">    text = playing.text</span><br><span class="line">    print(text)</span><br><span class="line">    time.sleep(3) #等三秒，有时候文字可能加载慢</span><br><span class="line">    nextTime = findTime(dr=driver) #文字中提取括号内的时间</span><br><span class="line">    playing.click() #这里貌似无所谓，不点击也可以</span><br><span class="line">    print(str(nextTime))  #下一次执行的时间</span><br><span class="line">    time.sleep(10) #这个10s主要是为了flash允许有时间点</span><br><span class="line">    click_locxy(driver,750,540,left_click=True) #根据坐标点上去</span><br><span class="line">    time.sleep(nextTime + 5)  #这个5s和上面10s同样的道理</span><br><span class="line">count = 0</span><br><span class="line">while(count &lt;= 99):  #99这个数值具体自己设</span><br><span class="line">    playing()</span><br><span class="line">    count = count +1</span><br><span class="line"></span><br><span class="line">driver.quit()</span><br></pre></td></tr></table></figure>
+<h1 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h1><p>首先，获取正在播放的超链接，上面文字的格式：第x章节(00:02:30)表示2分30秒长，计算成秒，然后间隔这个时间值再去下一个循环。因为播放完成后会自动跳到下一个章节，只是不会开始播放而已，所以，我们要做的就是，间隔一段时间，点一下播放。</p>
+<p>试过传入启动flash插件的参数，最后也失败了，所以启动后需要在一分钟内登录，然后去 附加组件 - 插件 将flash插件启用。再将页面上的flash点个允许。点完允许后，10s内会触发一次播放点击。如果你觉得1分钟的登录时间不够，那就改一下上面的时间，或者，加上登录的逻辑（其实我是有登录的，发文章的时候，删掉了）</p>
+<p>如果你是其它挂课的网页，道理也是相同的，如果用JS可以实现还是用js吧。因为这个网页有flash的特殊性，才用的selenium，我对python和selenium都不熟，里面的函数几乎一个都不知道，只能边学边搜边写。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/python/" rel="tag"># python</a>
+          
+            <a href="/tags/selenium/" rel="tag"># selenium</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/05/02/opencv-android/" rel="next" title="OpenCV在Android NDK按需要的模块编译">
+                <i class="fa fa-chevron-left"></i> OpenCV在Android NDK按需要的模块编译
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/08/24/keep-alive/" rel="prev" title="android进程保活（掌握黑心科技）">
+                android进程保活（掌握黑心科技） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">lefo</p>
+              <div class="site-description motion-element" itemprop="description">android java 开发 编程</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">32</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">8</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+<div>
+    <ul>
+    
+        
+            <li><a href="/categories/android开发/" title="android开发">android开发<sup>17</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/android打包/" title="android打包">android打包<sup>5</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/个人随笔/" title="个人随笔">个人随笔<sup>2</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/apple/" title="apple">apple<sup>1</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/python/" title="python">python<sup>2</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/android/" title="android">android<sup>3</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/git/" title="git">git<sup>1</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/jenkins/" title="jenkins">jenkins<sup>1</sup></a></li>
+        
+    
+    </ul>
+</div>
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#手机端"><span class="nav-number">1.1.</span> <span class="nav-text">手机端</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#网页端"><span class="nav-number">1.2.</span> <span class="nav-text">网页端</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#放代码"><span class="nav-number">2.</span> <span class="nav-text">放代码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#说明"><span class="nav-number">3.</span> <span class="nav-text">说明</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lefo</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.0.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="//s95.cnzz.com/z_stat.php?id=3223008&web_id=3223008"></script>
+  </div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=7.0.1"></script>
+
+  <script src="/js/src/motion.js?v=7.0.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/affix.js?v=7.0.1"></script>
+
+  <script src="/js/src/schemes/pisces.js?v=7.0.1"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=7.0.1"></script>
+<script src="/js/src/post-details.js?v=7.0.1"></script>
+
+
+
+  
+
+
+  <script src="/js/src/next-boot.js?v=7.0.1"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

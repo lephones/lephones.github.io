@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.0.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.0.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.0.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.0.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.0.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.0.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: true,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="错过房子自如在北京租房行业上占据着龙头地位，它们的房租也是一年比一年高，特别是新签约的房子，价格很是离谱。但偶尔也会有一两个换租的房子，性价比超级高。如果有自己比较中意的小区，想监控里面的房子，我就有一次看中一个房子，看到的时候，就已经晚了，等想签的时候，被别人抢先了。这个脚本，可以在某小区有新房源的时候，第一时间通知自己。">
+<meta name="keywords" content="python">
+<meta property="og:type" content="article">
+<meta property="og:title" content="python入门：使用python刷自如的房子">
+<meta property="og:url" content="http://www.lefo.me/2019/07/31/python-ziroom/index.html">
+<meta property="og:site_name" content="lefo&#39;s blog">
+<meta property="og:description" content="错过房子自如在北京租房行业上占据着龙头地位，它们的房租也是一年比一年高，特别是新签约的房子，价格很是离谱。但偶尔也会有一两个换租的房子，性价比超级高。如果有自己比较中意的小区，想监控里面的房子，我就有一次看中一个房子，看到的时候，就已经晚了，等想签的时候，被别人抢先了。这个脚本，可以在某小区有新房源的时候，第一时间通知自己。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://www.lefo.me/image/20190731/price.png">
+<meta property="og:updated_time" content="2021-04-21T07:37:45.415Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="python入门：使用python刷自如的房子">
+<meta name="twitter:description" content="错过房子自如在北京租房行业上占据着龙头地位，它们的房租也是一年比一年高，特别是新签约的房子，价格很是离谱。但偶尔也会有一两个换租的房子，性价比超级高。如果有自己比较中意的小区，想监控里面的房子，我就有一次看中一个房子，看到的时候，就已经晚了，等想签的时候，被别人抢先了。这个脚本，可以在某小区有新房源的时候，第一时间通知自己。">
+<meta name="twitter:image" content="http://www.lefo.me/image/20190731/price.png">
+
+
+
+  <link rel="alternate" href="/atom.xml" title="lefo's blog" type="application/atom+xml">
+
+
+
+  
+  
+  <link rel="canonical" href="http://www.lefo.me/2019/07/31/python-ziroom/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>python入门：使用python刷自如的房子 | lefo's blog</title>
+  
+
+
+
+
+  <script async src="//www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script>
+    var host = window.location.hostname;
+    if (host !== "localhost" || !true) {
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-65991901-1');
+    }
+  </script>
+
+
+
+
+
+
+
+
+
+  <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({
+          google_ad_client: "ca-pub-6334086715606061",
+          enable_page_level_ads: true
+     });
+</script>
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lefo's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">又一个android开发人员</p>
+      
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-sitemap">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/sitemap.xml" rel="section"><i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br>站点地图</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+<div style="text-align:center">
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle" style="display:inline-block;width:200px;height:200px" data-ad-client="ca-pub-6334086715606061" data-ad-slot="1986102848"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</div>
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.lefo.me/2019/07/31/python-ziroom/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lefo">
+      <meta itemprop="description" content="android java 开发 编程">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">python入门：使用python刷自如的房子
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-07-31 16:43:48" itemprop="dateCreated datePublished" datetime="2019-07-31T16:43:48+00:00">2019-07-31</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2021-04-21 07:37:45" itemprop="dateModified" datetime="2021-04-21T07:37:45+00:00">2021-04-21</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/python/" itemprop="url" rel="index"><span itemprop="name">python</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+      
+    <div style="
+        margin: auto;
+        width: 728px;
+    ">
+    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <!-- BLOG-FOOT -->
+    <ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-6334086715606061" data-ad-slot="3007730447"></ins>
+    <script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+    </div>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="错过房子"><a href="#错过房子" class="headerlink" title="错过房子"></a>错过房子</h1><p>自如在北京租房行业上占据着龙头地位，它们的房租也是一年比一年高，特别是新签约的房子，价格很是离谱。但偶尔也会有一两个换租的房子，性价比超级高。如果有自己比较中意的小区，想监控里面的房子，我就有一次看中一个房子，看到的时候，就已经晚了，等想签的时候，被别人抢先了。这个脚本，可以在某小区有新房源的时候，第一时间通知自己。</p>
+<a id="more"></a>
+<h1 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h1><ol>
+<li>python 2.x 语言及运行环境</li>
+<li>tesseract ocr 这是google的一款图片识别文字的软件，需要安装库，自行搜索python+tesseract</li>
+<li>支持smtp协议的邮箱，建议新注册一个。</li>
+<li>绑定微信的QQ的邮箱。</li>
+</ol>
+<p>安装python和tesseract就不讲了，主要说一下tesseract。其实没有这个也不重要，主要是自如的房子，价格是一张图片。然后用坐标截取相应的数字生成价格图，比如坐标是[8,9,2,1]，那价格就是1345元。其实只要发送房子id就行，去官网看一下，价格就有了。</p>
+<p><img src="/image/20190731/price.png" alt></p>
+<p>使用邮箱，主要是为了方便微信接收，微信可以绑定QQ邮箱。只要给QQ发送邮件，微信就可以收到信息。</p>
+<h1 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h1><ol>
+<li>发送请求，搜索关键字 <a href="http://m.ziroom.com/v7/room/list.json?city_code=110000&amp;type=11&amp;keywords=" target="_blank" rel="noopener">http://m.ziroom.com/v7/room/list.json?city_code=110000&amp;type=11&amp;keywords=</a>   后面跟上要搜索的关键字。type=11是一居室,具体参数，可以通过<a href="http://m.ziroom.com/" target="_blank" rel="noopener">http://m.ziroom.com</a>，上面选择搜索信息后，可以查看到具体的type。</li>
+<li>拿到列表，解析房源信息。</li>
+<li>拿到房子价格图片，识别出内容，根据坐标拼出房价及单元（日租和月租）</li>
+<li>检查数据库中是否保存过该房源（已经发送过）</li>
+<li>分页会再请求下一页。</li>
+</ol>
+<h1 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h1><p>代码用定时任务跑在了我的服务器上，每隔一段时间跑一下。</p>
+<p>写python比较少，再加上后来改代码时，直接用ssh连接的服务器用vi改的，导致代码写的比较乱。</p>
+<p>我把信息保存到了ziroom.db里，是sqlite格式。价格为了不每次都请求，也缓存到了image文件夹下。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br></pre></td><td class="code"><pre><span class="line"># -*- coding: utf-8 -*-</span><br><span class="line">import sqlite3</span><br><span class="line">import urllib</span><br><span class="line">import urllib2</span><br><span class="line">import os</span><br><span class="line">import re</span><br><span class="line">import sys</span><br><span class="line">import json</span><br><span class="line">import smtplib</span><br><span class="line">import pytesseract</span><br><span class="line">import time</span><br><span class="line">from email.mime.text import MIMEText</span><br><span class="line">from email.header import Header</span><br><span class="line">from PIL import Image</span><br><span class="line"></span><br><span class="line"># 第三方 SMTP 服务</span><br><span class="line">mail_host=&quot;&quot;  #设置服务器</span><br><span class="line">mail_user=&quot;&quot;    #用户名</span><br><span class="line">mail_pass=&quot;&quot;   #口令 </span><br><span class="line">sender = &quot;&quot;		#发送邮箱 一般等同于用户名</span><br><span class="line">receivers = [&apos;2323354557@qq.com&apos;]  # 接收邮件，可设置为你的QQ邮箱或者其他邮箱</span><br><span class="line"></span><br><span class="line">BaseURL = &apos;http://m.ziroom.com/v7/room/list.json?city_code=110000&amp;type=11&amp;keywords=&apos;  </span><br><span class="line">#keywords = &apos;%E9%BE%99%E5%8D%8E%E5%9B%AD&apos;</span><br><span class="line">keywords = [&apos;华清嘉园&apos; , &apos;展春园&apos;]</span><br><span class="line">cur_page = 1</span><br><span class="line">room_string = &apos;&apos;</span><br><span class="line"></span><br><span class="line">def sendEmail(content,keyword):</span><br><span class="line">	message = MIMEText(content, &apos;plain&apos;, &apos;utf-8&apos;)</span><br><span class="line">	message[&apos;From&apos;] = &apos;自如&lt;&apos;+sender+&apos;&gt;&apos;</span><br><span class="line">	message[&apos;To&apos;] =  &apos;lefo&lt;2323354557@qq.com&gt;&apos;</span><br><span class="line">	</span><br><span class="line">	subject = &apos;有&apos;+ keyword +&apos;的新房子了&apos;</span><br><span class="line">	message[&apos;Subject&apos;] = Header(subject, &apos;utf-8&apos;)</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	try:</span><br><span class="line">		smtpObj = smtplib.SMTP() </span><br><span class="line">		smtpObj.connect(mail_host, 25)    # 25 为 SMTP 端口号</span><br><span class="line">		smtpObj.login(mail_user,mail_pass)  </span><br><span class="line">		smtpObj.sendmail(sender, receivers, message.as_string())</span><br><span class="line">		print(&quot;邮件发送成功&quot;)</span><br><span class="line">	except smtplib.SMTPException as e:</span><br><span class="line">		print(e);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def getJson(URL,page,keyword):</span><br><span class="line"></span><br><span class="line">	</span><br><span class="line">	global cur_page</span><br><span class="line">	global room_string</span><br><span class="line"></span><br><span class="line">	send_headers = &#123;</span><br><span class="line">    &apos;Host&apos;:&apos;m.ziroom.com&apos;,</span><br><span class="line">    &apos;User-Agent&apos;:&apos;Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1&apos;,</span><br><span class="line">    &apos;Accept&apos;:&apos;application/json;version=6&apos;,</span><br><span class="line">	&#125;</span><br><span class="line">  </span><br><span class="line">	</span><br><span class="line">	url = URL +&apos;&amp;page=&apos; + page;</span><br><span class="line">	req = urllib2.Request(url,headers=send_headers)</span><br><span class="line"></span><br><span class="line">	content = urllib2.urlopen(req).read().decode(&apos;utf-8&apos;)</span><br><span class="line">	data = json.loads(content)</span><br><span class="line">	rooms = data[&apos;data&apos;][&apos;rooms&apos;];</span><br><span class="line">	print(URL)</span><br><span class="line">	print(content)</span><br><span class="line">	</span><br><span class="line">	for room in rooms:</span><br><span class="line">		tags =&apos;&apos;</span><br><span class="line">		for tag in room[&apos;tags&apos;]:</span><br><span class="line">			tags +=(&apos; &apos; + (tag[&apos;title&apos;]))</span><br><span class="line">		#print (room[&apos;id&apos;] + room[&apos;face&apos;] + &apos; &apos; + room[&apos;name&apos;] + tags + room[&apos;price&apos;])</span><br><span class="line">		cursor = c.execute(&quot;SELECT * from ROOM WHERE ZID=&quot; + room[&apos;id&apos;])</span><br><span class="line">		result = cursor.fetchall()</span><br><span class="line">		</span><br><span class="line">		if len(result) &lt;= 0:</span><br><span class="line">			pricedata = room[&apos;price&apos;]</span><br><span class="line">			priceurl = &apos;http:&apos; + pricedata[0]</span><br><span class="line">			print(priceurl)</span><br><span class="line">			path = &quot;image/&quot; + os.path.basename(pricedata[0])</span><br><span class="line">			if not os.path.exists(path):</span><br><span class="line">				res = urllib.urlopen(priceurl).read()</span><br><span class="line">				f = open(path,&quot;wb&quot;)</span><br><span class="line">				f.write(res)</span><br><span class="line">				f.close()</span><br><span class="line">			img = Image.open(path)</span><br><span class="line">			print(path)</span><br><span class="line">			imgprice = pytesseract.image_to_string(img,lang=&apos;eng&apos;,config=&apos;-psm 7&apos;)</span><br><span class="line">			print(imgprice)</span><br><span class="line">			price = &apos;&apos;</span><br><span class="line">			unit = room[&apos;price_unit&apos;]</span><br><span class="line">			if len(imgprice)&gt;0:</span><br><span class="line">				for index in pricedata[1]:</span><br><span class="line">					price =price + imgprice[index]</span><br><span class="line">			roomInfo = room[&apos;id&apos;] + &apos; &apos; +  room[&apos;name&apos;] + &apos; &apos; + price + unit</span><br><span class="line">			 </span><br><span class="line"></span><br><span class="line">			room_string = room_string + roomInfo + &apos;\n&apos;</span><br><span class="line">			sql = &apos;INSERT INTO ROOM (ZID,HID,TITLE) VALUES (&quot;&apos; + room[&apos;id&apos;] +&apos;&quot;,&quot;&apos;  + room[&apos;house_id&apos;]+&apos;&quot;,&quot;&apos; + room[&apos;name&apos;] +&apos;&quot;)&apos;</span><br><span class="line">			c.execute(sql )</span><br><span class="line">			conn.commit()</span><br><span class="line">	</span><br><span class="line">	if len(rooms) &gt; 0:</span><br><span class="line">		cur_page += 1</span><br><span class="line">		getJson(BaseURL + urllib.quote(keyword),str(cur_page),keyword)</span><br><span class="line">	else:</span><br><span class="line">		if len(room_string) &gt; 0:</span><br><span class="line">			print(&apos;send email \n&apos; + room_string)</span><br><span class="line">			sendEmail(room_string,keyword)</span><br><span class="line">			room_string = &apos;&apos;</span><br><span class="line">			</span><br><span class="line">		</span><br><span class="line">conn = sqlite3.connect(&apos;ziroom.db&apos;)		</span><br><span class="line">c = conn.cursor()</span><br><span class="line">c.execute(&apos;&apos;&apos;CREATE TABLE IF NOT EXISTS ROOM</span><br><span class="line">       (ID INTEGER PRIMARY KEY AUTOINCREMENT     NOT NULL,</span><br><span class="line">	   ZID           TEXT     NOT NULL,</span><br><span class="line">       HID           TEXT     NOT NULL,</span><br><span class="line">       TITLE        CHAR(50));&apos;&apos;&apos;)</span><br><span class="line"></span><br><span class="line">for keyword in keywords:</span><br><span class="line">	cur_page = 1</span><br><span class="line">	keywordsquote = urllib.quote(keyword)</span><br><span class="line">	getJson(BaseURL + keywordsquote,str(cur_page),keyword)</span><br></pre></td></tr></table></figure>
+<h1 id="自行优化"><a href="#自行优化" class="headerlink" title="自行优化"></a>自行优化</h1><p>说一下优化的事，自如的房子有各种状态，参数名叫status，后续，可以把代码加一个状态的判断。比如status == ‘dzz’是待租中，还有退租配置中，最关键的是，有一个释放倒计时的状态。这样可以实现某个房子的要释放时，提前通知自己。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/python/" rel="tag"># python</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/07/08/zip-file-struct/" rel="next" title="从zip结构看APK采集时优化">
+                <i class="fa fa-chevron-left"></i> 从zip结构看APK采集时优化
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/12/13/foregroud-service-oreo/" rel="prev" title="android 8.0 foregroud-service的坑">
+                android 8.0 foregroud-service的坑 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">lefo</p>
+              <div class="site-description motion-element" itemprop="description">android java 开发 编程</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">32</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">8</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+<div>
+    <ul>
+    
+        
+            <li><a href="/categories/android开发/" title="android开发">android开发<sup>17</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/android打包/" title="android打包">android打包<sup>5</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/个人随笔/" title="个人随笔">个人随笔<sup>2</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/apple/" title="apple">apple<sup>1</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/python/" title="python">python<sup>2</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/android/" title="android">android<sup>3</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/git/" title="git">git<sup>1</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/jenkins/" title="jenkins">jenkins<sup>1</sup></a></li>
+        
+    
+    </ul>
+</div>
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#错过房子"><span class="nav-number">1.</span> <span class="nav-text">错过房子</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#环境"><span class="nav-number">2.</span> <span class="nav-text">环境</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#流程"><span class="nav-number">3.</span> <span class="nav-text">流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#代码"><span class="nav-number">4.</span> <span class="nav-text">代码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#自行优化"><span class="nav-number">5.</span> <span class="nav-text">自行优化</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lefo</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.0.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="//s95.cnzz.com/z_stat.php?id=3223008&web_id=3223008"></script>
+  </div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=7.0.1"></script>
+
+  <script src="/js/src/motion.js?v=7.0.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/affix.js?v=7.0.1"></script>
+
+  <script src="/js/src/schemes/pisces.js?v=7.0.1"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=7.0.1"></script>
+<script src="/js/src/post-details.js?v=7.0.1"></script>
+
+
+
+  
+
+
+  <script src="/js/src/next-boot.js?v=7.0.1"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

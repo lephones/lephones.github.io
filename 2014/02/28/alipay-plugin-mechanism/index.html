@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.0.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.0.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.0.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.0.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.0.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.0.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: true,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="前言支付宝已不再采用该方法插件化了，请参考 探究支付宝android客户端的动态加载 使用过支付宝android客户端的小伙伴们都知道，支付宝android客户端可以增量更新，不仅能够随时改变内部APP的个数，还可以改变它的布局，结构等。为本人也在做移动支付，对支付宝客户端颇感兴趣，于是找时间来简单破解研究一下。 支付宝的插件化，一共有两种方式，一种是通过html网页来实现布局。html技术相信c">
+<meta name="keywords" content="android,插件化">
+<meta property="og:type" content="article">
+<meta property="og:title" content="支付宝插件机制研究">
+<meta property="og:url" content="http://www.lefo.me/2014/02/28/alipay-plugin-mechanism/index.html">
+<meta property="og:site_name" content="lefo&#39;s blog">
+<meta property="og:description" content="前言支付宝已不再采用该方法插件化了，请参考 探究支付宝android客户端的动态加载 使用过支付宝android客户端的小伙伴们都知道，支付宝android客户端可以增量更新，不仅能够随时改变内部APP的个数，还可以改变它的布局，结构等。为本人也在做移动支付，对支付宝客户端颇感兴趣，于是找时间来简单破解研究一下。 支付宝的插件化，一共有两种方式，一种是通过html网页来实现布局。html技术相信c">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2021-04-21T07:37:45.415Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="支付宝插件机制研究">
+<meta name="twitter:description" content="前言支付宝已不再采用该方法插件化了，请参考 探究支付宝android客户端的动态加载 使用过支付宝android客户端的小伙伴们都知道，支付宝android客户端可以增量更新，不仅能够随时改变内部APP的个数，还可以改变它的布局，结构等。为本人也在做移动支付，对支付宝客户端颇感兴趣，于是找时间来简单破解研究一下。 支付宝的插件化，一共有两种方式，一种是通过html网页来实现布局。html技术相信c">
+
+
+
+  <link rel="alternate" href="/atom.xml" title="lefo's blog" type="application/atom+xml">
+
+
+
+  
+  
+  <link rel="canonical" href="http://www.lefo.me/2014/02/28/alipay-plugin-mechanism/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>支付宝插件机制研究 | lefo's blog</title>
+  
+
+
+
+
+  <script async src="//www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script>
+    var host = window.location.hostname;
+    if (host !== "localhost" || !true) {
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-65991901-1');
+    }
+  </script>
+
+
+
+
+
+
+
+
+
+  <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({
+          google_ad_client: "ca-pub-6334086715606061",
+          enable_page_level_ads: true
+     });
+</script>
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lefo's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <p class="site-subtitle">又一个android开发人员</p>
+      
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-sitemap">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/sitemap.xml" rel="section"><i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br>站点地图</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+<div style="text-align:center">
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle" style="display:inline-block;width:200px;height:200px" data-ad-client="ca-pub-6334086715606061" data-ad-slot="1986102848"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</div>
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.lefo.me/2014/02/28/alipay-plugin-mechanism/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lefo">
+      <meta itemprop="description" content="android java 开发 编程">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">支付宝插件机制研究
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2014-02-28 00:02:33" itemprop="dateCreated datePublished" datetime="2014-02-28T00:02:33+00:00">2014-02-28</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2021-04-21 07:37:45" itemprop="dateModified" datetime="2021-04-21T07:37:45+00:00">2021-04-21</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/android开发/" itemprop="url" rel="index"><span itemprop="name">android开发</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+      
+    <div style="
+        margin: auto;
+        width: 728px;
+    ">
+    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <!-- BLOG-FOOT -->
+    <ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-6334086715606061" data-ad-slot="3007730447"></ins>
+    <script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+    </div>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><strong>支付宝已不再采用该方法插件化了，请参考 <a href="http://www.lephones.net/2014/09/29/alipay-dynamic_load/" title="探究支付宝android客户端的动态加载" target="_blank" rel="noopener">探究支付宝android客户端的动态加载</a></strong></p>
+<p>使用过支付宝android客户端的小伙伴们都知道，支付宝android客户端可以增量更新，不仅能够随时改变内部APP的个数，还可以改变它的布局，结构等。为本人也在做移动支付，对支付宝客户端颇感兴趣，于是找时间来简单破解研究一下。</p>
+<p>支付宝的插件化，一共有两种方式，一种是通过html网页来实现布局。html技术相信coder们都清楚，不再介绍。这里只介绍native的插件化。</p>
+<h2 id="插件的下载"><a href="#插件的下载" class="headerlink" title="插件的下载"></a>插件的下载</h2><p>通过对文件监控对比发现，支付宝的插件更新，是下载一个后缀名为.amr的文件，此文件实质是一个压缩包，修改后缀为zip可直接解压。</p>
+<a id="more"></a>
+<h2 id="提取插件内容"><a href="#提取插件内容" class="headerlink" title="提取插件内容"></a>提取插件内容</h2><p>支付宝所有插件用到的文件都解压到了<code>/data/data/com.eg.android.AlipayGphone/files/apps/</code>目录下面，可直接提取。</p>
+<p>提取出来后发现是一些数字文件夹和一个<code>config.json</code>文件，其中，一个数字的文件夹代表的是一个APP，而<code>config.json</code>文件包含所有app的一些配置信息，比如图标，名称等。</p>
+<p>通过阅读<code>config.json</code>发现，<strong>10000002</strong>文件夹代表的是<strong>我要收款</strong>，好，就看你吧。</p>
+<p>打开<strong>10000002</strong>文件夹，发现下列列表</p>
+<ul>
+<li>layout （文件夹）</li>
+<li>res    （文件夹）</li>
+<li>CERT    （文件）</li>
+<li>Manifest.xml    （文件）</li>
+</ul>
+<h2 id="文件说明及插件可配置化布局原理："><a href="#文件说明及插件可配置化布局原理：" class="headerlink" title="文件说明及插件可配置化布局原理："></a>文件说明及插件可配置化布局原理：</h2><p><strong>layout</strong></p>
+<p>一堆xml文件，看起来是包含有APP用到的布局文件，格式类似于android原生的layout的xml文件，但控件是支付宝的coder们自定义的。既然它用xml，肯定有解析xml的地方，用dex2jar转换apk，再用jd-gui逆向生成src，通过在反编译的源码中搜索xml的标签，找到了自定义控件的代码，在<code>com.alipay.android.appHall.component</code>包下面。该包下包含了很多自定义控件的类，均以UI开头。</p>
+<p>定位到<code>com.alipay.android.appHall.component</code>下的<strong>UIButton</strong>的代码，找到了真正构成它的layout资源文件id（2130903115）。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Button localButton;</span><br><span class="line">if (paramString.equals(&quot;main&quot;))</span><br><span class="line">localButton = (Button)LayoutInflater.from(this.a).inflate(2130903115, paramViewGroup, false);</span><br></pre></td></tr></table></figure></p>
+<p>用计算器将id <strong>2130903115</strong> 转换成16进制，可得到<strong>0x7F03004B</strong>。</p>
+<p>用apktool工具反编译apk，生成资源文件，打开<code>/res/values/public.xml</code>找到 <strong>0x7F03004B</strong> 所对应的布局文件为button_main。在<code>/res/layout/</code>文件夹下面找到布局文件<strong>button_main.xml</strong>。</p>
+<p>可通过该方法，找到其他控件的view类以及所对应的layout静态xml资源。</p>
+<p><strong>res</strong></p>
+<p>此文件夹中包含有三种类型的资源，<code>图片资源</code>，<code>interface.xml</code>，<code>res.xml</code>，打开res.xml，发现其中有三种类型的标签</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;String id=&quot;10000&quot;&gt;我要收款&lt;/String&gt;</span><br><span class="line">&lt;Expression id=&quot;20000&quot;&gt;(类似方法的表达式)</span><br><span class="line">&lt;Rule id=&quot;30000&quot;&gt;(类似于json的一种配置关系)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>String       字符串资源与id对应关系 id以1开头</li>
+<li>Expression    表达式，用于指定事件，在layout的控件中绑定id来指定触发的事件 id以2开头</li>
+<li>Rule        表达式，可根据不同的状态进行不同的操作 id以3开头</li>
+</ul>
+<p>其中，String和Expression的id是在layout中使用的，配置到view的属性中。而Rule的id是在Expression的表达式中使用的，如：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;Expression id=&quot;20005&quot;&gt;$exec($ternary(@30003,$ctrl_value_get(numbers)))&lt;/Expression&gt;</span><br></pre></td></tr></table></figure></p>
+<p><strong>CERT</strong></p>
+<p>签名文件，保存了该app下的所有的文件的签名，用于校验文件的完整性，防止篡改。</p>
+<p><strong>Manifest.xml</strong></p>
+<p>清单文件，算做是一个总的配置文件，说明性文档。具体功能未做细致研究。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>在支付宝插件化中，布局文件采用了自定义常用控件的方案，重新编写了一组控件，通过配置文件来可配置性搭建界面。</p>
+<p>对于控件的事件，比如按钮的点击事件，支付宝定义了一系列的表达式，通过在控件配置文件中配置表达式的id，来指定具体要执行的事件。我的一个猜想是：支付宝预先定义好了一些用到的算法，然后在具体事件中，通过表达式来组合这些算法的调用。因源码混淆，研究起来有难度，放弃验证。</p>
+<p>另外，对于支付宝表达式的解析，朋友们可以将表达式字符串在反编译后的源码中搜索一下，就能找到痕迹。</p>
+<p>关于表达式解析，大家可以自行在google寻找资料。如：JAVACC</p>
+<p>附：如果不知道windows环境中，怎么在反编译后的代码中全局搜索资源，推荐一款神兵利器：<strong>Replace Studio</strong>，小伙伴们可google一下。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/android/" rel="tag"># android</a>
+          
+            <a href="/tags/插件化/" rel="tag"># 插件化</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2014/08/22/camera-picture-size/" rel="prev" title="用camera类拍照指定图片大小">
+                用camera类拍照指定图片大小 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">lefo</p>
+              <div class="site-description motion-element" itemprop="description">android java 开发 编程</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">32</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">8</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+<div>
+    <ul>
+    
+        
+            <li><a href="/categories/android开发/" title="android开发">android开发<sup>17</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/android打包/" title="android打包">android打包<sup>5</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/个人随笔/" title="个人随笔">个人随笔<sup>2</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/apple/" title="apple">apple<sup>1</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/python/" title="python">python<sup>2</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/android/" title="android">android<sup>3</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/git/" title="git">git<sup>1</sup></a></li>
+        
+    
+        
+            <li><a href="/categories/jenkins/" title="jenkins">jenkins<sup>1</sup></a></li>
+        
+    
+    </ul>
+</div>
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#插件的下载"><span class="nav-number">2.</span> <span class="nav-text">插件的下载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#提取插件内容"><span class="nav-number">3.</span> <span class="nav-text">提取插件内容</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#文件说明及插件可配置化布局原理："><span class="nav-number">4.</span> <span class="nav-text">文件说明及插件可配置化布局原理：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lefo</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.0.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+  <div style="display: none;">
+    <script src="//s95.cnzz.com/z_stat.php?id=3223008&web_id=3223008"></script>
+  </div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=7.0.1"></script>
+
+  <script src="/js/src/motion.js?v=7.0.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/affix.js?v=7.0.1"></script>
+
+  <script src="/js/src/schemes/pisces.js?v=7.0.1"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=7.0.1"></script>
+<script src="/js/src/post-details.js?v=7.0.1"></script>
+
+
+
+  
+
+
+  <script src="/js/src/next-boot.js?v=7.0.1"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
