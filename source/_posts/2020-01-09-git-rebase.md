@@ -114,7 +114,34 @@ https://www.jetbrains.com/help/idea/edit-project-history.html
 > ```
 > git rebase [-i] [--onto newbase] [upstream] [branch]
 > ```
-> where IntelliJ's "Onto" field corresponds to --onto newbase, IntelliJ's "From" field corresponds to "upstream" and IntelliJ's "Branch" field corresponds to "branch".
+>
+> where IntelliJ's "Onto" field corresponds to `--onto newbase`, IntelliJ's "From" field corresponds to "upstream" and IntelliJ's "Branch" field corresponds to "branch".
+>
+> In above git rebase command all parameters are optional, while in IntelliJ they are not. This means that you have to take your git rebase command and express it using the general form shown above.
+>
+> Note that what you actually do with the arguments of the rebase command is define a range of commits that will be replayed in a new target location. Generally, the range is `upstream..branch`. If you are not familiar with commit ranges you should read up on them.
+>
+> Let's look at your example and assume that you are on branch "branch":
+>
+> ```
+> git rebase -i HEAD~4
+> ```
+>
+> Let's first figure out which is the range. Since you have only one argument, `HEAD~4`, this corresponds to upstream, i.e. the range is `HEAD~4..branch` or in other words `HEAD~4..HEAD` on branch "branch". The question is now which is your --onto target. If you avoid `--onto`, then git assumes that your upstream is also your `--onto`.
+>
+> This yields:
+>
+> ```
+> git rebase -i --onto HEAD~4 HEAD~4 branch
+> ```
+>
+> and now you can fill in IntelliJ's rebase dialog using
+>
+> - Onto: `HEAD~4`
+> - From: `HEAD~4`
+> - Branch: `branch`
+>
+> IntelliJ actually forces you to think first and identify your range and target, which looks more complicated, but which prevents you from doing a rebase without understanding what the result will be.
 >
 > https://stackoverflow.com/questions/14608812/how-to-do-interactive-rebase-with-intellij-idea
 
