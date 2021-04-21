@@ -15,6 +15,8 @@ tag: [android,jenkins]
 
 gradle其实支持自定义参数，关于自定义参数的介绍，参考官方文档：https://docs.gradle.org/current/userguide/build_environment.html，简单说一下用到的：[Gradle properties](https://docs.gradle.org/current/userguide/build_environment.html#sec:gradle_configuration_properties)：
 
+<!-- more -->
+
 有两种方式传给gradle，一种是-P。
 
 ```
@@ -28,8 +30,6 @@ name=zhangsan
 ```
 
 通过这两种方式，在gradle脚本中就可以直接使用这个变量名。
-
-<!-- more -->
 
 比如如下的gradle配置，其中包含了int型，String型，boolean型，基本能满足需求了。
 
