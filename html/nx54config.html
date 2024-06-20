@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H3C NX54默认开启telnet配置生成器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.3.0/crypto-js.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100%;
+        }
+
+        main {
+            text-align: center;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0;
+            color: #555;
+        }
+
+        textarea {
+            width: 100%;
+            height: 40vh; /* 设置输入框高度为30%视窗高度 */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: red;
+            font-weight: bold;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .google-ad {
+            min-width: 30%;
+            align-items: center;
+        }
+        .reward {
+            width: 400px;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+
+    <main>
+        <div>
+            <h1>NX54开启telnet配置生成器</h1>
+            
+            <label for="inputText">Input Text:</label>
+            <textarea id="inputText" rows="4" cols="50" oninput="calculateMD5()"></textarea>
+    
+            <p>MD5 Hash:</p>
+            <p id="md5Result"></p>
+            <label>备份路由配置-复制内容到左侧-保存右侧内容到配置文件-恢复路由</label>
+        </div>
+        
+        <div>
+            <h1>生成配置:</h1>
+            
+            <label for="resultText">Result Text:</label>
+            <textarea id="resultText" rows="4" cols="50" readonly></textarea>
+
+            <!-- Copy Button -->
+            <button onclick="copyResultToClipboard()">Copy</button>
+        </div>
+            <!-- Google Ad -->
+    <div class="google-ad">
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+        crossorigin="anonymous"></script>
+        <!-- 纵向大自适应 -->
+        <ins class="adsbygoogle"
+            style="display:block"
+            data-ad-client="ca-pub-6334086715606061"
+            data-ad-slot="9682316267"
+            data-ad-format="auto"
+            data-full-width-responsive="true"></ins>
+        <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
+    </main>
+    <div><img class="reward" src="https://www.lefo.me/image/pay/wx_reward_small.png"/></div>
+    <script>
+        function calculateMD5() {
+            var inputText = document.getElementById("inputText").value;
+            var md5Result = document.getElementById("md5Result");
+            var resultText = document.getElementById("resultText");
+
+            if (inputText.trim() === "") {
+                md5Result.textContent = "Please enter some text.";
+                return;
+            }
+            var modifyText = inputText.replace(/telnetenable=[^\n]*/g, 'telnetenable=enable');
+            // 获取首行
+            var lines = modifyText.split('\n');
+            var firstLine = lines[0];
+
+            // 使用 CryptoJS 计算从第二行开始到所有行的内容的 MD5
+            var md5Hash = CryptoJS.MD5(lines.slice(1).join('\n')).toString();
+
+            // 显示结果，并设置为红色
+            md5Result.textContent = md5Hash;
+            md5Result.style.color = "red";
+
+            // 替换首行中的原始 MD5，并显示到右侧文本域
+            resultText.value = firstLine.replace(/\b[0-9a-f]{32}\b/i, md5Hash.substring(0, 32)) + '\n' + lines.slice(1).join('\n');
+        }
+
+        function copyResultToClipboard() {
+            var resultText = document.getElementById("resultText");
+            resultText.select();
+            document.execCommand("copy");
+            alert("Copied to clipboard!");
+        }
+    </script>
+</body>
+</html>
