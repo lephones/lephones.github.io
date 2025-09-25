@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="前言我主业是安卓开发，但不务正业的我又在折腾别的了。 之前写过一篇关于 NX54 如何配置 iptables 以开放指定 IP 的 IPv6 防火墙规则。最近又把手上的一块 14 年的废弃 ARM 开发板翻出来，挂了块硬盘，让我在任意设备上都能访问家里的网络。要说这块板子，官方系统只到ubuntu 2014，连python3都没法装，之前折腾过armbian，但kernel有问题，usb不工作。最">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mac mini配合linux当服务器使用">
+<meta property="og:url" content="https://lefo.me/2025/04/24/macmini/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="前言我主业是安卓开发，但不务正业的我又在折腾别的了。 之前写过一篇关于 NX54 如何配置 iptables 以开放指定 IP 的 IPv6 防火墙规则。最近又把手上的一块 14 年的废弃 ARM 开发板翻出来，挂了块硬盘，让我在任意设备上都能访问家里的网络。要说这块板子，官方系统只到ubuntu 2014，连python3都没法装，之前折腾过armbian，但kernel有问题，usb不工作。最">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-04-24T15:39:17.000Z">
+<meta property="article:modified_time" content="2025-09-25T10:57:34.357Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="linux">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/2025/04/24/macmini/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2025/04/24/macmini/","path":"2025/04/24/macmini/","title":"mac mini配合linux当服务器使用"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>mac mini配合linux当服务器使用 | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B9%8B%E5%89%8D%E6%88%91%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88"><span class="nav-number">2.</span> <span class="nav-text">之前我做了什么</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Mac-mini%E5%87%86%E5%A4%87"><span class="nav-number">3.</span> <span class="nav-text">Mac mini准备</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%BD%E6%BA%90"><span class="nav-number">3.1.</span> <span class="nav-text">能源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9C%E7%A8%8B%E6%A1%8C%E9%9D%A2"><span class="nav-number">3.2.</span> <span class="nav-text">远程桌面</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%93%E5%BC%80%E8%87%AA%E5%8A%A8%E7%99%BB%E5%BD%95"><span class="nav-number">3.3.</span> <span class="nav-text">打开自动登录</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E5%BC%80%E6%9C%BA%E5%90%AF%E5%8A%A8"><span class="nav-number">4.</span> <span class="nav-text">服务开机启动</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%89%93%E9%80%9A%E8%BD%AC%E5%8F%91-linux-Mac-mini%F0%9F%AA%9C"><span class="nav-number">5.</span> <span class="nav-text">打通转发(linux -&gt; Mac mini🪜)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE"><span class="nav-number">5.1.</span> <span class="nav-text">配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B8%A9%E8%BF%87%E7%9A%84%E5%9D%91"><span class="nav-number">5.2.</span> <span class="nav-text">踩过的坑</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B1%85%E7%84%B6%E6%98%AF%E5%86%B0%E7%9A%84"><span class="nav-number">6.</span> <span class="nav-text">居然是冰的</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%90%8E%E8%AE%B0"><span class="nav-number">7.</span> <span class="nav-text">后记</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2025/04/24/macmini/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="mac mini配合linux当服务器使用 | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          mac mini配合linux当服务器使用
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-04-24 23:39:17" itemprop="dateCreated datePublished" datetime="2025-04-24T23:39:17+08:00">2025-04-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-25 18:57:34" itemprop="dateModified" datetime="2025-09-25T18:57:34+08:00">2025-09-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>我主业是安卓开发，但不务正业的我又在折腾别的了。</p>
+<p>之前写过一篇关于 NX54 如何配置 iptables 以开放指定 IP 的 IPv6 防火墙规则。最近又把手上的一块 14 年的废弃 ARM 开发板翻出来，挂了块硬盘，让我在任意设备上都能访问家里的网络。要说这块板子，官方系统只到ubuntu 2014，连python3都没法装，之前折腾过armbian，但kernel有问题，usb不工作。最近看论坛去年有人升级了内核了，赶紧换一下系统。</p>
+<p>过年期间家属送了一台 Mac mini（现在百亿补贴入手价 2899，血亏 600），于是我又折腾了一下，把整个网络重新整理了一遍。熬了几个夜晚和午休时间，总算弄好了，这里记录一下过程中遇到的问题和解决方案。</p>
+<h1 id="之前我做了什么"><a href="#之前我做了什么" class="headerlink" title="之前我做了什么"></a>之前我做了什么</h1><ol>
+<li>桥接路由，这样可以直接获取公网ipv6地址，供自己在外边连接。</li>
+<li>关防火墙。大多数路由器都有ipv6防火墙，像我的NX54就是基于ip6tables的配置，需要关掉。我是只关掉了我的linux的ip。我使用了脚本自动更新，脚本流程如下： <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">linux定时任务 -&gt; python脚本 -&gt; 获取ipv6 -&gt; 发现变化 -&gt; 更新nx54防火墙 -&gt; 更新cloudflare dns AAAA(最早做了一版发email的，后来改ddns了)</span><br></pre></td></tr></table></figure>
+ 不得不说，cloudflare真的是互联网之光，域名便宜，免费加速，还提供Pages，Workers。</li>
+<li>linux关闭ssh密码访问，把常用的设备公钥加进去。<span id="more"></span>
+经过上面的配置，外网只能通过IPV6访问到linux，利用SSH建立隧道，还能连接家里的电脑，方便又安全。</li>
+</ol>
+<h1 id="Mac-mini准备"><a href="#Mac-mini准备" class="headerlink" title="Mac mini准备"></a>Mac mini准备</h1><h2 id="能源"><a href="#能源" class="headerlink" title="能源"></a>能源</h2><ul>
+<li>✅ 防止进入睡眠 </li>
+<li>✅ 唤醒以供网络访问</li>
+<li>❌ 如有可能，将硬盘置于睡眠状态 </li>
+<li>✅ 断电自动重启</li>
+</ul>
+<h2 id="远程桌面"><a href="#远程桌面" class="headerlink" title="远程桌面"></a>远程桌面</h2><p>设置 -&gt; 通用 -&gt; 共享 -&gt; 屏幕共享 &amp; 远程登录 &amp; 文件共享<br>mac支持屏幕分享，但是是通过vnc:&#x2F;&#x2F;协议访问的，如果要通过ARD，那还需要花几百块买软件。平替方案：走ssh通道</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh -L 5900:192.168.x.x:5900 username@linux_ipv6</span><br></pre></td></tr></table></figure>
+<p>command + spcae  屏幕分享  输入localhost就能连了，如此一来就是加密的。本来我是准备用wireguard去连接的，但一直没从10.0.0.0穿透到192.168.x.x，不好直接用ssh隧道更方便。</p>
+<h2 id="打开自动登录"><a href="#打开自动登录" class="headerlink" title="打开自动登录"></a>打开自动登录</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">设置 -&gt; 用户与群组 -&gt; 自动以此身份登录</span><br></pre></td></tr></table></figure>
+<p>这一项非常关键，不然重启后就卡在登录界面，需要手动输入密码。</p>
+<h1 id="服务开机启动"><a href="#服务开机启动" class="headerlink" title="服务开机启动"></a>服务开机启动</h1><p>适用一些需要开机启动的服务，和linux不一样，使用launchctl管理。注意脚本不要放在Documents，没权限访问，自己在~下新建一个</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;UTF-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">plist</span> <span class="keyword">PUBLIC</span> <span class="string">&quot;-//Apple//DTD PLIST 1.0//EN&quot;</span> <span class="string">&quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">plist</span> <span class="attr">version</span>=<span class="string">&quot;1.0&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">dict</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- 唯一的标识符 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">key</span>&gt;</span>Label<span class="tag">&lt;/<span class="name">key</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">string</span>&gt;</span>yourshell.startup<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- 要执行的命令 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">key</span>&gt;</span>ProgramArguments<span class="tag">&lt;/<span class="name">key</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">array</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">string</span>&gt;</span>/path/to/yourshell.sh<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">array</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- 在加载时自动启动 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">key</span>&gt;</span>RunAtLoad<span class="tag">&lt;/<span class="name">key</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">true</span>/&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- 如果脚本停止，保持脚本运行 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">key</span>&gt;</span>KeepAlive<span class="tag">&lt;/<span class="name">key</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">true</span>/&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- 丢弃标准输出 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">key</span>&gt;</span>StandardOutPath<span class="tag">&lt;/<span class="name">key</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">string</span>&gt;</span>/Dev/null<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- 丢弃标准错误输出 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">key</span>&gt;</span>StandardErrorPath<span class="tag">&lt;/<span class="name">key</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">string</span>&gt;</span>/Dev/null<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">dict</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">plist</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># 停止</span><br><span class="line">sudo launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/yourshell.startup.plist</span><br><span class="line"># 加载</span><br><span class="line">sudo launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/yourshell.startup.plist</span><br></pre></td></tr></table></figure>
+
+<h1 id="打通转发-linux-Mac-mini🪜"><a href="#打通转发-linux-Mac-mini🪜" class="headerlink" title="打通转发(linux -&gt; Mac mini🪜)"></a>打通转发(linux -&gt; Mac mini🪜)</h1><h2 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h2><p>我使用 Linux 网关配合 MosDNS 进行 DNS 分流：<code>直连流量</code>不处理，访问<code>内部网站</code>解析虚拟ip，然后通过 iptables 进行路由转发。由于 Mac 不支持 TPROXY，所以我在 Mac 上运行 SOCKS 代理，然后在 Linux 上使用 TPROXY 转发连接到 SOCKS。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"># 修改iptables</span><br><span class="line">iptables -t mangle -N MYWAY 2&gt;/dev/null</span><br><span class="line">iptables -t mangle -F MYWAY</span><br><span class="line">iptables -t mangle -A MYWAY -d 198.18.0.0/16 -p tcp -j TPROXY --on-port &lt;tproxy_port&gt; --tproxy-mark 1</span><br><span class="line">iptables -t mangle -A MYWAY -d 198.18.0.0/16 -p udp -j TPROXY --on-port &lt;tproxy_port&gt; --tproxy-mark 1</span><br><span class="line">iptables -t mangle -D PREROUTING -j MYWAY 2&gt;/dev/null</span><br><span class="line">iptables -t mangle -A PREROUTING -j MYWAY</span><br><span class="line"></span><br><span class="line"># 开启NAT转发</span><br><span class="line">echo &quot;net.ipv4.ip_forward = 1&quot; | sudo tee -a /etc/sysctl.conf</span><br><span class="line">echo &quot;net.ipv4.conf.all.route_localnet=1&quot; | sudo tee -a /etc/sysctl.conf</span><br><span class="line">sysctl -p</span><br><span class="line"></span><br><span class="line"># nat转换 注意这里区分你的网络接口</span><br><span class="line">iptables -t nat -A POSTROUTING -o end0 -j MASQUERADE</span><br><span class="line"></span><br><span class="line"># 路由 注意这两条也要保存到rc.local，不然重启后就失效了。</span><br><span class="line">ip rule add fwmark 1 lookup 100</span><br><span class="line">ip route add local 0 0.0.0/0 dev lo table 100</span><br><span class="line"></span><br><span class="line"># 保存 iptables配置</span><br><span class="line">sudo iptables-save | sudo tee -a /etc/iptables/rules.v4</span><br><span class="line">sudo nano /etc/rc.local</span><br><span class="line"># 添加 iptables-restore &lt; /etc/iptables/rules.v4</span><br><span class="line"># 添加 ip rule add fwmark 1 lookup 100</span><br><span class="line"># 添加 ip route add local 0 0.0. 0/0 dev lo table 100</span><br><span class="line"># 保存</span><br><span class="line"></span><br><span class="line"># 确保有执行权限</span><br><span class="line">sudo chmod +x /etc/rc.local</span><br></pre></td></tr></table></figure>
+<p>最终实现的效果如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">📱 手机（或其他设备）</span><br><span class="line">│</span><br><span class="line">├── 发起请求（例如：访问 https://www.example.com）</span><br><span class="line">│</span><br><span class="line">├── 📡 DNS 请求发送至 ➜ 192.168.x.115（网关设备上的 MosDNS）</span><br><span class="line">│</span><br><span class="line">│   └─ MosDNS 分流：</span><br><span class="line">│       ├─ 直连域名 → 直连（返回真实 IP）</span><br><span class="line">│       └─ 内部域名 → 发给 113 上的 DNS服务</span><br><span class="line">│</span><br><span class="line">│       └─ DNS服务 返回 fake-ip（如 198.18.0.x）</span><br><span class="line">│</span><br><span class="line">└── 手机收到 fake-ip（例如 198.18.0.33）后发起连接</span><br><span class="line">     ↓</span><br><span class="line">     发出 TCP 请求目标：198.18.0.33:443</span><br><span class="line">     ↓</span><br><span class="line">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span><br><span class="line">🛡️ 网关设备（115）iptables 检测</span><br><span class="line">│</span><br><span class="line">├── mangle 表匹配到 fake-ip 段（198.18.0.0/16）</span><br><span class="line">│</span><br><span class="line">├── TPROXY 重定向流量 → 本地转换服务</span><br><span class="line">│</span><br><span class="line">├── 路由策略：</span><br><span class="line">│   └─ fwmark=1 → local via lo（回送至本地转换服务</span><br><span class="line">│</span><br><span class="line">└── 本地转换服务 接收到TPROXY流量</span><br><span class="line">    ↓</span><br><span class="line">    转发至 代理服务（113）的 Socks 服务</span><br><span class="line">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span><br><span class="line">🧱 代理服务（113）处理流量</span><br><span class="line">│</span><br><span class="line">└── 访问目标网站（如 example.com），建立 TLS 连接</span><br><span class="line">    ↓</span><br><span class="line">    返回响应</span><br><span class="line">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span><br><span class="line">⬆️ 回程流量返回手机，访问完成</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>总结，其实就是将115上开启转发，fake-ip段标记1，进TPROXY，再走socks发到mac mini</p>
+<h2 id="踩过的坑"><a href="#踩过的坑" class="headerlink" title="踩过的坑"></a>踩过的坑</h2><p>有些细节不说了，我还有份详细的笔记，但不方便暴露。这里走了点弯路，踩坑总结：</p>
+<ol>
+<li>tproxy to socks 本来尝试用工具redsocks，AI说不支持udp，放弃了。改用另一款，性能稍微差点，但支持的协议多，配置也简单。</li>
+<li>一定要配<code>echo &quot;net.ipv4.conf.all.route_localnet=1&quot; | sudo tee -a /etc/sysctl.conf</code> 这一项才允许路由lo，我本身对linux的网络熟练度低，就因为这个配置，搞了好久，AI也一直没讲，后面一点点查到的。</li>
+<li>起初直接使用 TUN 实现，毕竟是个虚拟网卡，招呼了所有流量，后来觉得不够优雅，最终改成 DNS分流 + TPROXY + SOCKS，感谢一位哥们跟我交流后确定了方向。</li>
+<li>为什么非要建在mac上，因为开发板性能太差，虽然还能撑，但能少安服务就少安吧，况且在新mac上加一个这个服务跑，完全不受影响。我在linux上面还有个Alist(板子原生支持SATA，就接了块电脑硬盘)。</li>
+<li>linux上有个systemd-resolved，记得disable，占了53端口。当然也可以不做，需要设备上指定DNS端口。</li>
+</ol>
+<h1 id="居然是冰的"><a href="#居然是冰的" class="headerlink" title="居然是冰的"></a>居然是冰的</h1><p>Mac mini跑好几天了，摸一摸表面居然是冰的。家里养猫，PDD 26买了个3D打印的底座，不是15块那个，不是一个做工。</p>
+<h1 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h1><ol>
+<li>我把科技的服务搭在了我的linux板子上，发现开网页变的很慢，curl差不多，猜测是机器太老，线程不够，放弃了，又转回来mac mini了。</li>
+<li>不想手改ip网关了，就在nx54路由器上配了个静态路由<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ip route add 198.18.0.0/16 via 192.168.x.115 dev br-lan</span><br></pre></td></tr></table></figure></li>
+<li>115如果也想一样，需要标记一下OUTPUT链<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">iptables -t mangle -A OUTPUT -d 198.18.0.0/16 -p tcp -j MARK --set-mark 1</span><br><span class="line">iptables -t mangle -A OUTPUT -d 198.18.0.0/16 -p udp -j MARK --set-mark 1</span><br></pre></td></tr></table></figure></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/linux/" rel="tag"># linux</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2024/12/31/sm3-totp/" rel="prev" title="GmSSL中的totp">
+                  <i class="fa fa-angle-left"></i> GmSSL中的totp
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/07/31/android-14-install-ca/" rel="next" title="android 14安装CA证书">
+                  android 14安装CA证书 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>
