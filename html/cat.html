@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>猫咪猜猜看 - 思考版</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f7f9fc;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        #game-container {
+            position: relative;
+            width: 320px;
+            height: 320px; /* 增加高度放气泡 */
+            background: #fff;
+            border-radius: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 40px;
+        }
+
+        /* 思考气泡 */
+        .thought-bubble {
+            position: absolute;
+            top: 100px;
+            right: 80px;
+            font-size: 30px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        /* 猫咪形象 */
+        .cat {
+            font-size: 90px;
+            line-height: 1;
+            z-index: 2;
+        }
+
+        /* 物品行 */
+        .items-row {
+            display: flex;
+            gap: 60px;
+            position: relative;
+            margin-top: 20px;
+        }
+
+        .item { font-size: 50px; }
+
+        /* 猫爪 */
+        .paw {
+            position: absolute;
+            font-size: 50px;
+            top: -20px;
+            left: 50%;
+            margin-left: -25px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .status-msg {
+            margin: 25px 0 15px;
+            font-size: 22px;
+            font-weight: bold;
+            color: #444;
+            height: 30px;
+        }
+
+        .controls { display: flex; gap: 15px; }
+
+        button {
+            padding: 12px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            border: 2px solid #ff9800;
+            border-radius: 12px;
+            background-color: #fff;
+            color: #ff9800;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        button.active { background-color: #ff9800; color: white; }
+        button:disabled { border-color: #ddd; background-color: #f5f5f5; color: #bbb; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="thought" class="thought-bubble">💭</div>
+        <div class="cat">🐱</div>
+        <div class="items-row">
+            <div id="paw" class="paw">🐾</div>
+            <div id="target-tissue" class="item">🧻</div>
+            <div id="target-carrot" class="item">🥕</div>
+        </div>
+    </div>
+
+    <div id="message" class="status-msg">请选择一个物品</div>
+
+    <div class="controls">
+        <button id="btn-tissue" onclick="playGame('tissue')">纸巾</button>
+        <button id="btn-carrot" onclick="playGame('carrot')">胡萝卜</button>
+    </div>
+
+    <script>
+        let isLocked = false;
+        let playerChoice = null;
+        const names = { 'tissue': '纸巾', 'carrot': '胡萝卜' };
+
+        function playGame(choice) {
+            if (isLocked && choice !== playerChoice) return;
+
+            // 如果是重新尝试（即爪子还压在错的上面），先收回爪子的一瞬间
+            if (isLocked) {
+                const paw = document.getElementById('paw');
+                paw.style.opacity = "0";
+                paw.style.transform = `translateY(0px)`;
+            }
+
+            playerChoice = choice;
+            isLocked = true;
+
+            // 1. 置灰逻辑
+            const btnTissue = document.getElementById('btn-tissue');
+            const btnCarrot = document.getElementById('btn-carrot');
+            document.getElementById('message').innerText = ""; // 清空文字，显示“思考”
+            
+            if (choice === 'tissue') {
+                btnCarrot.disabled = true;
+                btnTissue.classList.add('active');
+            } else {
+                btnTissue.disabled = true;
+                btnCarrot.classList.add('active');
+            }
+
+            // 2. 显示思考表情
+            const thought = document.getElementById('thought');
+            thought.style.opacity = "1";
+
+            // 3. 1秒延迟后，猫咪做出决定
+            setTimeout(() => {
+                thought.style.opacity = "0"; // 停止思考
+                
+                const items = ['tissue', 'carrot'];
+                const catPick = items[Math.floor(Math.random() * items.length)];
+                
+                // 4. 执行压住动作
+                movePaw(catPick, (catPick === playerChoice));
+            }, 1000);
+        }
+
+        function movePaw(target, isCorrect) {
+            const paw = document.getElementById('paw');
+            const offset = (target === 'tissue') ? -60 : 60;
+
+            paw.style.opacity = "1";
+            paw.style.transform = `translateX(${offset}px) translateY(45px)`;
+
+            if (isCorrect) {
+                setTimeout(() => {
+                    document.getElementById('message').innerText = "✨ 真棒！奖励一个小鱼干！ ✨";
+                    document.getElementById('message').style.color = "#e91e63";
+                    
+                    setTimeout(() => {
+                        paw.style.opacity = "0";
+                        paw.style.transform = `translateX(${offset}px) translateY(0px)`;
+                        resetGame();
+                    }, 1200);
+                }, 400);
+            } else {
+                // 压错了，保持不动。文字提示为空，等待玩家再点
+                document.getElementById('message').innerText = ""; 
+            }
+        }
+
+        function resetGame() {
+            isLocked = false;
+            playerChoice = null;
+            const tBtn = document.getElementById('btn-tissue');
+            const cBtn = document.getElementById('btn-carrot');
+            
+            tBtn.disabled = false;
+            cBtn.disabled = false;
+            tBtn.classList.remove('active');
+            cBtn.classList.remove('active');
+            document.getElementById('message').innerText = "请选择一个物品";
+            document.getElementById('message').style.color = "#444";
+        }
+    </script>
+</body>
+</html>
