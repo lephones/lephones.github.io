@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="lefo的菜鸡实录">
+<meta property="og:url" content="https://lefo.me/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="android,java,kotlin,开发,编程,c++">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":true,"isPost":false,"lang":"zh-CN","comments":"","permalink":"","path":"index.html","title":""}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">lefo的菜鸡实录</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2026/01/17/cocos2d-issue/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/01/17/cocos2d-issue/" class="post-title-link" itemprop="url">Cocos2.x版本 HandleScope::Initialize(v8::Isolate*) 问题分析</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-01-17 12:30:26" itemprop="dateCreated datePublished" datetime="2026-01-17T12:30:26+08:00">2026-01-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/android/" itemprop="url" rel="index"><span itemprop="name">android</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="问题背景"><a href="#问题背景" class="headerlink" title="问题背景"></a>问题背景</h1><p>公司使用 Cocos 2.4.15 开发游戏时，发现一个 crash 在 Android 15 以上的设备上非常频繁。起初以为是 16KB 的兼容性问题，但分析后发现包其实是兼容 16KB 的。  </p>
+<p>在 Cocos 社区中，也有相关讨论：<a target="_blank" rel="noopener" href="https://forum.cocos.org/t/topic/167995">v8::HandleScope::Initialize(v8::Isolate*)</a>。官方曾提供过基于 Activity 在 <code>onDestroy</code> 时的修复方案，但我们发现还有其它触发场景。</p>
+<p>Crash 日志示例：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(v8::HandleScope::<span class="built_in">Initialize</span>(v8::Isolate*)+<span class="number">144</span>) (BuildId: a222c0a549189d49b84a5433428e92f58cba47f0)</span><br><span class="line">(se::AutoHandleScope::<span class="built_in">AutoHandleScope</span>()+<span class="number">36</span>) (BuildId: a222c0a549189d49b84a5433428e92f58cba47f0)</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2026/01/17/cocos2d-issue/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2025/11/04/h3c-no-update/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/11/04/h3c-no-update/" class="post-title-link" itemprop="url">nx54你别升级了</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-11-04 23:49:47" itemprop="dateCreated datePublished" datetime="2025-11-04T23:49:47+08:00">2025-11-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/nx54/" itemprop="url" rel="index"><span itemprop="name">nx54</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>前段时间，朋友微信上和我说，NX54升级固件了，升级后，debug模式进不了，telnet也打不开了。至此，我之前分享的ipv6纯定制的方案，失效了，只剩下一种方式：ipv6防火墙开关。当然，也是可以满足ipv6访问的，只不过不可以只开放指定的v6ip了。简单吐槽一下这次升级：</p>
+<ol>
+<li>不可降级。上了v13后，就算你保存了旧固件，也不可以降级。</li>
+<li>不可debug。加了密码被堵死了。</li>
+<li>telnet默认关闭。之前配置文件中关于telnet的设置，新版本上没有了。</li>
+</ol>
+<p>本篇不算什么黑科技，就是找一找升级的网络，然后停掉，算是一个小思路，但凡懂点网络知识的，应该都能明白。这次升级后，老版本且用且珍惜吧。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/11/04/h3c-no-update/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2025/10/24/public-ids/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/10/24/public-ids/" class="post-title-link" itemprop="url">android打包固定id</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-10-24 11:11:27" itemprop="dateCreated datePublished" datetime="2025-10-24T11:11:27+08:00">2025-10-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/android/" itemprop="url" rel="index"><span itemprop="name">android</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>6月份跳槽来了一家广告公司，整个业务逻辑就是流量玩法，上架市场，买量，赚广告费。因为gp上架越来越难，就衍生出一种玩法叫AB面。关于AB面，这里先不讲，主要说说B包的资源处理。这篇没技术，单纯自己记下来当笔记用。</p>
+<h1 id="id"><a href="#id" class="headerlink" title="id"></a>id</h1><p>id其实是个整数，应用内的id一般情况是<code>0x7fxxxxxx</code>，这个hex其实是<code>package</code>,<code>type</code>,<code>value</code>的结构。而代码中如果有R.id.xx，会在编译时直接替换成该整数。做AB面的包，B包都是通过动态加载的，这就导致这个整数，必须在使用时，和你的资源对应。10年有，有种粗暴的解决办法，就是构建一个自己的aapt，可以指定<code>package</code>，也就是前面的<code>7f</code>，然后再用添加Resources的方式，将资源添加到资源管理器中。这样就能一劳永逸。B包打包，使用0x7e的资源，A包不处理，这样AB的资源就不会冲突。</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">android&#123;</span><br><span class="line">    aaptOptions &#123;</span><br><span class="line">        additionalParameters <span class="string">&quot;--package-id&quot;</span>, <span class="string">&quot;0x7E&quot;</span>, <span class="string">&quot;--allow-reserved-package-id&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/10/24/public-ids/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2025/08/18/fk-hw-dns/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/08/18/fk-hw-dns/" class="post-title-link" itemprop="url">遥遥领先的DNS配置</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-08-18 23:01:19" itemprop="dateCreated datePublished" datetime="2025-08-18T23:01:19+08:00">2025-08-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>之前在家里的开发机上配了科技，但是媳妇的遥遥领先手机一直使用不了，大概排查了一下，应该是dns解析的问题，因为我把我路由fake ip的下一跳指到了内网一台设备上，但是我用工具查下一跳还是移动网关(10.41.x.x)。不能忍，开tcpdump查。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/08/18/fk-hw-dns/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2025/07/31/android-14-install-ca/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/07/31/android-14-install-ca/" class="post-title-link" itemprop="url">android 14安装CA证书</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-07-31 17:18:29" itemprop="dateCreated datePublished" datetime="2025-07-31T17:18:29+08:00">2025-07-31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/android/" itemprop="url" rel="index"><span itemprop="name">android</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>前两天给模拟器上安装CA证书，发现即使放入<code>/system/etc/security/cacerts/</code>，依然不能用Charles抓包，设置里查看，证书也没有生效，终于找到了一篇详细介绍原因的文章，记录一下，以后更好找。</p>
+<h1 id="准备证书"><a href="#准备证书" class="headerlink" title="准备证书"></a>准备证书</h1><p>准备你的SSL证书，重命名。</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">openssl x509 -inform PEM -subject_hash_old -<span class="keyword">in</span> charles_ssl.pem | <span class="built_in">head</span> -1</span><br><span class="line"><span class="comment">#将证书命名为得到的的结果.0</span></span><br><span class="line">adb push xxxxxx.0 /sdcard/</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/07/31/android-14-install-ca/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2025/04/24/macmini/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2025/04/24/macmini/" class="post-title-link" itemprop="url">mac mini配合linux当服务器使用</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-04-24 23:39:17" itemprop="dateCreated datePublished" datetime="2025-04-24T23:39:17+08:00">2025-04-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/linux/" itemprop="url" rel="index"><span itemprop="name">linux</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>我主业是安卓开发，但不务正业的我又在折腾别的了。</p>
+<p>之前写过一篇关于 NX54 如何配置 iptables 以开放指定 IP 的 IPv6 防火墙规则。最近又把手上的一块 14 年的废弃 ARM 开发板翻出来，挂了块硬盘，让我在任意设备上都能访问家里的网络。要说这块板子，官方系统只到ubuntu 2014，连python3都没法装，之前折腾过armbian，但kernel有问题，usb不工作。最近看论坛去年有人升级了内核了，赶紧换一下系统。</p>
+<p>过年期间家属送了一台 Mac mini（现在百亿补贴入手价 2899，血亏 600），于是我又折腾了一下，把整个网络重新整理了一遍。熬了几个夜晚和午休时间，总算弄好了，这里记录一下过程中遇到的问题和解决方案。</p>
+<h1 id="之前我做了什么"><a href="#之前我做了什么" class="headerlink" title="之前我做了什么"></a>之前我做了什么</h1><ol>
+<li>桥接路由，这样可以直接获取公网ipv6地址，供自己在外边连接。</li>
+<li>关防火墙。大多数路由器都有ipv6防火墙，像我的NX54就是基于ip6tables的配置，需要关掉。我是只关掉了我的linux的ip。我使用了脚本自动更新，脚本流程如下： <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">linux定时任务 -&gt; python脚本 -&gt; 获取ipv6 -&gt; 发现变化 -&gt; 更新nx54防火墙 -&gt; 更新cloudflare dns AAAA(最早做了一版发email的，后来改ddns了)</span><br></pre></td></tr></table></figure>
+ 不得不说，cloudflare真的是互联网之光，域名便宜，免费加速，还提供Pages，Workers。</li>
+<li>linux关闭ssh密码访问，把常用的设备公钥加进去。
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/04/24/macmini/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2024/12/31/sm3-totp/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2024/12/31/sm3-totp/" class="post-title-link" itemprop="url">GmSSL中的totp</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2024-12-31 17:40:31" itemprop="dateCreated datePublished" datetime="2024-12-31T17:40:31+08:00">2024-12-31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/gmssl/" itemprop="url" rel="index"><span itemprop="name">gmssl</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>越来越多的网站像Github一样开启了2次验证，给你生成一个6位的数字动态口令，这种就叫TOTP，通俗讲，就是基于时间的一次性动态口令。我在家里搭了个Alist文件服务器，也默认支持TOTP，不过我开了HTTPS，用的也不多，TOTP验证就关了。我为什么要看这个呢，上班的地方wifi使用了h3c e盾认证，里面使用了SM3计算口令，每次连wifi还得点开app，索性看看它是怎么计算的。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/12/31/sm3-totp/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2024/11/18/nas-ipv6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2024/11/18/nas-ipv6/" class="post-title-link" itemprop="url">nx54的ipv6配置nas，内网穿透访问，nxginx、DDNS都在这里</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2024-11-18 12:52:33" itemprop="dateCreated datePublished" datetime="2024-11-18T12:52:33+08:00">2024-11-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/nx54/" itemprop="url" rel="index"><span itemprop="name">nx54</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>上一篇说到nx54路由器如何在官方防火墙上加一个自己主机允许访问的规则，在不关闭防火墙的情况下，还能走ipv6访问到内网设备，里面有提到ipv6地址变化的问题。这篇主要说说ipv6变化后如何通知你，通知路由器，以及一部分nginx配置心得。</p>
+<h1 id="ip变化通知，同时更新路由防火墙规则"><a href="#ip变化通知，同时更新路由防火墙规则" class="headerlink" title="ip变化通知，同时更新路由防火墙规则"></a>ip变化通知，同时更新路由防火墙规则</h1><blockquote>
+<p>注意以下所说的ip都是指ipv6，因为ipv4内网地址可以直接和mac地址绑定，不用通知你。</p>
+</blockquote>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/11/18/nas-ipv6/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2024/11/10/nx54-ip6tables/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2024/11/10/nx54-ip6tables/" class="post-title-link" itemprop="url">H3C NX54不关ipv6防火墙，允许外网访问内网</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2024-11-10 14:51:47" itemprop="dateCreated datePublished" datetime="2024-11-10T14:51:47+08:00">2024-11-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/nx54/" itemprop="url" rel="index"><span itemprop="name">nx54</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>NX54终于更新固件了，新版本支持配置关闭ipv6防火墙，但是，防火墙关闭，相对而言风险也就上来了。其实最好的办法是，在防火墙上稍微开一个小口就行了，也就是，只允许目标地址是你指定IP的数据通过，今天就大概说说如何最小风险去处理这件事情。主要有以下两个操作：</p>
+<ol>
+<li>ip6tables限制指定目标ip转发</li>
+<li>关闭要访问的服务器的ssh访问，windows主机可忽略</li>
+</ol>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/11/10/nx54-ip6tables/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2024/05/12/build-pdfium/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2024/05/12/build-pdfium/" class="post-title-link" itemprop="url">如何构建一个pdfium.so</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2024-05-12 14:50:01" itemprop="dateCreated datePublished" datetime="2024-05-12T14:50:01+08:00">2024-05-12</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/android%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">android开发</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>项目中接入了打开pdf文件的功能，使用的是<a target="_blank" rel="noopener" href="https://github.com/barteksc/PdfiumAndroid/">https://github.com/barteksc/PdfiumAndroid/</a>。现在想升级一下pdfium库，旧库具体原因就不解释了，毕竟这个项目最后一个commit在6年前，当然，平常用来接入打开pdf也是没问题的。</p>
+<h1 id="开源库"><a href="#开源库" class="headerlink" title="开源库"></a>开源库</h1><p>在google一通搜索，发现pdfium库包含两套，一套在aosp中，另一套在chromium中。</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://android.googlesource.com/platform/external/pdfium/">https://android.googlesource.com/platform/external/pdfium/</a></li>
+<li><a target="_blank" rel="noopener" href="https://pdfium.googlesource.com/pdfium/">https://pdfium.googlesource.com/pdfium/</a><br>两款代码应该差不多，aosp的构建使用Android.bp，版本要比pdfium版本的落后一些。再看PdfiumAndroid项目README，第一句就说Uses pdfium library from AOSP，使用的库应该也是aosp的库。</li>
+</ul>
+<h1 id="构建aosp版"><a href="#构建aosp版" class="headerlink" title="构建aosp版"></a>构建aosp版</h1><h2 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h2><ol>
+<li>ubuntu 可以使用virtual box去装个虚拟机</li>
+<li>200GB以上硬盘空间，清华会推荐你下载aosp-latest.tar再解压，光压缩包80G了，解压完我就把tar包删了</li>
+</ol>
+<h2 id="获取aosp源码"><a href="#获取aosp源码" class="headerlink" title="获取aosp源码"></a>获取aosp源码</h2><p>推荐使用清华镜像<a target="_blank" rel="noopener" href="https://mirrors-i.tuna.tsinghua.edu.cn/help/AOSP/">https://mirrors-i.tuna.tsinghua.edu.cn/help/AOSP/</a>，可结合google的官方说明<a target="_blank" rel="noopener" href="https://source.android.com/docs/setup?hl=zh-cn">https://source.android.com/docs/setup?hl=zh-cn</a>。具体指令就不介绍了，主要是repo sync费时，注意选好你想构建的build tag。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/05/12/build-pdfium/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+  <nav class="pagination">
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" title="下一页" aria-label="下一页" href="/page/2/"><i class="fa fa-angle-right"></i></a>
+  </nav>
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

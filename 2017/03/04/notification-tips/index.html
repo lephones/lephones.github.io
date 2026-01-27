@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="前言在安卓开发中，一定会使用Notification。而notification也随着Android版本的升级，一直在变化。这篇blog简单记录一下在Notification开发时，我所碰上的问题，以及需要注意的地方。 碰上的问题RemoteView的文字颜色Android的ROM太多了，通知栏的颜色、样式都不尽相同。有的是白的，有的是黑的，这就让我们在自定义RemoteView的时候，不能直去设">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Notification通知栏的那些事">
+<meta property="og:url" content="https://lefo.me/2017/03/04/notification-tips/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="前言在安卓开发中，一定会使用Notification。而notification也随着Android版本的升级，一直在变化。这篇blog简单记录一下在Notification开发时，我所碰上的问题，以及需要注意的地方。 碰上的问题RemoteView的文字颜色Android的ROM太多了，通知栏的颜色、样式都不尽相同。有的是白的，有的是黑的，这就让我们在自定义RemoteView的时候，不能直去设">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-03-04T10:48:50.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.655Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="android">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/2017/03/04/notification-tips/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2017/03/04/notification-tips/","path":"2017/03/04/notification-tips/","title":"Notification通知栏的那些事"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Notification通知栏的那些事 | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%A2%B0%E4%B8%8A%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">2.</span> <span class="nav-text">碰上的问题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#RemoteView%E7%9A%84%E6%96%87%E5%AD%97%E9%A2%9C%E8%89%B2"><span class="nav-number">2.1.</span> <span class="nav-text">RemoteView的文字颜色</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%82%B9%E4%BA%86%E9%80%9A%E7%9F%A5%E6%A0%8F%E4%B8%8D%E8%B7%B3%E8%BD%AC"><span class="nav-number">2.2.</span> <span class="nav-text">点了通知栏不跳转</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%B9%E5%B8%83%E5%B1%80"><span class="nav-number">2.3.</span> <span class="nav-text">根布局</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-0%E7%9A%84%E6%96%B0%E7%89%B9%E6%80%A7"><span class="nav-number">3.</span> <span class="nav-text">7.0的新特性</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2017/03/04/notification-tips/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Notification通知栏的那些事 | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Notification通知栏的那些事
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017-03-04 18:48:50" itemprop="dateCreated datePublished" datetime="2017-03-04T18:48:50+08:00">2017-03-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/android%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">android开发</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>在安卓开发中，一定会使用Notification。而notification也随着Android版本的升级，一直在变化。这篇blog简单记录一下在Notification开发时，我所碰上的问题，以及需要注意的地方。</p>
+<h1 id="碰上的问题"><a href="#碰上的问题" class="headerlink" title="碰上的问题"></a>碰上的问题</h1><h2 id="RemoteView的文字颜色"><a href="#RemoteView的文字颜色" class="headerlink" title="RemoteView的文字颜色"></a>RemoteView的文字颜色</h2><p>Android的ROM太多了，通知栏的颜色、样式都不尽相同。有的是白的，有的是黑的，这就让我们在自定义RemoteView的时候，不能直去设置文字的颜色，比如设置了白色，在白底的通知栏就没办法显示出文字。</p>
+<p>怎么办？</p>
+<span id="more"></span>
+
+<p>&#x2F;res&#x2F;values&#x2F;styles.xml</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&lt;style name=&quot;NotificationText&quot;&gt;</span><br><span class="line">    &lt;item name=&quot;android:textColor&quot;&gt;?android:attr/textColorPrimary&lt;/item&gt;</span><br><span class="line">&lt;/style&gt;</span><br><span class="line"></span><br><span class="line">&lt;style name=&quot;NotificationTitle&quot;&gt;</span><br><span class="line">    &lt;item name=&quot;android:textColor&quot;&gt;?android:attr/textColorPrimary&lt;/item&gt;</span><br><span class="line">&lt;/style&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>因为在安卓2.3以上的版本，系统提供了一个默认通知栏的文本颜色值，所以直接拿来用就好<br>&#x2F;res&#x2F;values-v9&#x2F;styles.xml</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;style name=&quot;NotificationText&quot; parent=&quot;android:TextAppearance.StatusBar.EventContent&quot; /&gt;</span><br><span class="line">&lt;style name=&quot;NotificationTitle&quot; parent=&quot;android:TextAppearance.StatusBar.EventContent.Title&quot; /&gt;</span><br></pre></td></tr></table></figure>
+
+<p>本以为这样就OK了，这块代码一直没有动，直到前几天，测试发现在华为P9上，7.0系统，别人家的通知栏是白色底的，而我家的通知栏是黑色的。。而且有一个诡异的现象就是，在7.0系统展开后一滑动，有一定几率变成白色底。</p>
+<p><em>于是查啊查，终于发现，原来是gradle里面的<code>targetSdkVersion</code>，因为之前一直都是18，改成21以后就成了白色的了。</em></p>
+<p>白色的倒是变了，但是之前黑色底的文字是白色的，现在成了白色底，却还是白色的文字。不墨迹，直接翻开Notification的源码，找到了默认的layout，终于发现，原来在5.0系统上，默认通知栏文本颜色值又重新定义了。我们需要在v21再加入以下代码</p>
+<p><em>在EMUI和MIUI上，测试没有通过，发现还是用的v9的值，看来还是需要在代码里判断view的颜色值</em></p>
+<p>&#x2F;res&#x2F;values-v21&#x2F;styles.xml</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;style name=&quot;NotificationText&quot; parent=&quot;android:TextAppearance.Material.Notification&quot; /&gt;</span><br><span class="line">&lt;style name=&quot;NotificationTitle&quot; parent=&quot;android:TextAppearance.Material.Notification.Title&quot; /&gt;</span><br></pre></td></tr></table></figure>
+
+<p>怎么使用我就不细说了，在layout的textview使用style属性应该都会。</p>
+<p><em>在EMUI和MIUI上，测试没有通过，发现还是用的v9的值，看来还是需要在代码里判断view的颜色值</em></p>
+<h2 id="点了通知栏不跳转"><a href="#点了通知栏不跳转" class="headerlink" title="点了通知栏不跳转"></a>点了通知栏不跳转</h2><p>有一次测试，发现在4.4的手机上，明明配置了正确的PendingIntent，然而，不管怎么点，都不能跳转到Activity，非常郁闷。最后，终于找到了资料。原来，是因为在创建PendingIntent的时候，我们使用了FLAG_UPDATE_CURRENT，在4.4的系统上，用FLAG_UPDATE_CURRENT的时候，Activity必须得是exported&#x3D;true的才可以。</p>
+<p>解决办法：改为FLAG_CANCEL_CURRENT 或者，在清单文件将落地Activity改为exported&#x3D;true。</p>
+<h2 id="根布局"><a href="#根布局" class="headerlink" title="根布局"></a>根布局</h2><p>我提一个建议就是，根布局使用LinearLayout，为什么呢？因为在有的coolpad的手机上，弹出一个通知后，会在你的通知布局上加一个View，然后让用户选择是否允许弹出，如果我们的布局是RelativeLayout或者FrameLayout，那它加上的两个按钮就会把咱们的控件覆盖掉。</p>
+<h1 id="7-0的新特性"><a href="#7-0的新特性" class="headerlink" title="7.0的新特性"></a>7.0的新特性</h1><p>7.0的系统上，又有了一些新功能，附上google官方的博客介绍文章。<br><a target="_blank" rel="noopener" href="https://android-developers.googleblog.com/2016/06/notifications-in-android-n.html">https://android-developers.googleblog.com/2016/06/notifications-in-android-n.html</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/android/" rel="tag"># android</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/02/23/market-install-intercept/" rel="prev" title="应用市场的尔虞我诈（突破华为安装时来源检测）">
+                  <i class="fa fa-angle-left"></i> 应用市场的尔虞我诈（突破华为安装时来源检测）
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/05/19/shortcut-permission/" rel="next" title="是否允许创建快捷方式的权限检测">
+                  是否允许创建快捷方式的权限检测 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

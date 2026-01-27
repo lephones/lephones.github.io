@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="现有采集都知道APK就是一个zip包，目前，收集别人家的APK信息，原理都一样，一般都是先将APK文件下载，再提取AndroidManifest.xml，通过AXmlPrint2.jar打开，得到反编译后的xml，解析xml得到包信息。 那么，一个游戏好几个GB，真正用到的却只有几KB信息。如果能跳过内容，结合断点下载，直接下载到AndroidManifest.xml，那就能省很多流量了。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从zip结构看APK采集时优化">
+<meta property="og:url" content="https://lefo.me/2019/07/08/zip-file-struct/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="现有采集都知道APK就是一个zip包，目前，收集别人家的APK信息，原理都一样，一般都是先将APK文件下载，再提取AndroidManifest.xml，通过AXmlPrint2.jar打开，得到反编译后的xml，解析xml得到包信息。 那么，一个游戏好几个GB，真正用到的却只有几KB信息。如果能跳过内容，结合断点下载，直接下载到AndroidManifest.xml，那就能省很多流量了。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lefo.me/image/20190708/zip-header.jpg">
+<meta property="og:image" content="https://lefo.me/image/20190708/zip-dir.jpg">
+<meta property="article:published_time" content="2019-07-08T09:44:20.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.656Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="android">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lefo.me/image/20190708/zip-header.jpg">
+
+
+<link rel="canonical" href="https://lefo.me/2019/07/08/zip-file-struct/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2019/07/08/zip-file-struct/","path":"2019/07/08/zip-file-struct/","title":"从zip结构看APK采集时优化"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>从zip结构看APK采集时优化 | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%8E%B0%E6%9C%89%E9%87%87%E9%9B%86"><span class="nav-number">1.</span> <span class="nav-text">现有采集</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%86%E6%9E%90ZIP"><span class="nav-number">2.</span> <span class="nav-text">分析ZIP</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%A4%B4"><span class="nav-number">3.</span> <span class="nav-text">关键头</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%96%87%E4%BB%B6"><span class="nav-number">4.</span> <span class="nav-text">文件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%9D%E8%B7%AF"><span class="nav-number">5.</span> <span class="nav-text">思路</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81"><span class="nav-number">6.</span> <span class="nav-text">代码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%87%8D%E7%82%B9%E4%BC%98%E5%8C%96"><span class="nav-number">7.</span> <span class="nav-text">重点优化</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%81%E7%A8%8B%E4%BC%98%E5%8C%96"><span class="nav-number">7.1.</span> <span class="nav-text">流程优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-EOCD-%E8%AE%B0%E5%BD%95%E5%9C%A8-ZIP-%E6%96%87%E4%BB%B6%E7%9A%84%E6%9C%80%E5%90%8E-65535-%E5%AD%97%E8%8A%82%E5%86%85%EF%BC%9F"><span class="nav-number">7.2.</span> <span class="nav-text">为什么 EOCD 记录在 ZIP 文件的最后 65535 字节内？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#EOCD%E7%BB%93%E6%9E%84"><span class="nav-number">7.3.</span> <span class="nav-text">EOCD结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E5%AD%97%E8%8A%82%E6%AF%94%E8%BE%83"><span class="nav-number">7.4.</span> <span class="nav-text">四字节比较</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2019/07/08/zip-file-struct/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="从zip结构看APK采集时优化 | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          从zip结构看APK采集时优化
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-07-08 17:44:20" itemprop="dateCreated datePublished" datetime="2019-07-08T17:44:20+08:00">2019-07-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/android%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">android开发</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="现有采集"><a href="#现有采集" class="headerlink" title="现有采集"></a>现有采集</h1><p>都知道APK就是一个zip包，目前，收集别人家的APK信息，原理都一样，一般都是先将APK文件下载，再提取AndroidManifest.xml，通过<code>AXmlPrint2.jar</code>打开，得到反编译后的xml，解析xml得到包信息。</p>
+<p>那么，一个游戏好几个GB，真正用到的却只有几KB信息。如果能跳过内容，结合断点下载，直接下载到AndroidManifest.xml，那就能省很多流量了。</p>
+<span id="more"></span>
+
+<h1 id="分析ZIP"><a href="#分析ZIP" class="headerlink" title="分析ZIP"></a>分析ZIP</h1><p>图文并茂的文章：<a target="_blank" rel="noopener" href="https://blog.csdn.net/hp910315/article/details/77717746">https://blog.csdn.net/hp910315/article/details/77717746</a></p>
+<p>表格介绍的文章：<a target="_blank" rel="noopener" href="https://blog.csdn.net/a200710716/article/details/51644421">https://blog.csdn.net/a200710716/article/details/51644421</a></p>
+<p>上面这两篇文章很详细的介绍了zip文件的结构，我再简单提一下，zip是先保存的文件，最后又将文件信息做了个目录放在最后。如下：</p>
+<p><strong>[文件实体头+文件数据+数据描述符][..重复..]+核心目录+目录结束标识</strong></p>
+<p>核心目录是关键内容，结构为重复n个[文件头]，也就是，所有在zip中重复的文件，都有会在核心目录区保存一些关键信息(文件信息，不含文件内容)。其中，包含了每个文件在zip中起始偏移、压缩后的大小，所以，只要我们拿到核心目录的内容，就可以定位到AndroidManifest.xml的位置。</p>
+<p>附上两张图：</p>
+<p>manifest文件实体头</p>
+<p><img src="/image/20190708/zip-header.jpg" alt="manifest文件实体头"></p>
+<p>manifest核心目录</p>
+<p><img src="/image/20190708/zip-dir.jpg" alt="manifest核心目录"></p>
+<h1 id="关键头"><a href="#关键头" class="headerlink" title="关键头"></a>关键头</h1><p>核心目录中，每个文件头的标记位开始都是4个字节<code>0x02014b50</code>，在文件中，高位是在后面存放的，所以，要找的4个字节是0x50，0x4b，0x01，0x02。找到以后，根据对应的偏移，来找到文件名、文件名长度、压缩后大小以及在文件中的位置。</p>
+<p>我只列举一下用到的位置</p>
+<table>
+<thead>
+<tr>
+<th>offset</th>
+<th>大小(字节)</th>
+<th>代表意义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>4</td>
+<td>0x02014b50</td>
+</tr>
+<tr>
+<td>20</td>
+<td>4</td>
+<td>压缩后文件大小</td>
+</tr>
+<tr>
+<td>28</td>
+<td>2</td>
+<td>文件名长度(n)</td>
+</tr>
+<tr>
+<td>42</td>
+<td>4</td>
+<td>文件保存的位置</td>
+</tr>
+<tr>
+<td>46</td>
+<td>文件名长度(n)</td>
+<td>文件名</td>
+</tr>
+</tbody></table>
+<p>找到文件保存的位置和大小后，直接读取成字节数组，然后使用<code>ZipInputStream</code>解压。</p>
+<h1 id="文件"><a href="#文件" class="headerlink" title="文件"></a>文件</h1><p>文件分为：文件头、文件数据、数据描述符</p>
+<p>文件头后面，就是文件内容了，但是，这些我们都不用关注，我们只需要拿到最开始0x04034b50所在的位置就行。因为ZipInputStream调用getNextEntry可以直接读取。</p>
+<p>实际中发现文件头中很多信息都没有，比如文件大小。另外，扩展内容一般情况也是空的，所以基本上文件名后面就是文件内容。</p>
+<table>
+<thead>
+<tr>
+<th>offset</th>
+<th>大小</th>
+<th>意义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>4</td>
+<td>0x04034b50</td>
+</tr>
+<tr>
+<td>26</td>
+<td>2</td>
+<td>文件名长度n</td>
+</tr>
+<tr>
+<td>28</td>
+<td>2</td>
+<td>扩展内容长度m</td>
+</tr>
+<tr>
+<td>30</td>
+<td>n</td>
+<td>文件名</td>
+</tr>
+<tr>
+<td>30+n</td>
+<td>m</td>
+<td>扩展内容</td>
+</tr>
+<tr>
+<td>30+n+m</td>
+<td>不固定</td>
+<td>文件内容</td>
+</tr>
+</tbody></table>
+<h1 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h1><ol>
+<li>找到核心目录开头</li>
+<li>找出AndroidManifest.xml文件信息</li>
+<li>找到在文件中对应的偏移</li>
+<li>解压出AndroidManifest.xml</li>
+<li>使用AXmlPrint2.jar转换xml</li>
+</ol>
+<p>比较难的是确认核心目录开头，我们可以先获取后1MB的内容，然后读取，如果没有匹配上manifest，则再向前取1MB的内容，再进行一次匹配。使用断点下载时同理。</p>
+<h1 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h1><p>附上代码：这个代码是一边学习一边随手尝试写的，查找目录偏移，读取文件等有很多偷懒的写法，请自行优化。代码只是提供思路以及验证可行性，请不要在正式环境中使用。</p>
+<p>另外注意，read()过后，计算下一个offset的时候，要去掉本身的大小的。比如：得到压缩后文件大小，再去获取文件名长度时，是20偏移 + 4字节再到28偏移，所以是skipBytes(4)。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br></pre></td><td class="code"><pre><span class="line">import java.io.ByteArrayInputStream;</span><br><span class="line">import java.io.File;</span><br><span class="line">import java.io.FileOutputStream;</span><br><span class="line">import java.io.RandomAccessFile;</span><br><span class="line">import java.util.zip.ZipEntry;</span><br><span class="line">import java.util.zip.ZipInputStream;</span><br><span class="line"></span><br><span class="line">public class ManifestGetter&#123;</span><br><span class="line"></span><br><span class="line">    public static final int DEFAULT_SIZE = 1024 * 1024 *2;</span><br><span class="line">    public static void main(String... args) &#123;</span><br><span class="line"></span><br><span class="line">        byte[] signature = new byte[]&#123;0x50,0x4b,0x01,0x02&#125;;</span><br><span class="line">    </span><br><span class="line">        String filename = &quot;./test.apk&quot;;</span><br><span class="line">        File file = new File( filename);</span><br><span class="line"></span><br><span class="line">        try &#123;</span><br><span class="line">            RandomAccessFile accessFile = new RandomAccessFile(file,&quot;r&quot;);</span><br><span class="line">            RandomAccessFile accessFile2 = new RandomAccessFile(file,&quot;r&quot;);</span><br><span class="line">            long offset = file.length() - DEFAULT_SIZE;</span><br><span class="line">            </span><br><span class="line">            accessFile.seek(offset);</span><br><span class="line">            </span><br><span class="line">            byte[] buffer = new byte[1024];</span><br><span class="line">            int len = 0;</span><br><span class="line">            while((len = accessFile.read(buffer) )&gt; 0)&#123;</span><br><span class="line">            </span><br><span class="line">                int index = 0;</span><br><span class="line">                for (; index &lt; len; index++) &#123;</span><br><span class="line">                    </span><br><span class="line">                    boolean flag = true;</span><br><span class="line"></span><br><span class="line">                    for (byte signatureB : signature) &#123;</span><br><span class="line"></span><br><span class="line">                        byte b = 0;</span><br><span class="line">                        if (index &lt; buffer.length - 4)&#123;</span><br><span class="line">                            b = buffer[index++];</span><br><span class="line">                        &#125;else&#123;</span><br><span class="line">                            b = (byte)accessFile.read();</span><br><span class="line">                        &#125;</span><br><span class="line">                        if (signatureB != b)&#123;</span><br><span class="line">                            flag = false;</span><br><span class="line">                            break;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">										//匹配到了0x02014b50标记</span><br><span class="line">                    if (flag)&#123;</span><br><span class="line"></span><br><span class="line">                        long subOffset = 0;</span><br><span class="line">                        if (index &lt; buffer.length - 4)&#123;</span><br><span class="line">                           subOffset = accessFile.getFilePointer() - buffer.length + index -4;</span><br><span class="line">                        &#125;else&#123;</span><br><span class="line">                            subOffset = accessFile.getFilePointer();</span><br><span class="line">                        &#125;</span><br><span class="line">                        </span><br><span class="line">                        //0x04034B50</span><br><span class="line">                        System.out.println(&quot;中心目录文件开始-----------&quot; + subOffset);</span><br><span class="line">                        System.out.println(&quot;offset =&quot; + subOffset);</span><br><span class="line">												//压缩后文件大小 4字节</span><br><span class="line">                        accessFile2.seek(subOffset + 20);</span><br><span class="line">                        int fileSize = 0;</span><br><span class="line">                        for (int i =0; i &lt; 4; i++) &#123;</span><br><span class="line">                            fileSize += (accessFile2.read()&lt;&lt; (8 *i));</span><br><span class="line">                        &#125;    </span><br><span class="line">                        </span><br><span class="line">                        accessFile2.skipBytes(4);</span><br><span class="line">												//文件名大小 2字节</span><br><span class="line">                        int size_byte1 = accessFile2.read();</span><br><span class="line">                        int size_byte2 = accessFile2.read();</span><br><span class="line"></span><br><span class="line">                        int name_size = (size_byte2 &lt;&lt; 8 ) + size_byte1;</span><br><span class="line">                        System.out.println(&quot;name size = &quot; + name_size);</span><br><span class="line">                        accessFile2.skipBytes(12);</span><br><span class="line"></span><br><span class="line">                        long fileOffset = 0;</span><br><span class="line"></span><br><span class="line">                        for (int i =0; i &lt; 4; i++) &#123;</span><br><span class="line">                            fileOffset += (accessFile2.read()&lt;&lt; (8 *i));</span><br><span class="line">                        &#125;</span><br><span class="line"></span><br><span class="line">                        byte[] nameBuf = new byte[name_size];</span><br><span class="line">                        accessFile2.read(nameBuf);</span><br><span class="line">                        String nameString = new String(nameBuf);</span><br><span class="line"></span><br><span class="line">                        System.out.println(nameString + &quot; offset = &quot;+ Long.toHexString(fileOffset));</span><br><span class="line"></span><br><span class="line">                        if (nameString.contains(&quot;AndroidManifest.xml&quot;))&#123;</span><br><span class="line">                           </span><br><span class="line">                            // file header</span><br><span class="line">                            accessFile2.seek(fileOffset);</span><br><span class="line"></span><br><span class="line">                            FileOutputStream out = new FileOutputStream(&quot;./dest.xml&quot;);</span><br><span class="line">                            // 文件里还有一个小文件头，这里加了1024字节，实际情况很小</span><br><span class="line">                            byte[] buf = new byte[fileSize + 1024];</span><br><span class="line">                            accessFile2.read(buf);</span><br><span class="line">                            ByteArrayInputStream bInputStream = new ByteArrayInputStream(buf);</span><br><span class="line">                            ZipInputStream zin = new ZipInputStream(bInputStream);</span><br><span class="line"></span><br><span class="line">                            ZipEntry zipEntry = zin.getNextEntry();</span><br><span class="line"></span><br><span class="line">                            System.out.println(zipEntry.getName() + &quot;文件信息在目录里，这里的size = &quot; + zipEntry.getSize());</span><br><span class="line">                            </span><br><span class="line">                            byte[] readBuf = new byte[fileSize + 1024];</span><br><span class="line"></span><br><span class="line">                            int readLength = 0;</span><br><span class="line">                            while ((readLength = zin.read(readBuf)) &gt; 0) &#123;</span><br><span class="line">                                byte[] bytes = new byte[readLength];</span><br><span class="line">                                System.arraycopy(readBuf, 0, bytes, 0, readLength);</span><br><span class="line">                                out.write(bytes);</span><br><span class="line">                                </span><br><span class="line">                            &#125;</span><br><span class="line"></span><br><span class="line">                            accessFile.close();</span><br><span class="line">                            accessFile2.close();</span><br><span class="line">                            out.close();</span><br><span class="line">                            return;</span><br><span class="line"></span><br><span class="line">                        &#125;</span><br><span class="line">                        System.out.println(nameString);</span><br><span class="line">                    </span><br><span class="line"></span><br><span class="line">                    &#125;                   </span><br><span class="line">                &#125;</span><br><span class="line">            </span><br><span class="line">                offset += len;</span><br><span class="line"></span><br><span class="line">            &#125;</span><br><span class="line">            accessFile.close();</span><br><span class="line">            accessFile2.close();</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h1 id="重点优化"><a href="#重点优化" class="headerlink" title="重点优化"></a>重点优化</h1><p>因为上面代码偷懒，并不是一个完整的zip处理方案，下面附一个标准的方法。</p>
+<h2 id="流程优化"><a href="#流程优化" class="headerlink" title="流程优化"></a>流程优化</h2><p>加载一个zip的流程是先加载EOCD ending of central directory，再找到CD起始位置，再找里面文件的偏移。我上边的做法是错误的。<br>EOCD保存有CD的起始偏移，CD保存着每个一个file header<br>EOCD偏移值为0x06054b50</p>
+<h2 id="为什么-EOCD-记录在-ZIP-文件的最后-65535-字节内？"><a href="#为什么-EOCD-记录在-ZIP-文件的最后-65535-字节内？" class="headerlink" title="为什么 EOCD 记录在 ZIP 文件的最后 65535 字节内？"></a>为什么 EOCD 记录在 ZIP 文件的最后 65535 字节内？</h2><p>EOCD 记录的最大偏移量字段限制为 16 位，最大值为 65535。这意味着 EOCD 记录的偏移量不能超过 65535 字节。如果 ZIP 文件的大小超过 65535 字节，EOCD 记录仍然必须在最后 65535 字节内找到。这个设计是为了确保即使是大文件，EOCD 记录也可以通过读取文件的最后 65535 字节来定位。</p>
+<h2 id="EOCD结构"><a href="#EOCD结构" class="headerlink" title="EOCD结构"></a>EOCD结构</h2><table>
+<thead>
+<tr>
+<th>offset</th>
+<th>大小</th>
+<th>意义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>4</td>
+<td>0x06054b50</td>
+</tr>
+<tr>
+<td>4</td>
+<td>2</td>
+<td>当前分卷号</td>
+</tr>
+<tr>
+<td>6</td>
+<td>2</td>
+<td>central directory开始分卷号</td>
+</tr>
+<tr>
+<td>8</td>
+<td>2</td>
+<td>当前分卷记录的contral directory数量</td>
+</tr>
+<tr>
+<td>10</td>
+<td>2</td>
+<td>central directory记录的总数量</td>
+</tr>
+<tr>
+<td>12</td>
+<td>4</td>
+<td>contral directory的大小</td>
+</tr>
+<tr>
+<td>16</td>
+<td>4</td>
+<td>contral directory的偏移</td>
+</tr>
+<tr>
+<td>20</td>
+<td>2</td>
+<td>zip文件注释的长度</td>
+</tr>
+<tr>
+<td>22</td>
+<td>n</td>
+<td>zip文件注释</td>
+</tr>
+</tbody></table>
+<h2 id="四字节比较"><a href="#四字节比较" class="headerlink" title="四字节比较"></a>四字节比较</h2><p>刚开始写的代码偷懒用string比较了，实际上应该拿int值比较，一次读取4个字节，使用位运算合成一个整数，以下是合成方法：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">private static int getInt(byte[] buffer, int offset) &#123;</span><br><span class="line">return (buffer[offset] &amp; 0xFF) |</span><br><span class="line">       ((buffer[offset + 1] &amp; 0xFF) &lt;&lt; 8) |</span><br><span class="line">       ((buffer[offset + 2] &amp; 0xFF) &lt;&lt; 16) |</span><br><span class="line">       ((buffer[offset + 3] &amp; 0xFF) &lt;&lt; 24);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>也可以使用nio中的ByteBuffer</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/android/" rel="tag"># android</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/07/02/target-sdk-26/" rel="prev" title="升级targetSdkVersion为26以后">
+                  <i class="fa fa-angle-left"></i> 升级targetSdkVersion为26以后
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/07/31/python-ziroom/" rel="next" title="python入门：使用python刷自如的房子">
+                  python入门：使用python刷自如的房子 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

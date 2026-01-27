@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="导读jetpack当时还没来得及用，整个项目就被砍掉了，这两年一直没有接触，最近好多岗位都要求会jetpack，这两年逐渐用的人越来越多，重学Android赶紧简单了解一下，做了一点整理，都是皮毛，供自己查笔记用吧，如果有一些知识点需要增加备注，随时修改。 Navigation 用于fragment切换优点 可视化，可以as中可视化编辑 通过destination和action完成页面的导航 参数">
+<meta property="og:type" content="article">
+<meta property="og:title" content="重学安卓之Jetpack">
+<meta property="og:url" content="https://lefo.me/2024/01/30/jetpack/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="导读jetpack当时还没来得及用，整个项目就被砍掉了，这两年一直没有接触，最近好多岗位都要求会jetpack，这两年逐渐用的人越来越多，重学Android赶紧简单了解一下，做了一点整理，都是皮毛，供自己查笔记用吧，如果有一些知识点需要增加备注，随时修改。 Navigation 用于fragment切换优点 可视化，可以as中可视化编辑 通过destination和action完成页面的导航 参数">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-01-30T14:07:12.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.658Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="android">
+<meta property="article:tag" content="重学android">
+<meta property="article:tag" content="Jetpack">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/2024/01/30/jetpack/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2024/01/30/jetpack/","path":"2024/01/30/jetpack/","title":"重学安卓之Jetpack"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>重学安卓之Jetpack | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AF%BC%E8%AF%BB"><span class="nav-number">1.</span> <span class="nav-text">导读</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Navigation-%E7%94%A8%E4%BA%8Efragment%E5%88%87%E6%8D%A2"><span class="nav-number">2.</span> <span class="nav-text">Navigation 用于fragment切换</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BC%98%E7%82%B9"><span class="nav-number">2.1.</span> <span class="nav-text">优点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BB%E8%A6%81%E7%BB%84%E4%BB%B6"><span class="nav-number">2.2.</span> <span class="nav-text">主要组件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%93%8D%E4%BD%9C%E6%AD%A5%E9%AA%A4"><span class="nav-number">2.3.</span> <span class="nav-text">操作步骤:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#safe-args%E4%BC%A0%E9%80%92%E5%8F%82%E6%95%B0"><span class="nav-number">2.4.</span> <span class="nav-text">safe args传递参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NavigationUi"><span class="nav-number">2.5.</span> <span class="nav-text">NavigationUi</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#LifeCycle"><span class="nav-number">3.</span> <span class="nav-text">LifeCycle</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#LifecycleOwner%E5%92%8CLifecycleObserver"><span class="nav-number">3.1.</span> <span class="nav-text">LifecycleOwner和LifecycleObserver</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E7%90%86"><span class="nav-number">3.2.</span> <span class="nav-text">原理</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ViewModel"><span class="nav-number">4.</span> <span class="nav-text">ViewModel</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#LiveData"><span class="nav-number">5.</span> <span class="nav-text">LiveData</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#DataBinding"><span class="nav-number">6.</span> <span class="nav-text">DataBinding</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E7%A1%80%E7%94%A8%E6%B3%95"><span class="nav-number">6.1.</span> <span class="nav-text">基础用法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89BindAdapter"><span class="nav-number">6.2.</span> <span class="nav-text">自定义BindAdapter</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ViewBinding"><span class="nav-number">7.</span> <span class="nav-text">ViewBinding</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Room"><span class="nav-number">8.</span> <span class="nav-text">Room</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Paging"><span class="nav-number">9.</span> <span class="nav-text">Paging</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#WorkManager"><span class="nav-number">10.</span> <span class="nav-text">WorkManager</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Hilt"><span class="nav-number">11.</span> <span class="nav-text">Hilt</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#DataStore"><span class="nav-number">12.</span> <span class="nav-text">DataStore</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Preferences-DataStore"><span class="nav-number">12.1.</span> <span class="nav-text">Preferences DataStore</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Proto-DataStore"><span class="nav-number">12.2.</span> <span class="nav-text">Proto DataStore</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2024/01/30/jetpack/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="重学安卓之Jetpack | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          重学安卓之Jetpack
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2024-01-30 22:07:12" itemprop="dateCreated datePublished" datetime="2024-01-30T22:07:12+08:00">2024-01-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/android/" itemprop="url" rel="index"><span itemprop="name">android</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="导读"><a href="#导读" class="headerlink" title="导读"></a>导读</h1><p>jetpack当时还没来得及用，整个项目就被砍掉了，这两年一直没有接触，最近好多岗位都要求会jetpack，这两年逐渐用的人越来越多，重学Android赶紧简单了解一下，做了一点整理，都是皮毛，供自己查笔记用吧，如果有一些知识点需要增加备注，随时修改。</p>
+<h1 id="Navigation-用于fragment切换"><a href="#Navigation-用于fragment切换" class="headerlink" title="Navigation 用于fragment切换"></a>Navigation 用于fragment切换</h1><h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ul>
+<li>可视化，可以as中可视化编辑</li>
+<li>通过destination和action完成页面的导航</li>
+<li>参数传递安全， safe args</li>
+<li>支持deeplink，支持创建PendingIntent<span id="more"></span>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* 返回一个 PendingIntent</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">private</span> PendingIntent <span class="title function_">getPendingIntent</span><span class="params">()</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> Navigation.findNavController(requireActivity(), R.id.button)</span><br><span class="line">            .createDeepLink()</span><br><span class="line">            .setGraph(R.navigation.my_nav_graph)</span><br><span class="line">            .setDestination(R.id.detailFragment)</span><br><span class="line">            .createTaskStackBuilder()</span><br><span class="line">            .getPendingIntent(<span class="number">0</span>, PendingIntent.FLAG_IMMUTABLE);</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="主要组件"><a href="#主要组件" class="headerlink" title="主要组件"></a>主要组件</h2><ol>
+<li>Graph xml资源文件，包含所有页面和页面间的关系</li>
+<li>Controller 用于完成Graph中的页面切换</li>
+<li>NavHostFragment 特殊fragment容器</li>
+<li>提供了NavigationUi控制各种bar的改变</li>
+</ol>
+<h2 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤:"></a>操作步骤:</h2><ol>
+<li>新建Android Resource File中的Graph文件，Resource type为Navigation，会在navigation目录下生成一个xml</li>
+<li>将NavHostFragment添加到activity。&#96;&#96;，作为其它fragment的容器，defaultNaveHost&#x3D;true会自动处理返回键<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">fragment</span> </span></span><br><span class="line"><span class="tag">    <span class="attr">android:name</span>=<span class="string">&quot;android.navigation. fragment .NavHostFragment&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">app:defaultNaveHost</span>=<span class="string">&quot;true&quot;</span> </span></span><br><span class="line"><span class="tag">    <span class="attr">app:navGraph</span>=<span class="string">&quot;@navigation/my_graph&quot;</span> /&gt;</span></span><br></pre></td></tr></table></figure></li>
+<li>创建新的destination，其实就是将fragment添加到navigation，navigation会有一个startDesination</li>
+<li>建立action，在可视编辑里是将一个和另一个连起来，xml中为fragment含有一个action标签，指向另一个fragment。</li>
+<li>Navigation.findNavController(view).navigate(id)来完成导航</li>
+</ol>
+<h2 id="safe-args传递参数"><a href="#safe-args传递参数" class="headerlink" title="safe args传递参数"></a>safe args传递参数</h2><p>在fragment中添加参数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">// 添加插件</span><br><span class="line">apply plugin: &#x27;androidx.navigation.safeargs&#x27;</span><br><span class="line"></span><br><span class="line">&lt;fragment&gt;</span><br><span class="line">    &lt;action/&gt;</span><br><span class="line">    &lt;argument </span><br><span class="line">        android:name=&quot;name&quot;</span><br><span class="line">        app:argType=&quot;string&quot;</span><br><span class="line">        android:defaultValue=&#x27;&quot;lefo&quot;&#x27;/&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>添加后，会生成对应的代码文件，就可以用Build创建对应的bundle了</p>
+<h2 id="NavigationUi"><a href="#NavigationUi" class="headerlink" title="NavigationUi"></a>NavigationUi</h2><p>NavigationUI 提供了一些静态方法来处理 顶部应用栏 &#x2F; 抽屉式导航栏 &#x2F; 底部导航栏中 的界面导航, 统一管理 Fragment 页面切换相关的UI改变<br>CollapsingToolbarlayout、Toolbar、ActionBar</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1. 获取 NavController</span></span><br><span class="line">navController = Navigation.findNavController(<span class="built_in">this</span>, R.id.fragment)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. 创建 AppBarConfiguration</span></span><br><span class="line">appBarConfiguration = AppBarConfiguration.Builder(navController.graph).build();</span><br><span class="line">NavigationUI.setupActionBarWithNavController(<span class="built_in">this</span>,navController,appBarConfiguration);</span><br></pre></td></tr></table></figure>
+
+<h1 id="LifeCycle"><a href="#LifeCycle" class="headerlink" title="LifeCycle"></a>LifeCycle</h1><h2 id="LifecycleOwner和LifecycleObserver"><a href="#LifecycleOwner和LifecycleObserver" class="headerlink" title="LifecycleOwner和LifecycleObserver"></a>LifecycleOwner和LifecycleObserver</h2><p>实现LifecyclerObserver接口，将要在具体生命周期执行的方法使用@OnLifecycleEvent注解</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@OnLifecycleEvent</span> (Lifecycle.Event.ONRESUME) </span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">onResumeEvent</span> <span class="params">()</span> &#123;</span><br><span class="line">    Log.d (TAG, <span class="string">&quot;onResumeEvent() &quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line"><span class="comment">//在Activity中注册观察者</span></span><br><span class="line">getLifecycle().addObserver(myObserver);</span><br></pre></td></tr></table></figure>
+<ul>
+<li>LifecycleService，使用方式等于Service</li>
+<li>ProcessLifecycleOwner 整个应用的生命周期 使用方法ProcessLifecycleOwner.get().getLifecycle()</li>
+<li>LifecycleRegistry类，管理mObserverMap维护state和event</li>
+</ul>
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>通过在Activity中绑定一个空的fragment来实现监听Activity生命周期。</p>
+<h1 id="ViewModel"><a href="#ViewModel" class="headerlink" title="ViewModel"></a>ViewModel</h1><p>使用ViewModelProvider创建一个ViewModel</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">constructor</span>(</span><br><span class="line">    owner: ViewModelStoreOwner</span><br><span class="line">) : <span class="keyword">this</span>(owner.viewModelStore, defaultFactory(owner), defaultCreationExtras(owner))</span><br></pre></td></tr></table></figure>
+
+<p>通常使用ViewModelProvider</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">NoteViewModelFactory</span>(<span class="keyword">private</span> <span class="keyword">val</span> repository: NoteRepository) : ViewModelProvider.Factory &#123;  </span><br><span class="line">	<span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="type">&lt;T : ViewModel&gt;</span> <span class="title">create</span><span class="params">(modelClass: <span class="type">Class</span>&lt;<span class="type">T</span>&gt;)</span></span>: T &#123;  </span><br><span class="line">		<span class="keyword">if</span> (modelClass.isAssignableFrom(NoteViewModel::<span class="keyword">class</span>.java)) &#123;  </span><br><span class="line">			<span class="meta">@Suppress(<span class="string">&quot;UNCHECKED_CAST&quot;</span>)</span>  </span><br><span class="line">			<span class="keyword">return</span> NoteViewModel(repository) <span class="keyword">as</span> T  </span><br><span class="line">		&#125;  </span><br><span class="line">		<span class="keyword">throw</span> IllegalArgumentException(<span class="string">&quot;Unknown ViewModel class&quot;</span>)  </span><br><span class="line">	&#125;  </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">val</span> viewModel = ViewModelProvider(<span class="keyword">this</span>, NoteViewModelFactory(repository))[NoteViewModel::<span class="keyword">class</span>.java]</span><br></pre></td></tr></table></figure>
+<p>基本原理如下</p>
+<ol>
+<li>ViewModelProvider接收参数ViewModelStoreOwner，参数的对象实现方法getViewModelStore</li>
+<li>ViewModelStore提供一个HashMap&lt;String,ViewModel&gt;</li>
+</ol>
+<p>为什么ViewModel在横竖屏切换时，不会被销毁，其实是因为ViewModel是保存在ViewModelStore中的，而在感知到Destory的生命周期时，会判断isChangingConfigurations，如果为否，才会进入getViewModelStore().clear();</p>
+<h1 id="LiveData"><a href="#LiveData" class="headerlink" title="LiveData"></a>LiveData</h1><p>LiveData的作用是ViewModel在数据发生变化时通知页面</p>
+<ul>
+<li>实际上就是一个观察者模式的数据容器，当数据改变时，通知UI刷新；</li>
+<li>能感知activity fragment组件生命周期，</li>
+<li>通常和viewModel一起使用，<code>LiveData&lt;T&gt;</code>作为ViewModel的一个成员变量</li>
+<li>liveData.observe()注册一个对数据的观察</li>
+<li>observeForever使用后一定要用removeObserver方法停止观察</li>
+</ul>
+<h1 id="DataBinding"><a href="#DataBinding" class="headerlink" title="DataBinding"></a>DataBinding</h1><h2 id="基础用法"><a href="#基础用法" class="headerlink" title="基础用法"></a>基础用法</h2><ul>
+<li>DataBinding结合ViewModel是常用的做法</li>
+<li>向include的二级页面传递数据</li>
+<li>BaseObservable和ObservableField支持多个控件互相绑定数据<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- activity_main.xml --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">layout</span> <span class="attr">xmlns:android</span>=<span class="string">&quot;http://schemas.android.com/apk/res/android&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">xmlns:app</span>=<span class="string">&quot;http://schemas.android.com/apk/res-auto&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">xmlns:tools</span>=<span class="string">&quot;http://schemas.android.com/tools&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">data</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">variable</span></span></span><br><span class="line"><span class="tag">            <span class="attr">name</span>=<span class="string">&quot;user&quot;</span></span></span><br><span class="line"><span class="tag">            <span class="attr">type</span>=<span class="string">&quot;com.example.User&quot;</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">data</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">RelativeLayout</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_width</span>=<span class="string">&quot;match_parent&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_height</span>=<span class="string">&quot;match_parent&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">tools:context</span>=<span class="string">&quot;.MainActivity&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="tag">&lt;<span class="name">TextView</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:layout_width</span>=<span class="string">&quot;wrap_content&quot;</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:layout_height</span>=<span class="string">&quot;wrap_content&quot;</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:text</span>=<span class="string">&quot;@&#123;user.name&#125;&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="tag">&lt;<span class="name">Button</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:layout_width</span>=<span class="string">&quot;wrap_content&quot;</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:layout_height</span>=<span class="string">&quot;wrap_content&quot;</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:text</span>=<span class="string">&quot;Click&quot;</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:onClick</span>=<span class="string">&quot;@&#123;() -&gt; user.onButtonClick()&#125;&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;/<span class="name">RelativeLayout</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">layout</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MainActivity</span> : AppCompatActivity() &#123;</span><br><span class="line"></span><br><span class="line">    override fun <span class="title function_">onCreate</span><span class="params">(savedInstanceState: Bundle?)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>.onCreate(savedInstanceState)</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 使用 DataBindingUtil 设置布局文件和数据绑定</span></span><br><span class="line">        val binding: ActivityMainBinding = DataBindingUtil.setContentView(<span class="built_in">this</span>, R.layout.activity_main)</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 创建 User 对象</span></span><br><span class="line">        <span class="type">val</span> <span class="variable">user</span> <span class="operator">=</span> User(<span class="string">&quot;John Doe&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 将 User 对象绑定到布局中的 user 变量</span></span><br><span class="line">        binding.user = user</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 设置点击事件</span></span><br><span class="line">        binding.button.setOnClickListener &#123;</span><br><span class="line">            user.onButtonClick()</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">include</span> </span></span><br><span class="line"><span class="tag">    <span class="attr">layout</span>=<span class="string">&quot;@layout/layout2&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">app:user</span>=<span class="string">&quot;@&#123;user&#125;&quot;</span>/&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">&lt;!--在2级页面这么写--&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">data</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">variable</span></span></span><br><span class="line"><span class="tag">        <span class="attr">name</span>=<span class="string">&quot;user&quot;</span></span></span><br><span class="line"><span class="tag">        <span class="attr">type</span>=<span class="string">&quot;com.example.User&quot;</span> /&gt;</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="自定义BindAdapter"><a href="#自定义BindAdapter" class="headerlink" title="自定义BindAdapter"></a>自定义BindAdapter</h2><p>还可以增加一个参数作为旧值，但此时必须先写旧值</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">object</span> CustomBindingAdapters &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@BindingAdapter(<span class="string">&quot;imageUrl&quot;</span>)</span></span><br><span class="line">    <span class="meta">@JvmStatic</span></span><br><span class="line">    <span class="function"><span class="keyword">fun</span> <span class="title">loadImage</span><span class="params">(imageView: <span class="type">ImageView</span>, url: <span class="type">String</span>?)</span></span> &#123;</span><br><span class="line">        <span class="comment">// 使用 Glide 加载图片</span></span><br><span class="line">        Glide.with(imageView.context)</span><br><span class="line">            .load(url)</span><br><span class="line">            .into(imageView)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@BindingAdapter(<span class="string">&quot;visibility&quot;</span>)</span></span><br><span class="line">    <span class="meta">@JvmStatic</span></span><br><span class="line">    <span class="function"><span class="keyword">fun</span> <span class="title">setVisibility</span><span class="params">(view: <span class="type">View</span>, isVisible: <span class="type">Boolean</span>)</span></span> &#123;</span><br><span class="line">        <span class="comment">// 设置 View 的可见性</span></span><br><span class="line">        view.visibility = <span class="keyword">if</span> (isVisible) View.VISIBLE <span class="keyword">else</span> View.GONE</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">ImageView</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:id</span>=<span class="string">&quot;@+id/imageView&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:layout_width</span>=<span class="string">&quot;wrap_content&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:layout_height</span>=<span class="string">&quot;wrap_content&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">app:imageUrl</span>=<span class="string">&quot;@&#123;viewModel.imageUrl&#125;&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">View</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:id</span>=<span class="string">&quot;@+id/customView&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:layout_width</span>=<span class="string">&quot;match_parent&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:layout_height</span>=<span class="string">&quot;wrap_content&quot;</span></span></span><br><span class="line"><span class="tag">    <span class="attr">app:visibility</span>=<span class="string">&quot;@&#123;viewModel.isVisible&#125;&quot;</span> /&gt;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h1 id="ViewBinding"><a href="#ViewBinding" class="headerlink" title="ViewBinding"></a>ViewBinding</h1><p>减少findviewbyid，简单举例一下</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 使用 View Binding</span></span><br><span class="line"><span class="keyword">val</span> binding = ActivityMainBinding.inflate(layoutInflater)</span><br><span class="line">setContentView(binding.root)</span><br></pre></td></tr></table></figure>
+
+<h1 id="Room"><a href="#Room" class="headerlink" title="Room"></a>Room</h1><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Entity(tableName = <span class="string">&quot;user_table&quot;</span>)</span></span><br><span class="line"><span class="keyword">data</span> <span class="keyword">class</span> <span class="title class_">User</span>(</span><br><span class="line">    <span class="meta">@PrimaryKey(autoGenerate = true)</span></span><br><span class="line">    <span class="keyword">val</span> id: <span class="built_in">Long</span> = <span class="number">0</span>,</span><br><span class="line">    <span class="keyword">val</span> name: String,</span><br><span class="line">    <span class="keyword">val</span> email: String</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment">// Dao</span></span><br><span class="line"><span class="meta">@Dao</span></span><br><span class="line"><span class="keyword">interface</span> <span class="title class_">UserDao</span> &#123;</span><br><span class="line">    <span class="meta">@Query(<span class="string">&quot;SELECT * FROM user_table&quot;</span>)</span></span><br><span class="line">    <span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">getAllUsers</span><span class="params">()</span></span>: List&lt;User&gt;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Insert(onConflict = OnConflictStrategy.REPLACE)</span></span><br><span class="line">    <span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">insertUser</span><span class="params">(user: <span class="type">User</span>)</span></span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// @Database(entities = [User::class], version = 1, exportSchema = false)</span></span><br><span class="line"><span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title class_">AppDatabase</span> : <span class="type">RoomDatabase</span>() &#123;</span><br><span class="line">    <span class="keyword">abstract</span> <span class="function"><span class="keyword">fun</span> <span class="title">userDao</span><span class="params">()</span></span>: UserDao</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>数据库，使用起来和之前的注解框架差不多，可以配合LiveData和ViewModel实现数据的刷新。</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">UserRepository</span>(<span class="keyword">private</span> <span class="keyword">val</span> userDao: UserDao) &#123;</span><br><span class="line">    <span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">getUsersFromNetwork</span><span class="params">()</span></span>: List&lt;User&gt; &#123;</span><br><span class="line">        <span class="comment">// 从网络获取数据的逻辑</span></span><br><span class="line">        <span class="keyword">val</span> networkData = <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 将数据存储到数据库</span></span><br><span class="line">        userDao.insertUser(networkData)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> networkData</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">getAllUsers</span><span class="params">()</span></span>: List&lt;User&gt; &#123;</span><br><span class="line">        <span class="comment">// 从数据库获取数据的逻辑</span></span><br><span class="line">        <span class="keyword">return</span> userDao.getAllUsers()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ViewModel中使用Repository</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MyViewModel</span>(<span class="keyword">private</span> <span class="keyword">val</span> userRepository: UserRepository) : ViewModel() &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">val</span> _users = MutableLiveData&lt;List&lt;User&gt;&gt;()</span><br><span class="line">    <span class="keyword">val</span> users: LiveData&lt;List&lt;User&gt;&gt; <span class="keyword">get</span>() = _users</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">fun</span> <span class="title">fetchData</span><span class="params">()</span></span> &#123;</span><br><span class="line">        viewModelScope.launch &#123;</span><br><span class="line">            <span class="comment">// 从网络获取数据并更新数据库</span></span><br><span class="line">            userRepository.getUsersFromNetwork()</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 从数据库获取数据并更新 LiveData</span></span><br><span class="line">            _users.value = userRepository.getAllUsers()</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h1 id="Paging"><a href="#Paging" class="headerlink" title="Paging"></a>Paging</h1><p>Paging还是看官方文档更合适，网上搜的信息Paging2和Paging3内容混乱，这里我也不整理了，特别是使用RemoteMediator去同时接入 db + network 的方案。<br><strong>paging库3.0变化较大，放个<a href="%5Bhttps://developer.android.google.cn/topic/libraries/architecture/paging/v3-overview?hl=zh-cn%5D">官方链接</a></strong><br><strong><a target="_blank" rel="noopener" href="https://github.com/android/architecture-components-samples/blob/main/PagingWithNetworkSample/">官方DEMO</a></strong></p>
+<ol>
+<li>PagingDataAdapter，首先RecyclerView的Adapter需要继承这个类，此外，您也可以使用随附的 AsyncPagingDataDiffer 组件构建自己的自定义适配器</li>
+<li>Pager 基于 PagingSource 对象和 PagingConfig 配置对象来构造在响应式流中公开的 PagingData 实例。</li>
+<li>PagingSource，数据载入，有一个load方法需要实现</li>
+<li>PagingData 用于存放分页数据快照的容器。它会查询 PagingSource 对象并存储结果。</li>
+<li>RemoteMediator 处理分层数据源。</li>
+</ol>
+<blockquote>
+<p>Paging 2 中的 PageKeyedDataSource、PositionalDataSource 和 ItemKeyedDataSource 都合并到了 Paging 3 中的 PagingSource API 中。所有旧版 API 类中的加载方法都合并到了 PagingSource 中的单个 load() 方法中。这样可以减少代码重复，因为在旧版 API 类的实现中，各种加载方法之间的很多逻辑通常是相同的。<br>在 Paging 3 中，所有加载方法参数被一个 LoadParams 密封类替代，该类中包含了每个加载类型所对应的子类。如果需要区分 load() 方法中的加载类型，请检查传入了 LoadParams 的哪个子类：LoadParams.Refresh、LoadParams.Prepend 还是 LoadParams.Append。</p>
+</blockquote>
+<ol>
+<li><del>BoundaryCallback</del>弃用了，使用RemoteMediator。在分页数据耗尽时，Paging 库会触发 RemoteMediator 以从网络源加载新数据。RemoteMediator 会将新数据存储在本地数据库中，因此无需在 ViewModel 中使用内存缓存。最后，PagingSource 会使自身失效，而 Pager 会创建一个新实例以从数据库中加载新数据。</li>
+</ol>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@OptIn(ExperimentalPagingApi::class)</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ExampleRemoteMediator</span>(</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">val</span> query: String,</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">val</span> database: RoomDb,</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">val</span> networkService: ExampleBackendService</span><br><span class="line">) : RemoteMediator&lt;<span class="built_in">Int</span>, User&gt;() &#123;</span><br><span class="line">  <span class="keyword">val</span> userDao = database.userDao()</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">load</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    loadType: <span class="type">LoadType</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">    state: <span class="type">PagingState</span>&lt;<span class="type">Int</span>, User&gt;</span></span></span><br><span class="line"><span class="params"><span class="function">  )</span></span>: MediatorResult &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="WorkManager"><a href="#WorkManager" class="headerlink" title="WorkManager"></a>WorkManager</h1><p>最低兼容api 14，在api 23以上使用JobScheduler，在api 23以下使用AlarmManager</p>
+<ol>
+<li>创建Worker<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MyWorker</span>(context: Context, workerParams: WorkerParameters) : Worker(context, workerParams) &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="title">doWork</span><span class="params">()</span></span>: Result &#123;</span><br><span class="line">        <span class="comment">// 后台任务逻辑</span></span><br><span class="line">        Timber.d(<span class="string">&quot;Performing long running task in MyWorker&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 返回任务执行结果</span></span><br><span class="line">        <span class="keyword">return</span> Result.success()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li>设置约束条件<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">import androidx.work.Constraints</span><br><span class="line">import androidx.work.NetworkType</span><br><span class="line"></span><br><span class="line">val constraints = Constraints.Builder()</span><br><span class="line">    .setRequiredNetworkType(NetworkType.CONNECTED)</span><br><span class="line">    .setRequiresCharging(true)</span><br><span class="line">    .build()</span><br></pre></td></tr></table></figure></li>
+<li>创建请求<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 一次性工作请求</span></span><br><span class="line"><span class="keyword">val</span> oneTimeRequest = OneTimeWorkRequest.Builder(MyWorker::<span class="keyword">class</span>.java)</span><br><span class="line">    .setConstraints(constraints)</span><br><span class="line">    .build()</span><br><span class="line"></span><br><span class="line"><span class="comment">// 周期性工作请求</span></span><br><span class="line"><span class="keyword">val</span> periodicRequest = PeriodicWorkRequest.Builder(MyWorker::<span class="keyword">class</span>.java, <span class="number">24</span>, TimeUnit.HOURS)</span><br><span class="line">    .setConstraints(constraints)</span><br><span class="line">    .build()</span><br></pre></td></tr></table></figure></li>
+<li>加入队列<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">// 将一次性工作请求加入队列</span><br><span class="line">WorkManager.getInstance(context).enqueue(oneTimeRequest)</span><br><span class="line"></span><br><span class="line">// 将周期性工作请求加入队列</span><br><span class="line">WorkManager.getInstance(context).enqueue(periodicRequest)</span><br></pre></td></tr></table></figure>
+WorkManager还支持链式任务，观察任务状态，传递参数。</li>
+</ol>
+<ul>
+<li>链式: 在加入队列时使用beginWith(oneTimeRequest).then(periodicRequest)，还可以combine…then…</li>
+<li>观察任务状态: WorkManager.getWorkInfosXXX，可以通过tag,id,worker对象查看任务状态，还能获取对应的LiveData，通过LiveData就能在任务状态变化时收到通知</li>
+<li>传参: Data类</li>
+</ul>
+<h1 id="Hilt"><a href="#Hilt" class="headerlink" title="Hilt"></a>Hilt</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">// 在应用模块的 build.gradle 文件中</span><br><span class="line">implementation &quot;com.google.dagger:hilt-android:2.38.1&quot;</span><br><span class="line">kapt &quot;com.google.dagger:hilt-android-compiler:2.38.1&quot;</span><br><span class="line"></span><br><span class="line">// 如果使用了ViewModel，还需要添加以下依赖</span><br><span class="line">implementation &quot;androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha03&quot;</span><br><span class="line">kapt &quot;androidx.hilt:hilt-compiler:1.0.0-alpha03&quot;</span><br></pre></td></tr></table></figure>
+<ol>
+<li>在 Application 类中启用 Hilt： 在你的 Application 类中使用 @HiltAndroidApp 注解启用 Hilt。<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@HiltAndroidApp</span><br><span class="line">class MyApplication : Application()</span><br></pre></td></tr></table></figure></li>
+<li>配置依赖注入： 使用 @Inject 注解标记需要注入的依赖，同时使用 @HiltViewModel 注解标记需要注入的 ViewModel。<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">class MyRepository @Inject constructor() &#123;</span><br><span class="line">    // ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@HiltViewModel</span><br><span class="line">class MyViewModel @Inject constructor(private val repository: MyRepository) : ViewModel() &#123;</span><br><span class="line">    // ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li>在 Activity 或 Fragment 中使用 Hilt 注入： 在需要注入依赖的 Activity 或 Fragment 中，使用 @AndroidEntryPoint 注解启用 Hilt，并使用 @Inject 注解标记需要注入的字段。<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">@AndroidEntryPoint</span><br><span class="line">class MyActivity : AppCompatActivity() &#123;</span><br><span class="line"></span><br><span class="line">    @Inject</span><br><span class="line">    lateinit var viewModel: MyViewModel</span><br><span class="line"></span><br><span class="line">    // ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li>在 Module 中配置依赖： 如果需要自定义依赖注入的配置，可以创建一个 Dagger Module，并在其上使用 @InstallIn 注解指定作用范围。</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">@Module</span><br><span class="line">@InstallIn(ApplicationComponent::class)</span><br><span class="line">object MyModule &#123;</span><br><span class="line"></span><br><span class="line">    @Provides</span><br><span class="line">    fun provideMyRepository(): MyRepository &#123;</span><br><span class="line">        return MyRepository()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="DataStore"><a href="#DataStore" class="headerlink" title="DataStore"></a>DataStore</h1><ul>
+<li>用于存储较小的数据集，分为Preferences DataStore和Proto DataStore，可以代替SP，可以轻松迁移数据。</li>
+<li><a target="_blank" rel="noopener" href="https://developer.android.com/topic/libraries/architecture/datastore?hl=zh-cn">官方介绍</a></li>
+</ul>
+<h2 id="Preferences-DataStore"><a href="#Preferences-DataStore" class="headerlink" title="Preferences DataStore"></a>Preferences DataStore</h2><ul>
+<li>读取用flow</li>
+<li>写入用edit<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 创建dataStore context.createDataStore</span></span><br><span class="line"><span class="comment">// 使用委托创建dataStore</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">const</span> <span class="keyword">val</span> USER_PREFERENCES_NAME = <span class="string">&quot;user_preferences&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">val</span> Context.dataStore <span class="keyword">by</span> preferencesDataStore(</span><br><span class="line">    name = USER_PREFERENCES_NAME,</span><br><span class="line">    produceMigrations = &#123; context -&gt;</span><br><span class="line">        <span class="comment">// Since we&#x27;re migrating from SharedPreferences, add a migration based on the</span></span><br><span class="line">        <span class="comment">// SharedPreferences name</span></span><br><span class="line">        listOf(SharedPreferencesMigration(context, USER_PREFERENCES_NAME))</span><br><span class="line">    &#125;</span><br><span class="line">)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>当 DataStore 从文件读取数据时，如果读取数据期间出现错误，系统会抛出 IOExceptions。我们可以通过以下方式处理这些事务：在 map() 之前使用 catch() Flow 运算符，并且在抛出的异常是 IOException 时发出 emptyPreferences()。如果出现其他类型的异常，最好重新抛出该异常。</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> userPreferencesFlow: Flow&lt;UserPreferences&gt; = dataStore.<span class="keyword">data</span></span><br><span class="line">    .<span class="keyword">catch</span> &#123; exception -&gt;</span><br><span class="line">        <span class="comment">// dataStore.data throws an IOException when an error is encountered when reading data</span></span><br><span class="line">        <span class="keyword">if</span> (exception <span class="keyword">is</span> IOException) &#123;</span><br><span class="line">            emit(emptyPreferences())</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">throw</span> exception</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;.map &#123; preferences -&gt;</span><br><span class="line">        <span class="comment">// Get our show completed value, defaulting to false if not set:</span></span><br><span class="line">        <span class="keyword">val</span> showCompleted = preferences[PreferencesKeys.SHOW_COMPLETED]?: <span class="literal">false</span></span><br><span class="line">        UserPreferences(showCompleted)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">updateShowCompleted</span><span class="params">(showCompleted: <span class="type">Boolean</span>)</span></span> &#123;</span><br><span class="line">    dataStore.edit &#123; preferences -&gt;</span><br><span class="line">        preferences[PreferencesKeys.SHOW_COMPLETED] = showCompleted</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 可以使用扩展函数asLiveData转换flow为LiveData</span></span><br><span class="line">userPreferencesFlow.asLiveData().observe(viewLifecycleOwner,&#123; &#125;)</span><br></pre></td></tr></table></figure>
+
+<h2 id="Proto-DataStore"><a href="#Proto-DataStore" class="headerlink" title="Proto DataStore"></a>Proto DataStore</h2><ol>
+<li>区别于之前的Preferences DataStore的读取方式.map{ preferences-&gt; { } }</li>
+<li>写入方式使用updateData(){ preferences-&gt; {…}}<br>生成pb对象和类<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">syntax = <span class="string">&quot;proto3&quot;</span>;</span><br><span class="line"></span><br><span class="line">option java_package = <span class="string">&quot;com.codelab.android.datastore&quot;</span>;</span><br><span class="line">option java_multiple_files = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">message UserPreferences &#123;</span><br><span class="line">  <span class="comment">// filter for showing / hiding completed tasks</span></span><br><span class="line">  bool show_completed = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+创建UserPreferencesSerializer<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">object</span> UserPreferencesSerializer : Serializer&lt;UserPreferences&gt; &#123;</span><br><span class="line">    <span class="keyword">override</span> <span class="keyword">val</span> defaultValue: UserPreferences = UserPreferences.getDefaultInstance()</span><br><span class="line">    <span class="keyword">override</span> <span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">readFrom</span><span class="params">(input: <span class="type">InputStream</span>)</span></span>: UserPreferences &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> UserPreferences.parseFrom(input)</span><br><span class="line">        &#125; <span class="keyword">catch</span> (exception: InvalidProtocolBufferException) &#123;</span><br><span class="line">            <span class="keyword">throw</span> CorruptionException(<span class="string">&quot;Cannot read proto.&quot;</span>, exception)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">override</span> <span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">writeTo</span><span class="params">(t: <span class="type">UserPreferences</span>, output: <span class="type">OutputStream</span>)</span></span> = t.writeTo(output)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+创建DataStore<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">const</span> <span class="keyword">val</span> USER_PREFERENCES_NAME = <span class="string">&quot;user_preferences&quot;</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">const</span> <span class="keyword">val</span> DATA_STORE_FILE_NAME = <span class="string">&quot;user_prefs.pb&quot;</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">const</span> <span class="keyword">val</span> SORT_ORDER_KEY = <span class="string">&quot;sort_order&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">val</span> Context.userPreferencesStore: DataStore&lt;UserPreferences&gt; <span class="keyword">by</span> dataStore(</span><br><span class="line">    fileName = DATA_STORE_FILE_NAME,</span><br><span class="line">    serializer = UserPreferencesSerializer</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+读取数据<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">val</span> TAG: String = <span class="string">&quot;UserPreferencesRepo&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">val</span> userPreferencesFlow: Flow&lt;UserPreferences&gt; = dataStore.<span class="keyword">data</span></span><br><span class="line">    .<span class="keyword">catch</span> &#123; exception -&gt;</span><br><span class="line">        <span class="comment">// dataStore.data throws an IOException when an error is encountered when reading data</span></span><br><span class="line">        <span class="keyword">if</span> (exception <span class="keyword">is</span> IOException) &#123;</span><br><span class="line">            Log.e(TAG, <span class="string">&quot;Error reading sort order preferences.&quot;</span>, exception)</span><br><span class="line">            emit(UserPreferences.getDefaultInstance())</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">throw</span> exception</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+写入数据<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">updateShowCompleted</span><span class="params">(completed: <span class="type">Boolean</span>)</span></span> &#123;</span><br><span class="line">    dataStore.updateData &#123; preferences -&gt;</span><br><span class="line">        preferences.toBuilder().setShowCompleted(completed).build()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/android/" rel="tag"># android</a>
+              <a href="/tags/%E9%87%8D%E5%AD%A6android/" rel="tag"># 重学android</a>
+              <a href="/tags/Jetpack/" rel="tag"># Jetpack</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2023/10/06/frida/" rel="prev" title="第一次尝试frida">
+                  <i class="fa fa-angle-left"></i> 第一次尝试frida
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2024/02/20/nx54-telnet/" rel="next" title="H3C NX54路由器如何永久开telnet，永久关闭ipv6防火墙">
+                  H3C NX54路由器如何永久开telnet，永久关闭ipv6防火墙 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

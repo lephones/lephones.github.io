@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="需求从API 19开始，也就是android 4.4 kitcat，android开始支持沉浸式状态栏。可以使状态栏看起来和我们的程序浑然一体，不再像之前那样突兀。几个月前，刚好做了个这方面的需求，记录一下踩了的坑。 一共两种类型的沉浸式，一种是将view直接伸到statusbar里去，另一种是直接给statusbar设置一个背景色。其中，有些需要将伸到statusbar里的页面，顶部还有一个类似">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android沉浸式状态栏的实现">
+<meta property="og:url" content="https://lefo.me/2016/09/05/translucent-status-bar/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="需求从API 19开始，也就是android 4.4 kitcat，android开始支持沉浸式状态栏。可以使状态栏看起来和我们的程序浑然一体，不再像之前那样突兀。几个月前，刚好做了个这方面的需求，记录一下踩了的坑。 一共两种类型的沉浸式，一种是将view直接伸到statusbar里去，另一种是直接给statusbar设置一个背景色。其中，有些需要将伸到statusbar里的页面，顶部还有一个类似">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2016-09-05T12:01:50.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.655Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="android">
+<meta property="article:tag" content="状态栏">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/2016/09/05/translucent-status-bar/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2016/09/05/translucent-status-bar/","path":"2016/09/05/translucent-status-bar/","title":"Android沉浸式状态栏的实现"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Android沉浸式状态栏的实现 | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%9C%80%E6%B1%82"><span class="nav-number">1.</span> <span class="nav-text">需求</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E7%8A%B6%E6%80%81%E6%A0%8F%E9%A2%9C%E8%89%B2%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-number">2.1.</span> <span class="nav-text">修改状态栏颜色的方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%86%E5%B8%83%E5%B1%80%E5%BB%B6%E4%BC%B8%E5%88%B0%E7%8A%B6%E6%80%81%E6%A0%8F"><span class="nav-number">2.2.</span> <span class="nav-text">将布局延伸到状态栏</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B8%83%E5%B1%80%E5%A4%8D%E6%9D%82"><span class="nav-number">2.3.</span> <span class="nav-text">布局复杂</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81"><span class="nav-number">3.</span> <span class="nav-text">代码</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2016/09/05/translucent-status-bar/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Android沉浸式状态栏的实现 | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Android沉浸式状态栏的实现
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2016-09-05 20:01:50" itemprop="dateCreated datePublished" datetime="2016-09-05T20:01:50+08:00">2016-09-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/android%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">android开发</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h1><p>从API 19开始，也就是android 4.4 kitcat，android开始支持沉浸式状态栏。可以使状态栏看起来和我们的程序浑然一体，不再像之前那样突兀。几个月前，刚好做了个这方面的需求，记录一下踩了的坑。</p>
+<p>一共两种类型的沉浸式，一种是将view直接伸到statusbar里去，另一种是直接给statusbar设置一个背景色。其中，有些需要将伸到statusbar里的页面，顶部还有一个类似titlebar的view，有交互，必须保证操作区域没有进入到状态栏中。设置背景色的需求则比较简单，直接换个纯色的背景色。</p>
+<h1 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h1><p>一顿的搜索前辈们的各种技术文章之后发现，一切效果都是：不理想。可以参考知乎上的一个问答<a target="_blank" rel="noopener" href="https://www.zhihu.com/question/31468556">Android 5.0 如何实现将布局的内容延伸到状态栏</a>，网上也找了一些开源类，大多修改状态栏颜色的和布局伸入状态栏的是分开的，没有在一起介绍的。而且发现有些方法中介绍的fitsSystemWindows属性的办法，对我来说简直就是噩梦，布局太复杂，试了好多遍都没成功。</p>
+<span id="more"></span>
+
+<h2 id="修改状态栏颜色的方法"><a href="#修改状态栏颜色的方法" class="headerlink" title="修改状态栏颜色的方法"></a>修改状态栏颜色的方法</h2><p>4.4的版本和5.x的版本，实现方式还有点区别。4.4是没有提供直接改状态栏的办法的，如果要修改状态栏颜色，就需要将状态栏直接隐藏，再在根布局上增加一个statusbar等高的view。</p>
+<p>而在5.x的系统上，有一个方法叫，setStatusBarColor，可以直接修改状态栏的颜色。</p>
+<p>4.4隐藏状态栏的代码如下，</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Window window =  mActivity.getWindow();</span><br><span class="line">window.addFlags(Window.FLAG_TRANSLUCENT_STATUS);</span><br></pre></td></tr></table></figure>
+
+<p>设置颜色比较简单，在4.4的系统，调用<code>addFlags(Window.FLAG_TRANSLUCENT_STATUS)</code>，然后在根布局add一个状态栏高度的view；在5.x以上的系统，调用<code>setStatusBarColor</code>，就OK了。</p>
+<h2 id="将布局延伸到状态栏"><a href="#将布局延伸到状态栏" class="headerlink" title="将布局延伸到状态栏"></a>将布局延伸到状态栏</h2><p>将布局延伸到状态栏，需要做的就是隐藏掉状态栏，最初我也是按照搜索到的资料介绍，在5.x的系统上使用以下代码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN</span><br><span class="line">                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);</span><br><span class="line">window.addFlags(Window.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);</span><br><span class="line">window.setStatusBarColor(Color.TRANSPARENT);</span><br></pre></td></tr></table></figure>
+<p>结果，测试发现在华为EMUI 3.x的5.x系统上，沉浸式状态栏的效果失效了。于是在5.0的系统上，改成了在调用<code>setStatusBarColor</code>之前，调用<code>addFlags(Window.FLAG_TRANSLUCENT_STATUS)</code>，没有使用上面的代码。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">window.addFlags(Window.FLAG_TRANSLUCENT_STATUS);</span><br><span class="line">window.setStatusBarColor(Color.TRANSPARENT);</span><br></pre></td></tr></table></figure>
+
+<p>实践发现<code>addFlag(FLAG_TRANSLUCENT_STATUS)</code>就能让状态栏隐藏，在4.4中，有一层由深变浅的渐变遮罩（这个貌似没办法），不会覆盖整个状态栏；在5.x的手机上，会有一个半透明的黑色遮罩，这个是覆盖的整个状态栏位置的。</p>
+<p>为了解决5.0的黑色遮罩的问题，就需要调用<code>window.setStatusBarColor(Color.TRANSPARENT)</code>，将状态栏完全设置成全透明的。</p>
+<h2 id="布局复杂"><a href="#布局复杂" class="headerlink" title="布局复杂"></a>布局复杂</h2><p>但是，在隐藏掉以后，实际上，时间、wifi、通知等这些都会存在，顶部的titlebar就需要向下移动statusbar的高度，否则，时间，信号，wifi这些会覆盖在titlebar上面。</p>
+<p>解决的办法就是，需要将titlebar的位置，向下移动一个statusbar高度。由于这种类型的页面比较少，所以直接在有titlebar的布局中，include增加了一个0dp高度的view，而在需要将其显示时，初始化时修改view的高度。</p>
+<p>为了修改颜色和布局伸入状态栏可以统一处理，statusbar就完全隐藏掉，再增加一个statusbar高度的自定义背景色的view。</p>
+<h1 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h1><p>因为项目sdk版本的原因，我直接把Window类一些字段复制出来了。调用方式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">StatusBarManager statusBarManager = new StatusBarManager(activity);</span><br><span class="line">//这里如果要移动titlebar，则在布局中指定为include的自定义statusbar的view</span><br><span class="line">//如果不指定，则调用setStatusBarView();会自动加一个view</span><br><span class="line">statusBarManager.setStatusBarView(view);</span><br></pre></td></tr></table></figure>
+<p>另外，有些布局，在伸入到状态栏以后，给用户展示的区域就会变小，这个没办法，需要手动调整，只要调用<code>statusBarManager.getStatusBarHeight()</code>，此方法（注意这里不是静态方法，静态方法有参数，是获取系统状态栏的高度的）会返回view的高度，如果没有就是0，所以调用时不用做是否api 19+的版本判断。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br></pre></td><td class="code"><pre><span class="line">public class StatusBarManager &#123;</span><br><span class="line"></span><br><span class="line">    private static final int BUILD_VERSION_KITKAT = 19;</span><br><span class="line">    private static final int BUILD_VERSION_LOLLIPOP = 21;</span><br><span class="line"></span><br><span class="line">    //WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS</span><br><span class="line">    public static final int FLAG_TRANSLUCENT_STATUS = 0x04000000;</span><br><span class="line"></span><br><span class="line">    //WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS</span><br><span class="line">    public static final int FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS = 0x80000000;</span><br><span class="line"></span><br><span class="line">    private Activity mActivity;</span><br><span class="line">    private View statusBarView;</span><br><span class="line">    private int statusBarHeight;</span><br><span class="line"></span><br><span class="line">    public StatusBarManager(Activity activity) &#123;</span><br><span class="line">        this.mActivity = activity;</span><br><span class="line">        statusBarHeight = getStatusBarHeight(activity);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setStatusBarView(View statusBarView) &#123;</span><br><span class="line">        this.statusBarView = statusBarView;</span><br><span class="line">        setTransparent();</span><br><span class="line">    &#125;</span><br><span class="line">    public void setStatusBarView() &#123;</span><br><span class="line">        setTransparent();</span><br><span class="line">    &#125;</span><br><span class="line">    public int getStatusBarHeight() &#123;</span><br><span class="line">        return statusBarHeight;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 设置状态栏全透明</span><br><span class="line">     *</span><br><span class="line">     */</span><br><span class="line">    private void setTransparent() &#123;</span><br><span class="line">        if (Build.VERSION.SDK_INT &lt; BUILD_VERSION_KITKAT) &#123;</span><br><span class="line">            return;</span><br><span class="line">        &#125;</span><br><span class="line">        if(statusBarHeight &lt;= 0)&#123;</span><br><span class="line">            return;</span><br><span class="line">        &#125;</span><br><span class="line">        transparentStatusBar();</span><br><span class="line">        showStatusBarView();</span><br><span class="line">    &#125;</span><br><span class="line">    @TargetApi(19)</span><br><span class="line">    private void showStatusBarView() &#123;</span><br><span class="line">        int color = mActivity.getResources().getColor(R.color.main_color);</span><br><span class="line">        if(statusBarView == null)&#123;</span><br><span class="line">            statusBarView = new View(mActivity);</span><br><span class="line">            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,</span><br><span class="line">                    getStatusBarHeight(mActivity));</span><br><span class="line">            statusBarView.setLayoutParams(params);</span><br><span class="line">            statusBarView.setBackgroundColor(color);</span><br><span class="line">            ViewGroup decorView = (ViewGroup) mActivity.getWindow().getDecorView();</span><br><span class="line">            FrameLayout content = (FrameLayout) decorView.findViewById(android.R.id.content);</span><br><span class="line">            FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) content.getChildAt(0).getLayoutParams();</span><br><span class="line">            layoutParams.setMargins(0,statusBarHeight,0,0);</span><br><span class="line">            decorView.addView(statusBarView);</span><br><span class="line">        &#125;else&#123;</span><br><span class="line">            ViewGroup.LayoutParams layoutParams = statusBarView.getLayoutParams();</span><br><span class="line">            layoutParams.height = getStatusBarHeight(mActivity);</span><br><span class="line">            statusBarView.setLayoutParams(layoutParams);</span><br><span class="line">            statusBarView.setBackgroundColor(color);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    //参考上面注释掉的代码 因为需要用隐藏API 调用方式进行改成反射</span><br><span class="line">    private void transparentStatusBar()&#123;</span><br><span class="line">        Window window =  mActivity.getWindow();</span><br><span class="line">        if (Build.VERSION.SDK_INT &gt;= BUILD_VERSION_LOLLIPOP) &#123;</span><br><span class="line">            //不add此条flag 会导致在EMUI3.1(华为)上失效，add这个flag 会导致在其它机型上面添加一个半透明黑条</span><br><span class="line">            window.addFlags(FLAG_TRANSLUCENT_STATUS);</span><br><span class="line">            //下面的代码段是不加上面的flag时，要显示纯色的状态栏时需要加的代码 不用了</span><br><span class="line">/*            window.clearFlags(FLAG_TRANSLUCENT_STATUS);</span><br><span class="line">            window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN</span><br><span class="line">                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);</span><br><span class="line">            window.addFlags(FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);*/</span><br><span class="line">			//因为需要用隐藏API，没有重新编译5.x版本的android.jar，使用的还是18的api，这里用的反射</span><br><span class="line">            try &#123;</span><br><span class="line">                Class[] argsClass=new Class[]&#123;int.class&#125;;</span><br><span class="line">                Method setStatusBarColorMethod = Window.class.getMethod(&quot;setStatusBarColor&quot;,argsClass);</span><br><span class="line">                setStatusBarColorMethod.invoke(window, Color.TRANSPARENT);</span><br><span class="line">            &#125; catch (Exception e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;else&#123;</span><br><span class="line">            window.addFlags(FLAG_TRANSLUCENT_STATUS);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    /**</span><br><span class="line">     * 获取状态栏高度</span><br><span class="line">     *</span><br><span class="line">     * @param context context</span><br><span class="line">     * @return 状态栏高度</span><br><span class="line">     */</span><br><span class="line">    private static int getStatusBarHeight(Context context) &#123;</span><br><span class="line">        if (Build.VERSION.SDK_INT &lt; BUILD_VERSION_KITKAT) &#123;</span><br><span class="line">            return 0;</span><br><span class="line">        &#125;</span><br><span class="line">        // 获得状态栏高度</span><br><span class="line">        int resourceId = context.getResources().getIdentifier(&quot;status_bar_height&quot;, &quot;dimen&quot;, &quot;android&quot;);</span><br><span class="line">        return context.getResources().getDimensionPixelSize(resourceId);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setStatusbarVisibility(int visibility)&#123;</span><br><span class="line">        if(statusBarView != null) &#123;</span><br><span class="line">            this.statusBarView.setVisibility(visibility);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setColor(int color)&#123;</span><br><span class="line">        if(statusBarView != null)&#123;</span><br><span class="line">            this.statusBarView.setBackgroundColor(color);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/android/" rel="tag"># android</a>
+              <a href="/tags/%E7%8A%B6%E6%80%81%E6%A0%8F/" rel="tag"># 状态栏</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2016/07/26/compile-android-source/" rel="prev" title="编译Android源码，使用hide api和internal api">
+                  <i class="fa fa-angle-left"></i> 编译Android源码，使用hide api和internal api
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/02/23/market-install-intercept/" rel="next" title="应用市场的尔虞我诈（突破华为安装时来源检测）">
+                  应用市场的尔虞我诈（突破华为安装时来源检测） <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

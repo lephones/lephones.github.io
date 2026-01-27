@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="背景越来越多的网站像Github一样开启了2次验证，给你生成一个6位的数字动态口令，这种就叫TOTP，通俗讲，就是基于时间的一次性动态口令。我在家里搭了个Alist文件服务器，也默认支持TOTP，不过我开了HTTPS，用的也不多，TOTP验证就关了。我为什么要看这个呢，上班的地方wifi使用了h3c e盾认证，里面使用了SM3计算口令，每次连wifi还得点开app，索性看看它是怎么计算的。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GmSSL中的totp">
+<meta property="og:url" content="https://lefo.me/2024/12/31/sm3-totp/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="背景越来越多的网站像Github一样开启了2次验证，给你生成一个6位的数字动态口令，这种就叫TOTP，通俗讲，就是基于时间的一次性动态口令。我在家里搭了个Alist文件服务器，也默认支持TOTP，不过我开了HTTPS，用的也不多，TOTP验证就关了。我为什么要看这个呢，上班的地方wifi使用了h3c e盾认证，里面使用了SM3计算口令，每次连wifi还得点开app，索性看看它是怎么计算的。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-12-31T09:40:31.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.658Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="gmssl">
+<meta property="article:tag" content="sm3">
+<meta property="article:tag" content="totp">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/2024/12/31/sm3-totp/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2024/12/31/sm3-totp/","path":"2024/12/31/sm3-totp/","title":"GmSSL中的totp"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>GmSSL中的totp | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#TOTP%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.</span> <span class="nav-text">TOTP介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#GmSSL"><span class="nav-number">3.</span> <span class="nav-text">GmSSL</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%BD%E6%A0%87GmSSL-TOTP"><span class="nav-number">4.</span> <span class="nav-text">国标GmSSL TOTP</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2024/12/31/sm3-totp/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="GmSSL中的totp | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          GmSSL中的totp
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2024-12-31 17:40:31" itemprop="dateCreated datePublished" datetime="2024-12-31T17:40:31+08:00">2024-12-31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/gmssl/" itemprop="url" rel="index"><span itemprop="name">gmssl</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>越来越多的网站像Github一样开启了2次验证，给你生成一个6位的数字动态口令，这种就叫TOTP，通俗讲，就是基于时间的一次性动态口令。我在家里搭了个Alist文件服务器，也默认支持TOTP，不过我开了HTTPS，用的也不多，TOTP验证就关了。我为什么要看这个呢，上班的地方wifi使用了h3c e盾认证，里面使用了SM3计算口令，每次连wifi还得点开app，索性看看它是怎么计算的。</p>
+<span id="more"></span>
+<h1 id="TOTP介绍"><a href="#TOTP介绍" class="headerlink" title="TOTP介绍"></a>TOTP介绍</h1><p>首先我们看一下Github二次验证，它会给我们一个二维码，让我们用Authenticator类似的软件扫一扫，然后就能添加。如果我们用别的软件扫，会得到一个如下的地址：(来源互联网的二维码)</p>
+<blockquote>
+<p>otpauth:&#x2F;&#x2F;totp&#x2F;GitHub:user?secret&#x3D;MMJCO5MSOUN57MGT&amp;issuer&#x3D;GitHub</p>
+</blockquote>
+<p>这里我们主要关注的是secret，128bit的key，其它参数都是用来在软件上显示的，其实你可以随意修改。软件会用secret + 时间值计算一个hash，并截取6位作为口令值。服务端校验时，通常会计算前一个或者后一个值，用来容错对比。</p>
+<ul>
+<li>TOTP生成：TOTP(K,T) &#x3D; Truncate(HMAC-HASH(K,T))，其中HASH&#x3D;SHA-1&#x2F;SHA-256&#x2F;SHA-512</li>
+</ul>
+<p>对上述参数做简单说明：</p>
+<ol>
+<li>K就是你的密钥，也就是secret</li>
+<li>T为时间因子，一般时间戳(秒) &#x2F; 步长。如30s一刷新，那就是当前时间戳(秒) &#x2F; 30。</li>
+</ol>
+<h1 id="GmSSL"><a href="#GmSSL" class="headerlink" title="GmSSL"></a>GmSSL</h1><blockquote>
+<p>otpauth:&#x2F;&#x2F;totp&#x2F;lefo:lefo?secret&#x3D;MMJCO5MSOUN57MGT&amp;algorithm&#x3D;sm3</p>
+</blockquote>
+<p>GmSSL中，SM3 SM4算法可以用来生成一次性口令，日常使用中，也是一个链接生成的二维码，与常规totp的二维码无异，只是后面会跟一个参数用来标记使用sm3&#x2F;sm4算法。但算法并不是替换就行，还多了两项参数。</p>
+<ul>
+<li>GMOTP生成：GMOTP(K,T|C|Q)&#x3D;Truncate(F(K,T|C|Q))，其中F&#x3D;SM3&#x2F;SM4</li>
+</ul>
+<p>其中，C为事件因子，8字节整数。Q为挑战因子，4字节整数。均可省略。将这些参数拼接起来，再调用SM3&#x2F;SM4算法。</p>
+<h1 id="国标GmSSL-TOTP"><a href="#国标GmSSL-TOTP" class="headerlink" title="国标GmSSL TOTP"></a>国标GmSSL TOTP</h1><p>全国标准信息公共服务平台有一项规范为《信息安全技术 动态口令密码应用技术规范》，内部介绍了SM3 SM4计算totp的方法，其中Truncate计算和常规totp计算也不一样。在常规totp中，是取最后4字节，但是在该规范中，32个字节分为8组，将所有4字节整数求和。</p>
+<table>
+<thead>
+<tr>
+<th><strong>参数</strong></th>
+<th><strong>规范中的扩展（推测）</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>参数为 K 和 T</td>
+<td>参数为 K、T、C、Q</td>
+</tr>
+<tr>
+<td>使用标准哈希算法（SHA-1、SHA-256）</td>
+<td>使用国密算法</td>
+</tr>
+<tr>
+<td>Truncate 步骤使用偏移量截取 4 字节</td>
+<td>可能分组为 8 部分（S1-S8），通过计算决定截取部分</td>
+</tr>
+</tbody></table>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://openstd.samr.gov.cn/bzgk/gb/newGbInfo?hcno=FBCA58A4BF07DD668D7480D5A3C8DFE4">GB&#x2F;T 38556-2020 信息安全技术 动态口令密码应用技术规范</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/lephones/GmSSL-totp">GmSSL-totp</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/gmssl/" rel="tag"># gmssl</a>
+              <a href="/tags/sm3/" rel="tag"># sm3</a>
+              <a href="/tags/totp/" rel="tag"># totp</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2024/11/18/nas-ipv6/" rel="prev" title="nx54的ipv6配置nas，内网穿透访问，nxginx、DDNS都在这里">
+                  <i class="fa fa-angle-left"></i> nx54的ipv6配置nas，内网穿透访问，nxginx、DDNS都在这里
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/04/24/macmini/" rel="next" title="mac mini配合linux当服务器使用">
+                  mac mini配合linux当服务器使用 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

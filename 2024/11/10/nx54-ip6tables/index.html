@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="前言NX54终于更新固件了，新版本支持配置关闭ipv6防火墙，但是，防火墙关闭，相对而言风险也就上来了。其实最好的办法是，在防火墙上稍微开一个小口就行了，也就是，只允许目标地址是你指定IP的数据通过，今天就大概说说如何最小风险去处理这件事情。主要有以下两个操作：  ip6tables限制指定目标ip转发 关闭要访问的服务器的ssh访问，windows主机可忽略">
+<meta property="og:type" content="article">
+<meta property="og:title" content="H3C NX54不关ipv6防火墙，允许外网访问内网">
+<meta property="og:url" content="https://lefo.me/2024/11/10/nx54-ip6tables/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="前言NX54终于更新固件了，新版本支持配置关闭ipv6防火墙，但是，防火墙关闭，相对而言风险也就上来了。其实最好的办法是，在防火墙上稍微开一个小口就行了，也就是，只允许目标地址是你指定IP的数据通过，今天就大概说说如何最小风险去处理这件事情。主要有以下两个操作：  ip6tables限制指定目标ip转发 关闭要访问的服务器的ssh访问，windows主机可忽略">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-11-10T06:51:47.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.658Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="h3c">
+<meta property="article:tag" content="nx54">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/2024/11/10/nx54-ip6tables/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2024/11/10/nx54-ip6tables/","path":"2024/11/10/nx54-ip6tables/","title":"H3C NX54不关ipv6防火墙，允许外网访问内网"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>H3C NX54不关ipv6防火墙，允许外网访问内网 | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%99%90%E5%88%B6%E5%8F%AA%E6%9C%89%E8%AE%BF%E9%97%AE%E4%BD%A0%E4%B8%BB%E6%9C%BA%E6%89%8D%E8%83%BD%E9%80%9A%E8%BF%87ipv6%E9%98%B2%E7%81%AB%E5%A2%99"><span class="nav-number">2.</span> <span class="nav-text">限制只有访问你主机才能通过ipv6防火墙</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B7%E4%BD%93%E6%93%8D%E4%BD%9C"><span class="nav-number">2.1.</span> <span class="nav-text">具体操作</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%BB%E6%9C%BA%E7%9B%B4%E6%8E%A5%E5%85%B3%E9%97%ADssh%E5%AF%86%E7%A0%81%E8%AE%BF%E9%97%AE"><span class="nav-number">3.</span> <span class="nav-text">主机直接关闭ssh密码访问</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ip%E5%8F%98%E6%9B%B4%E5%90%8E"><span class="nav-number">4.</span> <span class="nav-text">ip变更后</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2024/11/10/nx54-ip6tables/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="H3C NX54不关ipv6防火墙，允许外网访问内网 | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          H3C NX54不关ipv6防火墙，允许外网访问内网
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2024-11-10 14:51:47" itemprop="dateCreated datePublished" datetime="2024-11-10T14:51:47+08:00">2024-11-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/nx54/" itemprop="url" rel="index"><span itemprop="name">nx54</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>NX54终于更新固件了，新版本支持配置关闭ipv6防火墙，但是，防火墙关闭，相对而言风险也就上来了。其实最好的办法是，在防火墙上稍微开一个小口就行了，也就是，只允许目标地址是你指定IP的数据通过，今天就大概说说如何最小风险去处理这件事情。主要有以下两个操作：</p>
+<ol>
+<li>ip6tables限制指定目标ip转发</li>
+<li>关闭要访问的服务器的ssh访问，windows主机可忽略</li>
+</ol>
+<span id="more"></span>
+<h1 id="限制只有访问你主机才能通过ipv6防火墙"><a href="#限制只有访问你主机才能通过ipv6防火墙" class="headerlink" title="限制只有访问你主机才能通过ipv6防火墙"></a>限制只有访问你主机才能通过ipv6防火墙</h1><p>nx54就是一个openwrt的魔改版本，所以防火墙是基于ip6tables的，简单说一下iptables，维护着一个规则链，所以要达到我们的预期，需要把允许的规则配置到前面。</p>
+<h2 id="具体操作"><a href="#具体操作" class="headerlink" title="具体操作"></a>具体操作</h2><p>访问<a href="http://[ip]/debug.asp">http:&#x2F;&#x2F;[ip]&#x2F;debug.asp</a>，向下拉，找到telnet管理，勾选启动telnet，点旁边应用，在命令行执行如下命令</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">telnet &lt;路由ip&gt; 15000</span><br><span class="line"><span class="comment"># 输入密码</span></span><br><span class="line">&lt;your password&gt;</span><br><span class="line"><span class="comment"># &lt;H3C_NX54&gt;后输入 debugshell</span></span><br><span class="line">debugshell</span><br></pre></td></tr></table></figure>
+
+<p>查看ip6tables的FORWARD配置，显示只有一项为delegate_forward，再看delegate_forward配置，包含5项，通过继续查看第一项forwarding_rule，发现这条配置其实是空的。</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">ip6tables -L FORWARD -v -n --line-numbers</span><br><span class="line"><span class="comment"># delegate_forward</span></span><br><span class="line"></span><br><span class="line">ip6tables -L delegate_forward -v -n --line-numbers</span><br><span class="line"><span class="comment"># forwarding_rule</span></span><br><span class="line"><span class="comment"># ACCEPT</span></span><br><span class="line"><span class="comment"># zone_lan_forward</span></span><br><span class="line"><span class="comment"># zone_wan_forward</span></span><br><span class="line"><span class="comment"># reject</span></span><br><span class="line"></span><br><span class="line">ip6tables -L forwarding_rule -v -n --line-numbers</span><br><span class="line"><span class="comment"># null</span></span><br></pre></td></tr></table></figure>
+
+<p>简单说一下上面的意思，所有的转发流量，走delegate_forward，而delegate_forward分为了5步，如果前四步没有命中，那么会进入第5步的拒绝策略，也就是all reject。我们要做的就是在reject前，将自己的ipv6添加到ACCEPT的规则。看了一眼forwarding_rule，是个空的。所以有两个选择：delegate_forward下第1个位置插入自定义Chain，或者直接加到forwarding_rule。以直接加到forwarding_rule中为准：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 添加允许目标为[ip]的规则到 forwarding_rule</span></span><br><span class="line">ip6tables -A forwarding_rule -d device_ipv6 -j ACCEPT</span><br></pre></td></tr></table></figure>
+<p>为什么要使用forwarding_rule，而不直接加在最外层呢？因为ip会变，我们说了是最小风险，所以当ip变更后，要删除旧的规则，这里如果有自定义Chain名称，可以很方便操作。因为forwarding_rule只包含你那一条，所以直接删除forwarding_rule里所有的配置项就可以了。</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ip6tables -F forwarding_rule</span><br></pre></td></tr></table></figure>
+
+<p>如果你的forwarding_rule不为空(应该不会)，我们在添加规则的时候，也可以直接创建一个新Chain，加在delegate_forward下，forwarding_rule旁边就行了，总之就是一句话，让你的规则在reject前命中。</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># 最开始插入一条forwarding_rule_ip6</span></span><br><span class="line">ip6tables -I delegate_forward -j forwarding_rule_ip6</span><br><span class="line"><span class="comment"># 或者使用 ip6tables -A forwarding_rule -j forwarding_rule_ip6</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 将自己的ip添加到自定义规则中</span></span><br><span class="line">ip6tables -A forwarding_rule_ip6 -d device_ipv6 -j ACCEPT</span><br><span class="line"></span><br><span class="line"><span class="comment"># 清空自定义规则</span></span><br><span class="line">ip6tables -F forwarding_rule_ip6</span><br></pre></td></tr></table></figure>
+
+<h1 id="主机直接关闭ssh密码访问"><a href="#主机直接关闭ssh密码访问" class="headerlink" title="主机直接关闭ssh密码访问"></a>主机直接关闭ssh密码访问</h1><p>我本来就是想做个文件服务器，linux系统，既然路由上iptables限制了受访IP，再在开发板上加一道安全机制，限制外网使用ipv6通过密码来的方式进行ssh访问，这样一来，必须有访问需求的机器的key手动添加到服务器上才行。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># /etc/ssh/sshd_config</span><br><span class="line"># 针对所有 IPv6 地址的配置 添加到文件末尾</span><br><span class="line">Match Address ::/0</span><br><span class="line">    PasswordAuthentication no</span><br><span class="line"></span><br><span class="line"># sudo systemctl restart sshd</span><br></pre></td></tr></table></figure>
+<p>至于如何生成key添加到服务器，这里就不说了。</p>
+<h1 id="ip变更后"><a href="#ip变更后" class="headerlink" title="ip变更后"></a>ip变更后</h1><p>做完以上配置，其实你的ipv6防火墙其实依然是开启状态，只不过加了一条目标ip的数据允许通过的规则。通过以上配置，已经可以达到理想的安全效果：只允许文件服务器被外网访问，外网不能通过ssh密码登录。但是nx54有一个问题，只要重新连接ipv6地址就会变化，所以需要将ip6tables命令加入定时任务中。我写过一个python脚本，通过定时触发，如果发现ip变动就给我email发一封邮件告诉我最新ip，在python中再添加如下加入清空自定义规则，加入允许访问IP规则。注意如果你自己新建了Chain，以你的名称为准。我是直接使用forwarding_rule。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># 删除旧规则</span><br><span class="line">ip6tables -F forwarding_rule</span><br><span class="line"># 添加新的允许访问ip</span><br><span class="line">ip6tables -A forwarding_rule -d device_ipv6 -j ACCEPT</span><br></pre></td></tr></table></figure>
+<p>具体流程如下：</p>
+<ol>
+<li>使用python获取最新非temporary的ip6地址。这一步对系统有兼容性，可能各种方式不一样。</li>
+<li>对比上次获取的ipv6地址，比较是否一致，不一致说明有变化，需要更新，保存供下次比较。</li>
+<li>参考我前面的blog，永久开启telnet，这一步网上有和第2步结合的脚本，但是使用curl发送的请求，那url又臭又长，不如参考我的一步到位。</li>
+<li>使用python发送telnet，连接路由，输入密码，debugshell。</li>
+<li>ip6tables -F forwarding_rule</li>
+<li>ip6tables -A forwarding_rule -d your_device_ipv6 -j ACCEPT</li>
+<li>加入crontab -e，半小时执行一次</li>
+</ol>
+<p>和朋友交流后，朋友说可以不采用email形式，钉钉、飞书这类办公软件有webhook，也就是当你ip变动后，你使用curl发一个网络请求，飞书就会给你发送消息。因为我基本不用飞书钉钉，所以就算了吧。当然了，也可以直接绑定域名，我其实已经做了AAAA解析了，但是懒得弄DDNS了(有个开源的程序叫DDNS-GO)，因为我外网连接机器这个并不是一个刚需且密集的事件，所以，需要的时候改ip地址就行了。</p>
+<p>最后，非常感谢您的阅读。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/h3c/" rel="tag"># h3c</a>
+              <a href="/tags/nx54/" rel="tag"># nx54</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2024/05/12/build-pdfium/" rel="prev" title="如何构建一个pdfium.so">
+                  <i class="fa fa-angle-left"></i> 如何构建一个pdfium.so
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2024/11/18/nas-ipv6/" rel="next" title="nx54的ipv6配置nas，内网穿透访问，nxginx、DDNS都在这里">
+                  nx54的ipv6配置nas，内网穿透访问，nxginx、DDNS都在这里 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

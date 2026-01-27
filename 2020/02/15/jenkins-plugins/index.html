@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="记录最近疫情闹的有点凶，大家都是在家办公，刚好群里的一个妹子一边卖萌，一边问jenkins的搭建及使用，就用腾讯会议给辅导了一下。给她讲完后，翻了翻之前给公司搭建的环境，想记录一下之前使用过的Jenkins插件，供以后使用。 暂时就这些，有好用的插件会不定时更新。 自带插件安装的时候，会提示你要选哪些插件，建议默认，像git svn以及gradle，这些插件会在默认插件列表里就存在。 Git Pa">
+<meta property="og:type" content="article">
+<meta property="og:title" content="jenkins中实用的插件">
+<meta property="og:url" content="https://lefo.me/2020/02/15/jenkins-plugins/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="记录最近疫情闹的有点凶，大家都是在家办公，刚好群里的一个妹子一边卖萌，一边问jenkins的搭建及使用，就用腾讯会议给辅导了一下。给她讲完后，翻了翻之前给公司搭建的环境，想记录一下之前使用过的Jenkins插件，供以后使用。 暂时就这些，有好用的插件会不定时更新。 自带插件安装的时候，会提示你要选哪些插件，建议默认，像git svn以及gradle，这些插件会在默认插件列表里就存在。 Git Pa">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-02-14T18:27:04.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.657Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="jenkins">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/2020/02/15/jenkins-plugins/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2020/02/15/jenkins-plugins/","path":"2020/02/15/jenkins-plugins/","title":"jenkins中实用的插件"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>jenkins中实用的插件 | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AE%B0%E5%BD%95"><span class="nav-number">1.</span> <span class="nav-text">记录</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E5%B8%A6%E6%8F%92%E4%BB%B6"><span class="nav-number">1.1.</span> <span class="nav-text">自带插件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Git-Parameter"><span class="nav-number">1.2.</span> <span class="nav-text">Git Parameter</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SVN-Parameter"><span class="nav-number">1.3.</span> <span class="nav-text">SVN Parameter</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Multiple-SCMs-plugin"><span class="nav-number">1.4.</span> <span class="nav-text">Multiple SCMs plugin</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Environment-Injector-Plugin"><span class="nav-number">1.5.</span> <span class="nav-text">Environment Injector Plugin</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Version-Number-Plug-In"><span class="nav-number">1.6.</span> <span class="nav-text">Version Number Plug-In</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Build-Keeper-Plugin"><span class="nav-number">1.7.</span> <span class="nav-text">Build Keeper Plugin</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Role-based-Authorization-Strategy"><span class="nav-number">1.8.</span> <span class="nav-text">Role-based Authorization Strategy</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Copy-Artifact"><span class="nav-number">1.9.</span> <span class="nav-text">Copy Artifact</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Validating-String-Parameter-Plugin"><span class="nav-number">1.10.</span> <span class="nav-text">Validating String Parameter Plugin</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2020/02/15/jenkins-plugins/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="jenkins中实用的插件 | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          jenkins中实用的插件
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-02-15 02:27:04" itemprop="dateCreated datePublished" datetime="2020-02-15T02:27:04+08:00">2020-02-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/jenkins/" itemprop="url" rel="index"><span itemprop="name">jenkins</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="记录"><a href="#记录" class="headerlink" title="记录"></a>记录</h1><p>最近疫情闹的有点凶，大家都是在家办公，刚好群里的一个妹子一边卖萌，一边问jenkins的搭建及使用，就用腾讯会议给辅导了一下。给她讲完后，翻了翻之前给公司搭建的环境，想记录一下之前使用过的Jenkins插件，供以后使用。</p>
+<p>暂时就这些，有好用的插件会不定时更新。</p>
+<h2 id="自带插件"><a href="#自带插件" class="headerlink" title="自带插件"></a>自带插件</h2><p>安装的时候，会提示你要选哪些插件，建议默认，像git svn以及gradle，这些插件会在默认插件列表里就存在。</p>
+<h2 id="Git-Parameter"><a href="#Git-Parameter" class="headerlink" title="Git Parameter"></a>Git Parameter</h2><p>可用于把git的tag branch当作构建参数传进来，方便使用branch构建。</p>
+<h2 id="SVN-Parameter"><a href="#SVN-Parameter" class="headerlink" title="SVN Parameter"></a>SVN Parameter</h2><p>同Git Parameter 一样是可以将tag branch当作构建参数传进来。</p>
+<span id="more"></span>
+
+<h2 id="Multiple-SCMs-plugin"><a href="#Multiple-SCMs-plugin" class="headerlink" title="Multiple SCMs plugin"></a>Multiple SCMs plugin</h2><p>可以加多个源码的插件，比如我们项目就是资源单独有一个SVN，所以要把代码checkout以后，再checkout资源。</p>
+<h2 id="Environment-Injector-Plugin"><a href="#Environment-Injector-Plugin" class="headerlink" title="Environment Injector Plugin"></a>Environment Injector Plugin</h2><p>可以在构建时注入一些环境变量，这款插件有一个好处就是，它支持<code>Prepare an environment for the run</code>，可以在SCM以前注入变量，比如我们有个资源的svn地址，需要在构建时传进来然后checkout。为了更直观，参数默认值就留了空。有了这个插件，写了groovy脚本，手动将空值改成了默认资源地址，SCM那里直接使用参数名就OK了。</p>
+<h2 id="Version-Number-Plug-In"><a href="#Version-Number-Plug-In" class="headerlink" title="Version Number Plug-In"></a>Version Number Plug-In</h2><p>用于自定义构建记录的名字的插件，使构建记录更直观，不再是#1 #2这种格式。</p>
+<h2 id="Build-Keeper-Plugin"><a href="#Build-Keeper-Plugin" class="headerlink" title="Build Keeper Plugin"></a>Build Keeper Plugin</h2><p>可以按天数保留几天内的构建，没什么大用，如果硬盘紧张，推荐使用自带的Discard old builds</p>
+<h2 id="Role-based-Authorization-Strategy"><a href="#Role-based-Authorization-Strategy" class="headerlink" title="Role-based Authorization Strategy"></a>Role-based Authorization Strategy</h2><p>按项目分权限，比如某个project不想让某人访问到，可以用这个插件。</p>
+<h2 id="Copy-Artifact"><a href="#Copy-Artifact" class="headerlink" title="Copy Artifact"></a>Copy Artifact</h2><p>可以将上游JOB构建后生成的Artifact，复制到下游的JOB来使用，比如上游的JOB生成的apk。</p>
+<h2 id="Validating-String-Parameter-Plugin"><a href="#Validating-String-Parameter-Plugin" class="headerlink" title="Validating String Parameter Plugin"></a>Validating String Parameter Plugin</h2><p>用于参数校验的插件，像产品打包的时候versionCode总是喜欢空着，说多少次都不长心，还让开发看一下为什么打包失败，最后就使用了这个插件，输入时校验。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/jenkins/" rel="tag"># jenkins</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/01/09/git-rebase/" rel="prev" title="Git中rebase的常规使用">
+                  <i class="fa fa-angle-left"></i> Git中rebase的常规使用
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/05/02/opencv-android/" rel="next" title="OpenCV在Android NDK按需要的模块编译">
+                  OpenCV在Android NDK按需要的模块编译 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

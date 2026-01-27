@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="在早期的支付宝android客户端中，也有插件化的功能。大概的做法就是，自定义所有的UI控件，再通过XML文件，仿安卓原生XML的布局文件来搭建布局，再通过自定义的表达式解析器，利用JAVA的反射特性来给具体的控件添加不同的功能。这样也达到了插件化。 之前写过一篇文章，说的是支付宝的插件化。其实这篇文章很老了，现在的支付宝早已不是这种做法。最近几天忙里偷闲，反编译了一下支付宝的插件化。 在下资历不">
+<meta property="og:type" content="article">
+<meta property="og:title" content="探究支付宝android客户端的动态加载">
+<meta property="og:url" content="https://lefo.me/2014/09/29/alipay-dynamic_load/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="在早期的支付宝android客户端中，也有插件化的功能。大概的做法就是，自定义所有的UI控件，再通过XML文件，仿安卓原生XML的布局文件来搭建布局，再通过自定义的表达式解析器，利用JAVA的反射特性来给具体的控件添加不同的功能。这样也达到了插件化。 之前写过一篇文章，说的是支付宝的插件化。其实这篇文章很老了，现在的支付宝早已不是这种做法。最近几天忙里偷闲，反编译了一下支付宝的插件化。 在下资历不">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lefo.me/image/alipay/so_list.jpg">
+<meta property="og:image" content="https://lefo.me/image/alipay/so_is_apk.jpg">
+<meta property="og:image" content="https://lefo.me/image/alipay/application_create.jpg">
+<meta property="article:published_time" content="2014-09-29T08:15:14.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.654Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="android">
+<meta property="article:tag" content="插件化">
+<meta property="article:tag" content="动态加载">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lefo.me/image/alipay/so_list.jpg">
+
+
+<link rel="canonical" href="https://lefo.me/2014/09/29/alipay-dynamic_load/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2014/09/29/alipay-dynamic_load/","path":"2014/09/29/alipay-dynamic_load/","title":"探究支付宝android客户端的动态加载"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>探究支付宝android客户端的动态加载 | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B7%A5%E5%85%B7%EF%BC%9A"><span class="nav-number">1.</span> <span class="nav-text">工具：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%80%E5%8D%95%E6%8B%86%E5%8C%85%E5%88%86%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">简单拆包分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E5%8D%93%E5%8A%A8%E6%80%81%E5%8A%A0%E8%BD%BD%E5%8E%9F%E7%90%86"><span class="nav-number">3.</span> <span class="nav-text">安卓动态加载原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E8%B5%84%E6%BA%90"><span class="nav-number">4.</span> <span class="nav-text">关于资源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81"><span class="nav-number">5.</span> <span class="nav-text">代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B6%E5%AE%83"><span class="nav-number">6.</span> <span class="nav-text">其它</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%B4%E6%98%8E%EF%BC%9A"><span class="nav-number">7.</span> <span class="nav-text">说明：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8E%E8%AE%B0"><span class="nav-number">8.</span> <span class="nav-text">后记</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2014/09/29/alipay-dynamic_load/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="探究支付宝android客户端的动态加载 | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          探究支付宝android客户端的动态加载
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2014-09-29 16:15:14" itemprop="dateCreated datePublished" datetime="2014-09-29T16:15:14+08:00">2014-09-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/android%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">android开发</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>在早期的支付宝android客户端中，也有插件化的功能。大概的做法就是，自定义所有的UI控件，再通过XML文件，仿安卓原生XML的布局文件来搭建布局，再通过自定义的表达式解析器，利用JAVA的反射特性来给具体的控件添加不同的功能。这样也达到了插件化。</p>
+<p>之前写过一篇文章，说的是支付宝的插件化。其实这篇文章很老了，现在的支付宝早已不是这种做法。最近几天忙里偷闲，反编译了一下支付宝的插件化。</p>
+<p>在下资历不高，简单分享一下，大牛看到也不要喷我，在下也是在探索学习中，欢迎交流！</p>
+<h2 id="工具："><a href="#工具：" class="headerlink" title="工具："></a>工具：</h2><p>工欲善其事，必先利其器。因为平时拆包少，对某些好工具也了解不多，基本用了手工的方法来处理的。大家可以用什么APK改之理之类的工具。</p>
+<ul>
+<li><code>apktool</code>：这个大家都知道，反编译利器，我下的是apktool_2.0.0b9版本</li>
+<li><code>dex2jar</code>：不是必须，但看smali代码太累，用这个工具好受一些</li>
+<li><code>jd-gui</code>：不解释</li>
+<li><code>Replace Studio</code>：文本搜索工具，可以搜索某文件夹下的文件是否有某文本，我一直用这个，不知道大家有没有其它好工具推荐。</li>
+<li><code>notepad++</code>：如果你用记事本也可以</li>
+<li><code>android环境</code>：这个必须，你看完它的代码了，你起码得自己写的试试吧</li>
+</ul>
+<span id="more"></span>
+
+<h2 id="简单拆包分析"><a href="#简单拆包分析" class="headerlink" title="简单拆包分析"></a>简单拆包分析</h2><p>先copy一份apk出来，改后缀名为zip，直接解压，先瞧瞧里面的内容，发现在&#x2F;lib&#x2F;armeabi&#x2F;下的so文件相当的多，有蹊跷！</p>
+<p><img src="/image/alipay/so_list.jpg"></p>
+<p>出于习惯，立马就拿notepad++打开了，结果发现，在文本的最前边是<code>PK</code>开头的两个字符，哈哈，这绝对的是一个zip文件，我们都知道apk其实就是一个zip，而且，真正的so文件应该是以<code>ELF</code>开头的。随便找一个打开，发现了APK的结构：</p>
+<p><img src="/image/alipay/so_is_apk.jpg"></p>
+<p>该上工具了，一步到位。对支付宝主APK进行拆包，使用<code>apktool d xxx.apk</code>命令，直接拆成smali，再使用<code>dex2jar</code>命令拆成jar包，再保存成java文件。<br>打开<code>AndroidManifest.xml</code>文件，找到<code>application</code></p>
+<pre><code>com.alipay.mobile.quinox.LauncherApplication
+</code></pre>
+<p>用jd-gui打开jar包，找到该类，查看onCreate方法，找到这段代码<br><img src="/image/alipay/application_create.jpg"></p>
+<p>代码中反射的<code>mPackageInfo</code>其实就是有名的<code>LoadedApk</code>类。</p>
+<p>使用<code>Replace Studio</code>在生成的java文件目录下搜索<code>pathClassloader</code></p>
+<p>我发现在com.alipay.mobile.quinox.classloader下有两个类继承自该类。</p>
+<p>通过对smali代码的注入log日志的跟踪，JAVA文件和smali文件相互对照（因为不是所有的class都能反编译回来），我大概整理了一些逻辑与类的结构。</p>
+<h2 id="安卓动态加载原理"><a href="#安卓动态加载原理" class="headerlink" title="安卓动态加载原理"></a>安卓动态加载原理</h2><p>支付宝把一个一个插件称为bundle，在<code>application</code>的onCreate方法中，反射<code>mPackageInfo</code>中的<code>mClassloader</code>字段，该属性是一个pathClassloade，将其替换成自己的PathClassloader（这段代码在dex2jar后的代码中看不到，我是直接读的smali代码）。</p>
+<p>在自定义的PathClassloader中处理，如果是自身dex中的类，则用原pathClassloader加载，如果是bundle，则用bundle的<code>dexfile.loadClass</code>来加载</p>
+<ul>
+<li><code>BundleClassloader</code>：继承自classloader，用于加载具体的某个插件，包含一个DexFile文件引用，重写了loadClass方法，通过调用dexFile.loadClass(“className” , classLoader);</li>
+<li><code>HostClasloader</code>：继承自PathClassloader，包含一个系统的pathClassloader，也就是加载apk本身的pathClassloader</li>
+<li><code>BootstrapClassloader</code>：继承自<code>PathClassloader</code>，该类中包含一个map集合，保存着一个一个的<code>BundleClassloader</code>，同时包含一个HostClasloader，该类就是自定义的pathClassloader，通过反射将原来的mClassloader替换成该类。</li>
+<li><code>OriginClassLoader</code>：继承自classloader，也就是上图中new的c，ClassLoader.class的<code>parent</code>成了该对象。重写了findClass方法，调用了对android原生的类和APK中的类加载做了分发处理，APK中的类调用<code>BootstrapClassloader</code>的<code>loadClass</code>方法返回。</li>
+</ul>
+<h2 id="关于资源"><a href="#关于资源" class="headerlink" title="关于资源"></a>关于资源</h2><p>使用反射创建一个AssetManager对象， 使用<code>getDeclaredMethod</code>后调用<code>addAssetPath</code>方法，先用<code>getApplicationInfo().sourceDir</code>做参数调用该方法，再用bundle的路径调用该方法，这样就能整合到一起。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">//先反射创建一个AssetManager对象 </span><br><span class="line">//反射得到addAssetPath</span><br><span class="line">//调用addAssetPath并把当前APK的路径传进去，也就是sourceDir</span><br><span class="line">//调用addAssetPath并把子包的APK路径传进去</span><br><span class="line">//使用下面的代码创建出Resources</span><br><span class="line">//用反射替换掉 mPackageInfo 的mResources字段</span><br><span class="line">Resources rs = getResources();</span><br><span class="line">new Resources(assetManager , rs.getDisplayMetrics(), rs.getConfiguration())</span><br></pre></td></tr></table></figure>
+<p>使用反射替换掉 <code>mPackageInfo</code> 的<code>mResources</code>字段</p>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><p>我只写了一下动态加载activity的代码，具体的资源我没有加载，小伙伴们可以自己试试。</p>
+<p>activity我没有添加，大家可以添加到主工程下，也可以添加的被加载的工程下，不过一定要记得在<code>AndroidManifest.xml</code>里注册</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">public class MyApplication extends Application &#123;</span><br><span class="line"></span><br><span class="line">	private Field field;</span><br><span class="line"></span><br><span class="line">	@Override</span><br><span class="line">	public void onCreate() &#123;</span><br><span class="line">		super.onCreate();</span><br><span class="line"></span><br><span class="line">		Context context = getBaseContext();</span><br><span class="line"></span><br><span class="line">		Field localField1;</span><br><span class="line">		try &#123;</span><br><span class="line">			localField1 = context.getClass().getDeclaredField(&quot;mPackageInfo&quot;);</span><br><span class="line">			localField1.setAccessible(true);</span><br><span class="line">			Object mPackageInfo = localField1.get(context);</span><br><span class="line">			field = mPackageInfo.getClass().getDeclaredField(&quot;mClassLoader&quot;);</span><br><span class="line">			field.setAccessible(true);</span><br><span class="line">			Object mClassLoader = field.get(mPackageInfo);</span><br><span class="line">			ClassLoader loader = new MyPathClassLoader(this,</span><br><span class="line">					this.getApplicationInfo().sourceDir,</span><br><span class="line">					(PathClassLoader) mClassLoader);</span><br><span class="line"></span><br><span class="line">			field.set(mPackageInfo, loader);</span><br><span class="line"></span><br><span class="line">		&#125; catch (Exception e) &#123;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>下面是我的Classloader 比较粗糙</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">public class MyPathClassLoader extends PathClassLoader &#123;</span><br><span class="line"></span><br><span class="line">	private ClassLoader mClassLoader;</span><br><span class="line">	private Context context;</span><br><span class="line">	public MyPathClassLoader(Context context,String dexPath, PathClassLoader mClassLoader) &#123;</span><br><span class="line">		</span><br><span class="line">		super(dexPath, mClassLoader);</span><br><span class="line">		this.mClassLoader = mClassLoader;</span><br><span class="line">		this.context = context;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	@Override</span><br><span class="line">	protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException &#123;</span><br><span class="line">		File file = new File(&quot;/data/data/com.example.test/lib/libtest.so&quot;);</span><br><span class="line"></span><br><span class="line">		Class clazz = null;</span><br><span class="line">		try &#123;</span><br><span class="line">			clazz = mClassLoader.loadClass(name);</span><br><span class="line">		&#125; catch (Exception e) &#123;</span><br><span class="line"></span><br><span class="line">		&#125;</span><br><span class="line">		if (clazz != null) &#123;</span><br><span class="line">			return clazz;</span><br><span class="line">		&#125;</span><br><span class="line">		try &#123;</span><br><span class="line">			DexFile dexFile = DexFile.loadDex(file.getAbsolutePath(), context</span><br><span class="line">					.getDir(&quot;dex&quot;, 0).getAbsolutePath() + &quot;/libtest.so&quot;, 0);</span><br><span class="line">			return dexFile.loadClass(name, ClassLoader.getSystemClassLoader());</span><br><span class="line">		&#125; catch (IOException e) &#123;</span><br><span class="line">			// TODO Auto-generated catch block</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125;</span><br><span class="line">		return super.findClass(name);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h2><p>支付宝之前的做法利用自定义表达式解析器，对JAVA程序员的学习成本相当高，后来支付宝就换成了该方法。</p>
+<p>优点：</p>
+<ol>
+<li>使用同一个Context，还是同一个应用，相当灵活</li>
+<li>能解决打包时候method ID not in [0, 0xffff]: 65536的问题</li>
+<li>使用反射少</li>
+</ol>
+<p>另外，该方法的缺点：</p>
+<ol>
+<li>用到的组件<strong>必须在manifest.xml中声明</strong>，我们并没有突破manifest的验证</li>
+<li>可以通过加载类时，替换掉实际类达到了突破manifest的效果，但是这要求提前占坑，而且各种launchMode必须提前定义好，可以参考360的开源框架，一样的原理</li>
+<li>使用了反射私有API，尽管反射使用的不多。</li>
+<li>资源文件处理，如果bundle中的id和主工程下的id冲突了就悲剧了。支付宝自己修改了aapt的源码，把资源<code>0x7f010001</code>前面的7f改了。所有应用的生成id都是7f打头的，该方法不修改aapt办不到，会给你自动改回来。要办到这一步，就必须使用源码环境，编译自己的aapt。</li>
+</ol>
+<h2 id="说明："><a href="#说明：" class="headerlink" title="说明："></a>说明：</h2><p>同是阿里系的淘宝网有一套框架叫atlas，该框架是一套重量级框架，完全突破了manifest的封锁，不同的bundle使用的不同的context。</p>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>其实支付宝也突破了manifest文件，采用的是代理的模式。代理有两种实现方式，</p>
+<p>一：注册一个CommonActivity，在各生命周期的方法中调用targetActivity的方法。再利用反射将CommonActivity中的变量赋值到插件中targetActivity中（用遍历就能满足），此方法有个缺陷就是，在插件中的activity中，要慎用this关键字，必要用的时候，得用其它方法取CommonActivity对象。</p>
+<p>另一种就是提前占坑，用classloader替换加载的字节码，方法同我上面讲的类似，需要做的就是每当启动一个插件的activity，就必须得自己维护一个清单文件和插件class的对应关系，而且，各种启动模式，不同的参数，都要有不同的坑位接着。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/android/" rel="tag"># android</a>
+              <a href="/tags/%E6%8F%92%E4%BB%B6%E5%8C%96/" rel="tag"># 插件化</a>
+              <a href="/tags/%E5%8A%A8%E6%80%81%E5%8A%A0%E8%BD%BD/" rel="tag"># 动态加载</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2014/08/22/camera-picture-size/" rel="prev" title="用camera类拍照指定图片大小">
+                  <i class="fa fa-angle-left"></i> 用camera类拍照指定图片大小
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2014/10/13/ant-apk-with-lib/" rel="next" title="使用ant打包APK及依赖包最佳解决办法">
+                  使用ant打包APK及依赖包最佳解决办法 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

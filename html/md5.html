@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MD5计算</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.3.0/crypto-js.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        main {
+            text-align: center;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0;
+            color: #555;
+        }
+
+        textarea {
+            width: 100%;
+            height: 30vh; /* 设置输入框高度为30%视窗高度 */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <main>
+        <h1>MD5 Calculator</h1>
+        
+        <label for="inputText">Input Text:</label>
+        <textarea id="inputText" rows="4" cols="50" oninput="calculateMD5()"></textarea>
+
+        <p>MD5 Hash:</p>
+        <p id="md5Result"></p>
+    </main>
+
+    <script>
+        function calculateMD5() {
+            var inputText = document.getElementById("inputText").value;
+            var md5Result = document.getElementById("md5Result");
+
+            if (inputText.trim() === "") {
+                md5Result.textContent = "Please enter some text.";
+                return;
+            }
+
+            // 使用 CryptoJS 计算 MD5
+            var md5Hash = CryptoJS.MD5(inputText).toString();
+
+            // 显示结果，并设置为红色
+            md5Result.textContent = md5Hash;
+            md5Result.style.color = "red";
+        }
+    </script>
+
+</body>
+</html>

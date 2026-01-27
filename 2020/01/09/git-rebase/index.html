@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="git公司从svn版本管理切换成了git，Android Studio（Intellij IDEA）也可以较好的支持git，相当方便。git有一个特别强大的命令，那就是rebase，这篇blog就记一下git rebase的一些使用。 官方文档https:&#x2F;&#x2F;git-scm.com&#x2F;docs&#x2F;git-rebase 一个不错的操作模拟https:&#x2F;&#x2F;learngitbranching.js.org&#x2F;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Git中rebase的常规使用">
+<meta property="og:url" content="https://lefo.me/2020/01/09/git-rebase/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="git公司从svn版本管理切换成了git，Android Studio（Intellij IDEA）也可以较好的支持git，相当方便。git有一个特别强大的命令，那就是rebase，这篇blog就记一下git rebase的一些使用。 官方文档https:&#x2F;&#x2F;git-scm.com&#x2F;docs&#x2F;git-rebase 一个不错的操作模拟https:&#x2F;&#x2F;learngitbranching.js.org&#x2F;">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-01-09T12:21:39.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.656Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="git">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/2020/01/09/git-rebase/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2020/01/09/git-rebase/","path":"2020/01/09/git-rebase/","title":"Git中rebase的常规使用"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Git中rebase的常规使用 | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#git"><span class="nav-number">1.</span> <span class="nav-text">git</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%98%E6%96%B9%E6%96%87%E6%A1%A3"><span class="nav-number">1.1.</span> <span class="nav-text">官方文档</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E4%B8%AA%E4%B8%8D%E9%94%99%E7%9A%84%E6%93%8D%E4%BD%9C%E6%A8%A1%E6%8B%9F"><span class="nav-number">1.2.</span> <span class="nav-text">一个不错的操作模拟</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#git-rebase%E7%9A%84%E5%B8%B8%E7%94%A8%E6%93%8D%E4%BD%9C"><span class="nav-number">2.</span> <span class="nav-text">git rebase的常用操作</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B1-%EF%BC%9A"><span class="nav-number">2.1.</span> <span class="nav-text">案例1 ：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B2%EF%BC%9A%E2%80%93onto%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="nav-number">2.2.</span> <span class="nav-text">案例2：–onto的使用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%8D%E5%88%B6%E4%B8%80%E6%AE%B5commits%E5%88%B0%E5%8F%A6%E4%B8%80%E4%B8%AA%E5%88%86%E6%94%AF%EF%BC%88as%E5%BA%94%E8%AF%A5%E4%B8%8D%E6%94%AF%E6%8C%81%EF%BC%89"><span class="nav-number">2.3.</span> <span class="nav-text">复制一段commits到另一个分支（as应该不支持）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B3%EF%BC%9A%E5%90%88%E5%B9%B6%E5%A4%9A%E6%9D%A1commit%E4%B8%BA%E4%B8%80%E6%9D%A1"><span class="nav-number">2.4.</span> <span class="nav-text">案例3：合并多条commit为一条</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%B3%E4%BA%8EAndroid-Studio"><span class="nav-number">3.</span> <span class="nav-text">关于Android Studio</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2020/01/09/git-rebase/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Git中rebase的常规使用 | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Git中rebase的常规使用
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-01-09 20:21:39" itemprop="dateCreated datePublished" datetime="2020-01-09T20:21:39+08:00">2020-01-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/git/" itemprop="url" rel="index"><span itemprop="name">git</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="git"><a href="#git" class="headerlink" title="git"></a>git</h1><p>公司从svn版本管理切换成了git，Android Studio（Intellij IDEA）也可以较好的支持git，相当方便。git有一个特别强大的命令，那就是rebase，这篇blog就记一下git rebase的一些使用。</p>
+<h2 id="官方文档"><a href="#官方文档" class="headerlink" title="官方文档"></a>官方文档</h2><p><a target="_blank" rel="noopener" href="https://git-scm.com/docs/git-rebase">https://git-scm.com/docs/git-rebase</a></p>
+<h2 id="一个不错的操作模拟"><a href="#一个不错的操作模拟" class="headerlink" title="一个不错的操作模拟"></a>一个不错的操作模拟</h2><p><a target="_blank" rel="noopener" href="https://learngitbranching.js.org/">https://learngitbranching.js.org/</a></p>
+<span id="more"></span>
+
+<h1 id="git-rebase的常用操作"><a href="#git-rebase的常用操作" class="headerlink" title="git rebase的常用操作"></a>git rebase的常用操作</h1><p>本文不另辟捷径，官方文档讲的很详细，就挑几个官方的例子翻译一下。</p>
+<h2 id="案例1-："><a href="#案例1-：" class="headerlink" title="案例1 ："></a>案例1 ：</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">      A---B---C topic</span><br><span class="line">     /</span><br><span class="line">D---E---F---G master</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git rebase master</span><br><span class="line">git rebase master topic</span><br></pre></td></tr></table></figure>
+
+<p>上面两条命令，执行其中的一条就可以，执行以后。其实就是git rebase upstream branch</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">              A&#x27;--B&#x27;--C&#x27; topic</span><br><span class="line">             /</span><br><span class="line">D---E---F---G master</span><br></pre></td></tr></table></figure>
+
+<h2 id="案例2：–onto的使用"><a href="#案例2：–onto的使用" class="headerlink" title="案例2：–onto的使用"></a>案例2：–onto的使用</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git rebase [-i | --interactive] [&lt;options&gt;] [--exec &lt;cmd&gt;]</span><br><span class="line">	[--onto &lt;newbase&gt; | --keep-base] [&lt;upstream&gt; [&lt;branch&gt;]]</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">o---o---o---o---o  master</span><br><span class="line">     \</span><br><span class="line">      o---o---o---o---o  next</span><br><span class="line">                       \</span><br><span class="line">                        o---o---o  topic</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git rebase --onto master next topic</span><br></pre></td></tr></table></figure>
+<p>执行的结果为</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">o---o---o---o---o  master</span><br><span class="line">    |            \</span><br><span class="line">    |             o&#x27;--o&#x27;--o&#x27;  topic</span><br><span class="line">     \</span><br><span class="line">      o---o---o---o---o  next</span><br></pre></td></tr></table></figure>
+<p>这里–onto的后面有三个参数（其实属于–onto的就一个）</p>
+<ol>
+<li>参数1：要跟随在哪个commit，可以是分支名，也可以是commit的 Revision Number</li>
+<li>参数2：after-this-commit 意思是，从这个commit之后的开始算，这个commit是不算的</li>
+<li>参数3：要操作的最后一个commit，这个本身是要算进去的。</li>
+</ol>
+<h2 id="复制一段commits到另一个分支（as应该不支持）"><a href="#复制一段commits到另一个分支（as应该不支持）" class="headerlink" title="复制一段commits到另一个分支（as应该不支持）"></a>复制一段commits到另一个分支（as应该不支持）</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">A---B---C---D---E  master</span><br><span class="line">     \</span><br><span class="line">      F---G---H---I---J---K---L---M  topic</span><br></pre></td></tr></table></figure>
+<p>比如想把K L M的提交copy到master上，那么可以使用命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git checkout master</span><br><span class="line">git rebase --onto E J M</span><br><span class="line">git rebase HEAD master</span><br></pre></td></tr></table></figure>
+<p>结果为</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">A---B---C---D---E---K‘---L’---M‘  master</span><br><span class="line">     \</span><br><span class="line">      F---G---H---I---J---K---L---M  topic</span><br></pre></td></tr></table></figure>
+<p>注意这里一定要<code>git rebase HEAD master</code>，因为执行了第二条rebase后，只是复制了一份commit过去，需要处理一下master和HEAD。</p>
+<h2 id="案例3：合并多条commit为一条"><a href="#案例3：合并多条commit为一条" class="headerlink" title="案例3：合并多条commit为一条"></a>案例3：合并多条commit为一条</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git rebase -i &lt;after-this-commit&gt;</span><br></pre></td></tr></table></figure>
+<p>执行上述命令后，会让你配置每一项的处理方式</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">pick ：不做任何修改；</span><br><span class="line">reword：只修改提交注释信息；</span><br><span class="line">edit：修改提交的文件，做增补提交；</span><br><span class="line">squash：将该条提交合并到上一条提交，提交注释也一并合并；</span><br><span class="line">fixup：将该条提交合并到上一条提交，废弃该条提交的注释；</span><br></pre></td></tr></table></figure>
+
+<h1 id="关于Android-Studio"><a href="#关于Android-Studio" class="headerlink" title="关于Android Studio"></a>关于Android Studio</h1><p>AS内置的插件可以满足大部分功能，按command + 9可以唤出来log tab<br>附上操作指南：<br><a target="_blank" rel="noopener" href="https://www.jetbrains.com/help/idea/edit-project-history.html">https://www.jetbrains.com/help/idea/edit-project-history.html</a></p>
+<p>我试了试，最终在as里没有找到 –onto 复制一段commits的方式，因为第三个参数必须得选branch，在stackoverflow里，找到一处资料。对比可以看到，如果和上述一段commits，是缺少参数的，所以这里得用命令行了。实际中，也劝大家尽量不要用这种方式。</p>
+<blockquote>
+<p>The rebase dialog in IntelliJ 12.1 uses the most general version of the rebase command:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git rebase [-i] [--onto newbase] [upstream] [branch]</span><br></pre></td></tr></table></figure>
+
+<p>where IntelliJ’s “Onto” field corresponds to <code>--onto newbase</code>, IntelliJ’s “From” field corresponds to “upstream” and IntelliJ’s “Branch” field corresponds to “branch”.</p>
+<p>In above git rebase command all parameters are optional, while in IntelliJ they are not. This means that you have to take your git rebase command and express it using the general form shown above.</p>
+<p>Note that what you actually do with the arguments of the rebase command is define a range of commits that will be replayed in a new target location. Generally, the range is <code>upstream..branch</code>. If you are not familiar with commit ranges you should read up on them.</p>
+<p>Let’s look at your example and assume that you are on branch “branch”:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git rebase -i HEAD~4</span><br></pre></td></tr></table></figure>
+
+<p>Let’s first figure out which is the range. Since you have only one argument, <code>HEAD~4</code>, this corresponds to upstream, i.e. the range is <code>HEAD~4..branch</code> or in other words <code>HEAD~4..HEAD</code> on branch “branch”. The question is now which is your –onto target. If you avoid <code>--onto</code>, then git assumes that your upstream is also your <code>--onto</code>.</p>
+<p>This yields:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git rebase -i --onto HEAD~4 HEAD~4 branch</span><br></pre></td></tr></table></figure>
+
+<p>and now you can fill in IntelliJ’s rebase dialog using</p>
+<ul>
+<li>Onto: <code>HEAD~4</code></li>
+<li>From: <code>HEAD~4</code></li>
+<li>Branch: <code>branch</code></li>
+</ul>
+<p>IntelliJ actually forces you to think first and identify your range and target, which looks more complicated, but which prevents you from doing a rebase without understanding what the result will be.</p>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/14608812/how-to-do-interactive-rebase-with-intellij-idea">https://stackoverflow.com/questions/14608812/how-to-do-interactive-rebase-with-intellij-idea</a></p>
+</blockquote>
+<p>注意AS中，也可以勾选-i参数</p>
+<p>如果是只有一条提交记录，通常用cherry-pick很方便，rebase可以用来处理多条commits的时候。当然，你也可以把commit先执行squash，再执行cherry-pick。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/git/" rel="tag"># git</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/12/13/foregroud-service-oreo/" rel="prev" title="android 8.0 foregroud-service的坑">
+                  <i class="fa fa-angle-left"></i> android 8.0 foregroud-service的坑
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/02/15/jenkins-plugins/" rel="next" title="jenkins中实用的插件">
+                  jenkins中实用的插件 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

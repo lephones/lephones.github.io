@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="在北京退休规定 满足国家规定退休条件，社保15年，达到退休年龄 (注意：目前已经改为20年了，但写这篇文章的时候还是15年) 在京缴纳社保满10年。 退休当年在京参保。  注意第三条，可以在退休前回北京，注册一家企业，这样就可以在京办理退休。毕竟60岁，那会估计也没有单位要接收了，注册公司还是靠谱的。 退休金计算公式 退休金 &#x3D; 基础养老金 + 个人养老金 个人养老金 &#x3D; 个人">
+<meta property="og:type" content="website">
+<meta property="og:title" content="北京历年社会平均工资及养老保险基数">
+<meta property="og:url" content="https://lefo.me/pages/pension.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="在北京退休规定 满足国家规定退休条件，社保15年，达到退休年龄 (注意：目前已经改为20年了，但写这篇文章的时候还是15年) 在京缴纳社保满10年。 退休当年在京参保。  注意第三条，可以在退休前回北京，注册一家企业，这样就可以在京办理退休。毕竟60岁，那会估计也没有单位要接收了，注册公司还是靠谱的。 退休金计算公式 退休金 &#x3D; 基础养老金 + 个人养老金 个人养老金 &#x3D; 个人">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-03-05T17:29:33.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.672Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="android,java,kotlin,开发,编程,c++">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/pages/pension">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/pages/pension.html","path":"pages/pension.html","title":"北京历年社会平均工资及养老保险基数"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>北京历年社会平均工资及养老保险基数 | lefo的菜鸡实录
+</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9C%A8%E5%8C%97%E4%BA%AC%E9%80%80%E4%BC%91%E8%A7%84%E5%AE%9A"><span class="nav-number">1.</span> <span class="nav-text">在北京退休规定</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%80%80%E4%BC%91%E9%87%91%E8%AE%A1%E7%AE%97%E5%85%AC%E5%BC%8F"><span class="nav-number">2.</span> <span class="nav-text">退休金计算公式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2010%E5%B9%B4%E8%B5%B7%E5%8C%97%E4%BA%AC%E5%85%BB%E8%80%81%E4%BF%9D%E9%99%A9%E5%9F%BA%E6%95%B0"><span class="nav-number">3.</span> <span class="nav-text">2010年起北京养老保险基数</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner page posts-expand">
+
+
+    
+    
+    
+    <div class="post-block" lang="zh-CN"><header class="post-header">
+
+<h1 class="post-title" itemprop="name headline">北京历年社会平均工资及养老保险基数
+</h1>
+
+<div class="post-meta-container">
+</div>
+
+</header>
+
+      
+      
+      <div class="post-body">
+          <h1 id="在北京退休规定"><a href="#在北京退休规定" class="headerlink" title="在北京退休规定"></a>在北京退休规定</h1><ol>
+<li>满足国家规定退休条件，社保15年，达到退休年龄 (注意：目前已经改为20年了，但写这篇文章的时候还是15年)</li>
+<li>在京缴纳社保满10年。</li>
+<li>退休当年在京参保。</li>
+</ol>
+<p>注意第三条，可以在退休前回北京，注册一家企业，这样就可以在京办理退休。毕竟60岁，那会估计也没有单位要接收了，注册公司还是靠谱的。</p>
+<h1 id="退休金计算公式"><a href="#退休金计算公式" class="headerlink" title="退休金计算公式"></a>退休金计算公式</h1><ol>
+<li>退休金 &#x3D; 基础养老金 + 个人养老金</li>
+<li>个人养老金 &#x3D; 个人账户养老金 &#x2F; 养老金计发月数</li>
+<li>基础养老金 &#x3D; 退休计发基数 * ( 1 + 平均缴费指数 ) &#x2F; 2 * 缴费年限 &#x2F; 100</li>
+<li>平均缴费指数 &#x3D; 缴费基数 &#x2F; 社平</li>
+</ol>
+<p>比如，张某按60%档缴费15年，在2024年退休：</p>
+<blockquote>
+<p>基础养老金 &#x3D; 11297 * 1.6 &#x2F; 2 * 15 &#x2F; 100 &#x3D; 1355 (不包括个人养老金)</p>
+</blockquote>
+<p>主要是计算基础养老金，至于个人养老金，本来也是自己交的钱，交多少领多少。想查看自己个人账户有多少钱的，可以点一下个人对账单，就能显示去年余额。</p>
+<h1 id="2010年起北京养老保险基数"><a href="#2010年起北京养老保险基数" class="headerlink" title="2010年起北京养老保险基数"></a>2010年起北京养老保险基数</h1><table>
+<thead>
+<tr>
+<th>期间</th>
+<th>平均工资</th>
+<th>养老上限</th>
+<th>养老下限</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2024.07-2025.06</td>
+<td>11761</td>
+<td>35283</td>
+<td>6821</td>
+</tr>
+<tr>
+<td>2023.07-2024.06</td>
+<td>11297</td>
+<td>33891</td>
+<td>6326</td>
+</tr>
+<tr>
+<td>2022.07-2023.06</td>
+<td>10628</td>
+<td>31884</td>
+<td>5869</td>
+</tr>
+<tr>
+<td>2021.07-2022.06</td>
+<td>9407</td>
+<td>28221</td>
+<td>5360</td>
+</tr>
+<tr>
+<td>2020.07-2021.06</td>
+<td>8847</td>
+<td>26541</td>
+<td>3613</td>
+</tr>
+<tr>
+<td>2019.07-2020.06</td>
+<td>7855</td>
+<td>23565</td>
+<td>3613</td>
+</tr>
+<tr>
+<td>2018.07-2019.06</td>
+<td>8467</td>
+<td>25401</td>
+<td>3387</td>
+</tr>
+<tr>
+<td>2017.07-2018.06</td>
+<td>7706</td>
+<td>23118</td>
+<td>3082</td>
+</tr>
+<tr>
+<td>2016.07-2017.06</td>
+<td>7086</td>
+<td>21258</td>
+<td>2834</td>
+</tr>
+<tr>
+<td>2015.07-2016.06</td>
+<td>6463</td>
+<td>19389</td>
+<td>2585</td>
+</tr>
+<tr>
+<td>2014.07-2015.06</td>
+<td>5793</td>
+<td>17379</td>
+<td>2317</td>
+</tr>
+<tr>
+<td>2013.04-2014.06</td>
+<td>5223</td>
+<td>15669</td>
+<td>2089</td>
+</tr>
+<tr>
+<td>2012.04-2013.03</td>
+<td>4672</td>
+<td>14016</td>
+<td>1869</td>
+</tr>
+<tr>
+<td>2011.04-2012.03</td>
+<td>4201</td>
+<td>12603</td>
+<td>1680</td>
+</tr>
+<tr>
+<td>2010.04-2011.03</td>
+<td>4037</td>
+<td>12111</td>
+<td>1615</td>
+</tr>
+<tr>
+<td>2010.01-2010.03</td>
+<td>3726</td>
+<td>11178</td>
+<td>1490</td>
+</tr>
+</tbody></table>
+
+      </div>
+      
+      
+      
+    </div>
+
+    
+    
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

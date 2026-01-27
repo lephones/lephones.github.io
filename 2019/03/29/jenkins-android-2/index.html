@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="需求上一篇文章主要写了打包刚开始的配置和参数化构建。这篇文章主要讲一讲在改包名、改资源的打包实践中，常会碰到的问题以及解决办法。如果看博客的人有更好的解决办法，也可以找我交流，关于页面有我联系方式。 打包的主要需求如下：  改包名 可以替换icon，可以修改应用名，包括应用内部显示的名称（如版权信息） 可以控制部分功能是否开启  改包名分析我们知道，改包名只是修改applicationId，和代码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用jenkins为android工程打包，支持多包名，改资源（踩坑指南）">
+<meta property="og:url" content="https://lefo.me/2019/03/29/jenkins-android-2/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="需求上一篇文章主要写了打包刚开始的配置和参数化构建。这篇文章主要讲一讲在改包名、改资源的打包实践中，常会碰到的问题以及解决办法。如果看博客的人有更好的解决办法，也可以找我交流，关于页面有我联系方式。 打包的主要需求如下：  改包名 可以替换icon，可以修改应用名，包括应用内部显示的名称（如版权信息） 可以控制部分功能是否开启  改包名分析我们知道，改包名只是修改applicationId，和代码">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lefo.me/image/20190329/key-config.jpg">
+<meta property="og:image" content="https://lefo.me/image/20190329/res-url.jpg">
+<meta property="article:published_time" content="2019-03-29T05:30:00.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.656Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="android">
+<meta property="article:tag" content="jenkins">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lefo.me/image/20190329/key-config.jpg">
+
+
+<link rel="canonical" href="https://lefo.me/2019/03/29/jenkins-android-2/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2019/03/29/jenkins-android-2/","path":"2019/03/29/jenkins-android-2/","title":"使用jenkins为android工程打包，支持多包名，改资源（踩坑指南）"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>使用jenkins为android工程打包，支持多包名，改资源（踩坑指南） | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%9C%80%E6%B1%82"><span class="nav-number">1.</span> <span class="nav-text">需求</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%94%B9%E5%8C%85%E5%90%8D%E5%88%86%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">改包名分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">3.</span> <span class="nav-text">应用场景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%94%B9%E8%B5%84%E6%BA%90%E8%AF%A5%E6%80%8E%E4%B9%88%E6%94%B9"><span class="nav-number">4.</span> <span class="nav-text">改资源该怎么改</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BB%AD"><span class="nav-number">5.</span> <span class="nav-text">续</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2019/03/29/jenkins-android-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="使用jenkins为android工程打包，支持多包名，改资源（踩坑指南） | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          使用jenkins为android工程打包，支持多包名，改资源（踩坑指南）
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-03-29 13:30:00" itemprop="dateCreated datePublished" datetime="2019-03-29T13:30:00+08:00">2019-03-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/android%E6%89%93%E5%8C%85/" itemprop="url" rel="index"><span itemprop="name">android打包</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h1><p>上一篇文章主要写了打包刚开始的配置和参数化构建。这篇文章主要讲一讲在改包名、改资源的打包实践中，常会碰到的问题以及解决办法。如果看博客的人有更好的解决办法，也可以找我交流，关于页面有我联系方式。</p>
+<p>打包的主要需求如下：</p>
+<ol>
+<li>改包名</li>
+<li>可以替换icon，可以修改应用名，包括应用内部显示的名称（如版权信息）</li>
+<li>可以控制部分功能是否开启</li>
+</ol>
+<h1 id="改包名分析"><a href="#改包名分析" class="headerlink" title="改包名分析"></a>改包名分析</h1><p>我们知道，改包名只是修改applicationId，和代码中类的package无关，所以基本上代码和AndroidManifest.xml中组件的name，都是不需要改动的。但是还是会涉及到下面的这些问题：</p>
+<span id="more"></span>
+
+<ol>
+<li>代码中使用”包名”写死的路径，比如<code>/data/data/com.xx.xx/</code>。</li>
+<li>AndroidManifest.xml中，ContentProvider会填一个<code>authorities</code>属性，换包名等于换应用<code>authorities</code>就得跟着变。部分<code>action</code>，部分activity的<code>taskAffinity</code>。</li>
+<li>第三方的client_key(支持多包名就没关系了，比如umeng push)。</li>
+<li>提供给外部调用的activity和service，偶尔会要求必须在包名路径下(刚好我碰上了这奇葩事)。</li>
+</ol>
+<p>具体解决办法：</p>
+<ol>
+<li>使用全局查找，找出包名的字符串，统一改为context.getPackageName()，没有context对象的地方，使用<code>BuildConfig.APPLICATION_ID</code>。</li>
+<li>当我们配了applicationId以后，就可以在AndroidMenifest.xml中使用<code>&#123;$applicationId&#125;</code>代替写死的包名。</li>
+<li>像<code>applicationId</code>一样，在gradle文件的<code>defaultConfig</code>中，把每个key都声明成常量调用。在做打包之前，我想的是给产品运营人员提供一个构建参数让他们填写，后来意识到，其实这些clientkey和包名是绑定的，于是在工程里新建了一个名包文件夹，里面保存了key&#x3D;value的格式，打包时，通过shell读取到环境变量，然后用shell修改gradle的配置。</li>
+<li>actiivity可以使用<code>activity-alias</code>标签<code>&lt;activity-alias android:name=&quot;&#123;$applicationId&#125;.XActivity&quot; android:targetActivity=&quot;&quot;</code>，至于service，就比较难搞，我这里的解决办法是，给当前包名写了个继承原包名Service的空子类，修改AndroidManifest.xml中的name使用<code>$&#123;applicationId&#125;</code>。然后代码中，给如果有startService的地方，就使用<code>Class.forName(BuildConfig.APPLICATION_ID + &quot;.XService&quot;)</code>反射。</li>
+</ol>
+<h1 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h1><p><strong>因为这里的脚本过于繁琐，从这里开始，请大家放弃看这一篇，直接去这里[<a href="/2020/09/04/jenkins-android-3/">使用jenkins为android工程打包，支持多包名，改资源（优化方案）</a></strong></p>
+<p>部分shell脚本的源码，这里只是修改build.gradle的脚本，要打包还要再加入<code>./gradlew assembleRelease</code>等其它个性化脚本<br>将完整的shell脚本保存成sh文件，放到工程目录下，在jenkins中执行该sh文件<code>sh ./jenkinsbuild.sh</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">field_name=(&#x27;BOOL_FIELD1&#x27; )</span><br><span class="line">value=($BOOL_FIELD1 )</span><br><span class="line">#注意 这里是用测试的值 注意value要和filed的name对应 在shell中全是字符串格式</span><br><span class="line">#value=(&#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27;)</span><br><span class="line"></span><br><span class="line">for i in &quot;$&#123;!field_name[@]&#125;&quot;;</span><br><span class="line">do</span><br><span class="line">    echo $&#123;field_name[$i]&#125; $&#123;value[$i]&#125;</span><br><span class="line">    #只有当变量不为null的情况下，才去修改Build文件</span><br><span class="line">    if [ -n &quot;$&#123;value[$i]&#125;&quot; ];then</span><br><span class="line">        toReplace=&#x27;buildConfigField &quot;boolean&quot;, \&quot;&#x27;$&#123;field_name[$i]&#125;&#x27;\&quot;, &quot;&#x27;$&#123;value[$i]&#125;&#x27;&quot;&#x27;</span><br><span class="line">        echo $toReplace</span><br><span class="line">        sed -i &#x27;s/buildConfigField \&quot;boolean\&quot;, \&quot;&#x27;&quot;$&#123;field_name[$i]&#125;&quot;&#x27;\&quot;, \&quot;\([a-zA-Z]*\)\&quot;/&#x27;&quot;$toReplace&quot;&#x27;/g&#x27; build.gradle</span><br><span class="line">    fi</span><br><span class="line">done</span><br><span class="line"></span><br><span class="line">toReplace=&#x27;applicationId \&quot;&#x27;$PACKAGE_NAME&#x27;\&quot;&#x27;</span><br><span class="line">echo $toReplace</span><br><span class="line">sed -i &#x27;s/applicationId \&quot;com.lefo.oldpkg\&quot;/&#x27;&quot;$toReplace&quot;&#x27;/g&#x27; build.gradle</span><br><span class="line"></span><br><span class="line">#字符串变量  操作方式是删除掉gradle文件中旧的  添加新的</span><br><span class="line">field_name=(&#x27;PT_CLIENT_ID&#x27; &#x27;PT_CLIENT_SECRET&#x27; &#x27;PT_QQ_ID&#x27; &#x27;PT_WX_RELEASE_ID&#x27; &#x27;BUGLY_ID&#x27; &#x27;APP_TYPE&#x27; &#x27;PT_SERVER_SECRET&#x27; &#x27;LICENSE_URL&#x27; &#x27;POLICY_URL&#x27;)</span><br><span class="line">value_name=(&#x27;client_id&#x27; &#x27;client_secret&#x27; &#x27;qq_id&#x27; &#x27;wx_id&#x27; &#x27;bugly_id&#x27; &#x27;app_type&#x27; &#x27;server_secret&#x27; &#x27;license&#x27; &#x27;policy&#x27;)</span><br><span class="line"></span><br><span class="line">for i in &quot;$&#123;!field_name[@]&#125;&quot;;</span><br><span class="line">do</span><br><span class="line">    echo $&#123;field_name[$i]&#125;</span><br><span class="line">    value=$&#123;value_name[$i]&#125;</span><br><span class="line">	toReplace=&#x27;buildConfigField \&quot;String\&quot;, \&quot;&#x27;$&#123;field_name[$i]&#125;&#x27;\&quot;, \&quot;\\\&quot;&#x27;$&#123;!value&#125;&#x27;\\\&quot;\&quot;&#x27;</span><br><span class="line">	echo $toReplace</span><br><span class="line">	sed -i &#x27;/buildConfigField \&quot;String\&quot;, \&quot;&#x27;$&#123;field_name[$i]&#125;&#x27;\&quot;, /d&#x27; build.gradle</span><br><span class="line">	sed -i &#x27;/defaultConfig/a buildConfigField \&quot;String\&quot;, \&quot;&#x27;$&#123;field_name[$i]&#125;&#x27;\&quot;, \&quot;\\\&quot;&#x27;$&#123;!value&#125;&#x27;\\\&quot;\&quot;&#x27; build.gradle</span><br><span class="line">done</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>那么，脚本中，<code>client_id</code>这些，是如何一次性加入到环境变量中的？这里要用到另一款插件，<strong>Environment Injector Plugin</strong>。这款插件可以在执行时往执行环境中注入变量。关于变量的配置信息，我在工程目录下新建了一个文件夹保存的配置文件。就是key&#x3D;value的格式，就是你熟悉的java properties file。这里的<code>PACKAGE_NAME</code>，在jenkins参数化构建时，给产品提供的是一个选项列表，固定好包名列表给产品选择选，毕竟涉及到client_key的修改，不能随便填。<br><img src="/image/20190329/key-config.jpg"></p>
+<h1 id="改资源该怎么改"><a href="#改资源该怎么改" class="headerlink" title="改资源该怎么改"></a>改资源该怎么改</h1><p>产品居然想要修改APP名称，图标，部分页面的图片，这里要用到gradle配置中的productFlavors。工程中新建一个文件夹<code>lefo</code>，注意要名字对应，然后我们将要替换的资源，按原资源存放位置，放到package1目录下，打包时，不能再执行assembleRelease，这个时候就应该是<code>./gradlew assembleLefoRelease</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">productFlavors&#123;</span><br><span class="line">	lefo&#123;</span><br><span class="line">    	//产品说，可不可以做到应用显示的名字和内部的名字不一样  可以 给应用单独配一个名字 本来有个资源叫app_name</span><br><span class="line">    	manifestPlaceholders = [label:&quot;@string/app_label&quot;]</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>既然想这么定制，那就彻底交给产品，他们想放什么放什么。</p>
+<p>修改应用名称：直接使用jenkins中参数配置，通过sed命令修改strings.xml<br>图标资源替换：最初想的是从某处下载一份资源，然后替换掉包中资源，产品那边和我们一样用的是svn，jenkins在构建的时候，SCM是在构建之前的，也就是说，在构建以前就要checkout代码。问题就来了，资源目录的URL可以做为一个参数传进来，但并不是每一次打包，都需要替换资源。如果URL没有传，那SCM就不能过，构建就会失败，根本走不到编译过程。这里同样要使用插件<strong>Environment Injector Plugin</strong>，它可以在SCM以前，使用脚本修改某个变量的值。</p>
+<p>注意下图中我使用的是<code>groovy script</code>，如果我没有记错的话，只有<code>groovy script</code>是可以在SCM之前执行的。如果没有填，脚本就给它一个内容为空的文件夹路径，SCM配置中，支持<code>$&#123;RES_URL&#125;</code>使用。为什么不给<code>RES_URL</code>配一个默认值呢？因为不填写更直观，产品修改的时候，也不用每次都删除旧的再复制上新的还得检查一遍。</p>
+<p><img src="/image/20190329/res-url.jpg"></p>
+<h1 id="续"><a href="#续" class="headerlink" title="续"></a>续</h1><p>产品经理用的很嗨，暂时没有续，为了不涉及隐私，整篇加上前一篇都是一些片段，想直接copy进去使用的可能要失望了。不过，拼凑一起还是可以的，实在不懂的来找我。</p>
+<p><strong>写了一篇最新的介绍，打包脚本更简洁，大家可以结合着看[<a href="2020/09/04/jenkins-android-3/">使用jenkins为android工程打包，支持多包名，改资源（优化方案）</a></strong></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/android/" rel="tag"># android</a>
+              <a href="/tags/jenkins/" rel="tag"># jenkins</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/03/26/jenkins-android-1/" rel="prev" title="使用jenkins为android工程打包，支持多包名，改资源（简单上手）">
+                  <i class="fa fa-angle-left"></i> 使用jenkins为android工程打包，支持多包名，改资源（简单上手）
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/06/02/vertical-viewpager/" rel="next" title="垂直滚动的ViewPager存在滑动不灵敏的问题">
+                  垂直滚动的ViewPager存在滑动不灵敏的问题 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

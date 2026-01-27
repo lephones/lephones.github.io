@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="垂直滚动的ViewPager凡是找到我这篇文章的，肯定都在网上看过这样一篇文章[几行代码实现ViewPager垂直滚动]，地址我就不上了，随便一搜，到处都是，原理也很简单，交换一下横竖坐标，再设置一个上下的Transformer。然而，事情并没有想像的那么简单。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="垂直滚动的ViewPager存在滑动不灵敏的问题">
+<meta property="og:url" content="https://lefo.me/2019/06/02/vertical-viewpager/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="垂直滚动的ViewPager凡是找到我这篇文章的，肯定都在网上看过这样一篇文章[几行代码实现ViewPager垂直滚动]，地址我就不上了，随便一搜，到处都是，原理也很简单，交换一下横竖坐标，再设置一个上下的Transformer。然而，事情并没有想像的那么简单。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lefo.me/image/20190602/viewpager-src.jpg">
+<meta property="article:published_time" content="2019-06-02T09:49:00.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.656Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="android">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lefo.me/image/20190602/viewpager-src.jpg">
+
+
+<link rel="canonical" href="https://lefo.me/2019/06/02/vertical-viewpager/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2019/06/02/vertical-viewpager/","path":"2019/06/02/vertical-viewpager/","title":"垂直滚动的ViewPager存在滑动不灵敏的问题"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>垂直滚动的ViewPager存在滑动不灵敏的问题 | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9E%82%E7%9B%B4%E6%BB%9A%E5%8A%A8%E7%9A%84ViewPager"><span class="nav-number">1.</span> <span class="nav-text">垂直滚动的ViewPager</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ViewPager%E6%BB%9A%E5%8A%A8%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">ViewPager滚动源码解析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E9%80%9F%E7%8E%87%E4%B8%8D%E6%88%90%E5%8A%9F"><span class="nav-number">3.</span> <span class="nav-text">修改速率不成功</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8E%BB%E6%8E%89%E9%80%9F%E5%BA%A6%EF%BC%8C%E5%8F%AA%E5%88%A4%E6%96%AD%E8%B7%9D%E7%A6%BB"><span class="nav-number">4.</span> <span class="nav-text">去掉速度，只判断距离</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%B6%E5%AE%83"><span class="nav-number">5.</span> <span class="nav-text">其它</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2019/06/02/vertical-viewpager/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="垂直滚动的ViewPager存在滑动不灵敏的问题 | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          垂直滚动的ViewPager存在滑动不灵敏的问题
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-06-02 17:49:00" itemprop="dateCreated datePublished" datetime="2019-06-02T17:49:00+08:00">2019-06-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/android%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">android开发</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="垂直滚动的ViewPager"><a href="#垂直滚动的ViewPager" class="headerlink" title="垂直滚动的ViewPager"></a>垂直滚动的ViewPager</h1><p>凡是找到我这篇文章的，肯定都在网上看过这样一篇文章<code>[几行代码实现ViewPager垂直滚动]</code>，地址我就不上了，随便一搜，到处都是，原理也很简单，交换一下横竖坐标，再设置一个上下的<code>Transformer</code>。然而，事情并没有想像的那么简单。</p>
+<span id="more"></span>
+
+<h1 id="ViewPager滚动源码解析"><a href="#ViewPager滚动源码解析" class="headerlink" title="ViewPager滚动源码解析"></a>ViewPager滚动源码解析</h1><p>在我提交上面的交换xy坐标代码后，测试拿着手机过来找我了，出现的问题就是，必须慢慢的将当前页滑动过页面的一半，松手时，才能滚到上一页或者下一页。这就导致如果是大屏手机，用户会很难去到下一页。我本来是以为x y坐标的问题，跟踪源码后，发现并不是。</p>
+<p>在ViewPager中，滚动到上一页或者下一页的关键方法叫<code>determineTargetPage</code>，其中，如果是滚动到下一页，currentPage是当前页的position，如果是滚动到上一页，currentPage是上一页的position。</p>
+<p><img src="/image/20190602/viewpager-src.jpg" alt="image-20190602181111242"></p>
+<p>第一个if的逻辑是，先计算滑动距离和滑动的速度，如果超过了<code>mFlingDistance</code>和<code>mMininumVelocity</code>，再根据速度的正负值来判断方向，如果velocity &gt; 0，则说明是[向右滑]的手势（先不考虑更换xy坐标），也就是滑动到上一页，返回currentPage。(currentPage是上一页的position)。如果velocity &lt; 0，那就是[向左滑]的手势（先不考虑更换xy坐标），则是去到下一页。(currentPage是当前页的position)</p>
+<p>else中的逻辑是，当用户慢慢拖动后松开手，也就是滚动速度和滚动距离的条件没有同时满足。此时通过计算出的<code>truncator</code>来计算目标页，可以理解为<code>pageOffset</code>是<code>currentPage</code>进了屏幕多少多少，而truncator就是剩下多少时滑动的一个比例。举个例子：</p>
+<p>假如我们向下滑，上一页只露出了40%，那么pageOffset就是0.6，此时，0.6+0.6取整就是1，targetPage &#x3D; currentPage + 1，而因为此时currentPage是上一页，所以又回滚回去。同理，假如我们向上滑，currentPage是当前页，也需要把pageOffSet滑动到0.6的位置，才能到下一页。</p>
+<h1 id="修改速率不成功"><a href="#修改速率不成功" class="headerlink" title="修改速率不成功"></a>修改速率不成功</h1><p>找到了原理，就要修改了，起初我想着是，修改<code>mFlingDistance</code>和<code>mMininumVelocity</code>这两个值就好，因为这俩变量本身不支持修改，就把ViewPager的源码拷贝了一份。满心欢喜的做了个测试，失败，失败的原因，也比较蹊跷。</p>
+<p>MotionEvent有一个方法，叫setLocation，交换xy坐标的方法，正是采用调用该方法实现的。但是在viewPager中，通过调用VelocityTracker的getXVelocity方法时，不论你如何执行setLocation，最终计算出的velocity永远都是指着真正在屏幕X方向上滑动的速度，也就是此时并没有把y轴的速度转到x上。这部分应该是跟native内部实现有关。</p>
+<h1 id="去掉速度，只判断距离"><a href="#去掉速度，只判断距离" class="headerlink" title="去掉速度，只判断距离"></a>去掉速度，只判断距离</h1><p>既然速度废了，那就不判断速率了，只判断距离。于是代码被我改成了这样子。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="type">int</span> <span class="title function_">determineTargetPage</span><span class="params">(<span class="type">int</span> currentPage, <span class="type">float</span> pageOffset, <span class="type">int</span> velocity, <span class="type">int</span> deltaX)</span> &#123;</span><br><span class="line">       <span class="type">int</span> targetPage;</span><br><span class="line">       <span class="keyword">if</span> (Math.abs(deltaX) &gt; mFlingDistance) &#123;</span><br><span class="line">           targetPage = velocity &gt; <span class="number">0</span> ? currentPage : currentPage + <span class="number">1</span>;</span><br><span class="line">       &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">           <span class="keyword">final</span> <span class="type">float</span> <span class="variable">truncator</span> <span class="operator">=</span> currentPage &gt;= mCurItem ? <span class="number">0.9f</span> : <span class="number">0.1f</span>;</span><br><span class="line">           targetPage = currentPage + (<span class="type">int</span>) (pageOffset + truncator);</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (mItems.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">          <span class="keyword">final</span> <span class="type">ItemInfo</span> <span class="variable">firstItem</span> <span class="operator">=</span> mItems.get(<span class="number">0</span>);</span><br><span class="line">          <span class="keyword">final</span> <span class="type">ItemInfo</span> <span class="variable">lastItem</span> <span class="operator">=</span> mItems.get(mItems.size() - <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">          <span class="comment">// Only let the user target pages we have items for</span></span><br><span class="line">          targetPage = Math.max(firstItem.position, Math.min(targetPage, lastItem.position));</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">return</span> targetPage;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>此时，只判断了<code>mFlingDistance</code>，为了保险起见，我又将else中的代码，计算truncator时，改成了0.8和0.2。也就是当上一页或者下一页露出10%以上时，则滚动到相应的页面。代码是周末前提交的，写这篇博客是在周末，暂没有产品和测试的体验结果。</p>
+<h1 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h1><p>复制ViewPager.java的时候，PagerAdapter有一个方法是setViewPagerObserver，因为这个方法是不允许访问的，这里可以改成registerDataSetObserver和unregisterDataSetObserver</p>
+<p>google已经出了viewpager2了</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/android/" rel="tag"># android</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/03/29/jenkins-android-2/" rel="prev" title="使用jenkins为android工程打包，支持多包名，改资源（踩坑指南）">
+                  <i class="fa fa-angle-left"></i> 使用jenkins为android工程打包，支持多包名，改资源（踩坑指南）
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/07/02/target-sdk-26/" rel="next" title="升级targetSdkVersion为26以后">
+                  升级targetSdkVersion为26以后 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

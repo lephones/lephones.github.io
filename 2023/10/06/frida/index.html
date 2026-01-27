@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="前言大概半个月前，群里的一个小伙伴问，谁能把某电商APP的订单列表导出到电脑，有个私活，报个价。其实我对这种稍微有点了解，无非是抓包，破解。但通常App的网络请求会有一套签名验证机制，所以要想模拟出整套请求流程，也算比较复杂。和群里的讨论后，觉得用hook做合适，但群里和我一样，都是安卓开发，没有逆向工程师，首先想到的是xposed。 xposed太重我之前倒是写过xposed，xposed缺点有">
+<meta property="og:type" content="article">
+<meta property="og:title" content="第一次尝试frida">
+<meta property="og:url" content="https://lefo.me/2023/10/06/frida/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="前言大概半个月前，群里的一个小伙伴问，谁能把某电商APP的订单列表导出到电脑，有个私活，报个价。其实我对这种稍微有点了解，无非是抓包，破解。但通常App的网络请求会有一套签名验证机制，所以要想模拟出整套请求流程，也算比较复杂。和群里的讨论后，觉得用hook做合适，但群里和我一样，都是安卓开发，没有逆向工程师，首先想到的是xposed。 xposed太重我之前倒是写过xposed，xposed缺点有">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-10-06T15:31:26.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.657Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="android">
+<meta property="article:tag" content="frida">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/2023/10/06/frida/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2023/10/06/frida/","path":"2023/10/06/frida/","title":"第一次尝试frida"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>第一次尝试frida | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#xposed%E5%A4%AA%E9%87%8D"><span class="nav-number">2.</span> <span class="nav-text">xposed太重</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Frida"><span class="nav-number">3.</span> <span class="nav-text">Frida</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA"><span class="nav-number">3.1.</span> <span class="nav-text">环境搭建</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B3%A8%E5%85%A5js%EF%BC%8Chook"><span class="nav-number">3.2.</span> <span class="nav-text">注入js，hook</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E4%BA%8Efrida%E7%9A%84%E8%AF%AD%E6%B3%95%EF%BC%8C%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D%E4%B8%80%E4%B8%AA%E5%B8%B8%E7%94%A8%E7%9A%84%EF%BC%8C%E5%89%A9%E4%B8%8B%E7%9A%84%E4%B8%8A%E5%AE%98%E7%BD%91%E6%9F%A5%E3%80%82"><span class="nav-number">3.3.</span> <span class="nav-text">关于frida的语法，简单介绍一个常用的，剩下的上官网查。</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2023/10/06/frida/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="第一次尝试frida | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          第一次尝试frida
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-10-06 23:31:26" itemprop="dateCreated datePublished" datetime="2023-10-06T23:31:26+08:00">2023-10-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/android/" itemprop="url" rel="index"><span itemprop="name">android</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>大概半个月前，群里的一个小伙伴问，谁能把某电商APP的订单列表导出到电脑，有个私活，报个价。其实我对这种稍微有点了解，无非是抓包，破解。但通常App的网络请求会有一套签名验证机制，所以要想模拟出整套请求流程，也算比较复杂。和群里的讨论后，觉得用hook做合适，但群里和我一样，都是安卓开发，没有逆向工程师，首先想到的是xposed。</p>
+<h1 id="xposed太重"><a href="#xposed太重" class="headerlink" title="xposed太重"></a>xposed太重</h1><p>我之前倒是写过xposed，xposed缺点有两个，第一就是环境复杂，你得安装xposed环境才可以，目前都是通过virtual xposed来使用。再就是插件一但有修改，就得重启手机。不过这也带来了一个有点就是持久化，只要装进去，就一直存在。那有没有更轻量级的工具可以达到这种效果，后来在网上找到了frida。(这也好几年了，我居然不知道)</p>
+<span id="more"></span>
+
+<h1 id="Frida"><a href="#Frida" class="headerlink" title="Frida"></a>Frida</h1><p>官网<br><a target="_blank" rel="noopener" href="https://github.com/frida/frida/releases">https://github.com/frida/frida/releases</a><br><a target="_blank" rel="noopener" href="https://frida.re/">https://frida.re</a></p>
+<h2 id="环境搭建"><a href="#环境搭建" class="headerlink" title="环境搭建"></a>环境搭建</h2><p>Frida分为客户端(电脑) + 服务端(手机端)。</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">pip3 install frida</span><br><span class="line">pip3 install frida-tools</span><br><span class="line"><span class="comment"># 安装完成后运行，查看是否安装成功，有进程输出说明成功</span></span><br><span class="line">frida-ps -U</span><br></pre></td></tr></table></figure>
+
+<p>下载服务端程序到手机(模拟器)，必须有root权限。下载时注意选择你对应平台的frida-server</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">adb push frida-server /data/local/tmp/</span><br><span class="line">adb shell</span><br><span class="line">su</span><br><span class="line"><span class="built_in">chmod</span> 777 /data/local/tmp/frida-server</span><br><span class="line">/data/local/tmp/frida-server</span><br></pre></td></tr></table></figure>
+<h2 id="注入js，hook"><a href="#注入js，hook" class="headerlink" title="注入js，hook"></a>注入js，hook</h2><p>举一个hook okhttp的例子，okhttp的响应信息都打印出来。在电脑上新建一个test.js</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// test.js  hook okhttp 因为okhttp的response只能消费一次，为了不影响默认的程序，将buffer复制一份</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">get_http</span>(<span class="params"></span>)&#123;</span><br><span class="line">    <span class="title class_">Java</span>.<span class="title function_">perform</span>(<span class="keyword">function</span> (<span class="params"></span>)&#123;</span><br><span class="line">        <span class="keyword">var</span> <span class="title class_">RealCall</span> = <span class="title class_">Java</span>.<span class="title function_">use</span>(<span class="string">&quot;okhttp3.RealCall&quot;</span>);</span><br><span class="line">        <span class="keyword">var</span> <span class="title class_">Buffer</span> = <span class="title class_">Java</span>.<span class="title function_">use</span>(<span class="string">&quot;okio.Buffer&quot;</span>);</span><br><span class="line">        <span class="keyword">var</span> <span class="title class_">ResponseBody</span> = <span class="title class_">Java</span>.<span class="title function_">use</span>(<span class="string">&quot;okhttp3.ResponseBody&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="title class_">RealCall</span>.<span class="property">getResponseWithInterceptorChain</span>.<span class="title function_">overload</span>().<span class="property">implementation</span> = <span class="keyword">function</span> (<span class="params"></span>) &#123;</span><br><span class="line">            <span class="keyword">var</span> response =  <span class="variable language_">this</span>.<span class="title function_">getResponseWithInterceptorChain</span>();</span><br><span class="line">            <span class="keyword">var</span> responseBody = response.<span class="title function_">body</span>();</span><br><span class="line"></span><br><span class="line">            <span class="keyword">var</span> buffer = <span class="title class_">Buffer</span>.$new();</span><br><span class="line">            responseBody.<span class="title function_">source</span>().<span class="title function_">readAll</span>(buffer);</span><br><span class="line">            <span class="keyword">var</span> responseBodyString = buffer.<span class="title function_">readUtf8</span>();</span><br><span class="line">            <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;HTTP Request -&gt; &quot;</span> + <span class="variable language_">this</span>.<span class="title function_">request</span>().<span class="title function_">url</span>().<span class="title function_">toString</span>());</span><br><span class="line">            <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;HTTP Response -&gt; &quot;</span> + responseBodyString);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">var</span> builder = response.<span class="title function_">newBuilder</span>();</span><br><span class="line"></span><br><span class="line">            <span class="keyword">var</span> newResponse = builder.<span class="title function_">body</span>(<span class="title class_">ResponseBody</span>.<span class="title function_">create</span>(responseBody.<span class="title function_">contentType</span>(), responseBodyString)).<span class="title function_">build</span>();</span><br><span class="line">            <span class="keyword">return</span> newResponse;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>启动服务端后，在客户端(电脑)上运行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># U是USB F是当前app，这里用-n也不会重启(frida-ps查到的名字)，用-f 包名 会重启app</span><br><span class="line">frida -UF test.js</span><br><span class="line"># 运行后，会进入frida，我们还需要输入具体js函数，比如get_http()</span><br><span class="line">get_http()</span><br></pre></td></tr></table></figure>
+<h2 id="关于frida的语法，简单介绍一个常用的，剩下的上官网查。"><a href="#关于frida的语法，简单介绍一个常用的，剩下的上官网查。" class="headerlink" title="关于frida的语法，简单介绍一个常用的，剩下的上官网查。"></a>关于frida的语法，简单介绍一个常用的，剩下的上官网查。</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">var Class = Java.use(&quot;class name&quot;);</span><br><span class="line">Class.method.overload(&quot;param class name&quot;).implementation = function( param) &#123;</span><br><span class="line">    # param.xxxx</span><br><span class="line">    # console.log(&quot;&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/android/" rel="tag"># android</a>
+              <a href="/tags/frida/" rel="tag"># frida</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2023/08/08/kotlin-coroutine/" rel="prev" title="重学安卓之kotlin协程">
+                  <i class="fa fa-angle-left"></i> 重学安卓之kotlin协程
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2024/01/30/jetpack/" rel="next" title="重学安卓之Jetpack">
+                  重学安卓之Jetpack <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

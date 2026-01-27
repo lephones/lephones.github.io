@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="前言上一篇说到nx54路由器如何在官方防火墙上加一个自己主机允许访问的规则，在不关闭防火墙的情况下，还能走ipv6访问到内网设备，里面有提到ipv6地址变化的问题。这篇主要说说ipv6变化后如何通知你，通知路由器，以及一部分nginx配置心得。 ip变化通知，同时更新路由防火墙规则 注意以下所说的ip都是指ipv6，因为ipv4内网地址可以直接和mac地址绑定，不用通知你。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nx54的ipv6配置nas，内网穿透访问，nxginx、DDNS都在这里">
+<meta property="og:url" content="https://lefo.me/2024/11/18/nas-ipv6/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="前言上一篇说到nx54路由器如何在官方防火墙上加一个自己主机允许访问的规则，在不关闭防火墙的情况下，还能走ipv6访问到内网设备，里面有提到ipv6地址变化的问题。这篇主要说说ipv6变化后如何通知你，通知路由器，以及一部分nginx配置心得。 ip变化通知，同时更新路由防火墙规则 注意以下所说的ip都是指ipv6，因为ipv4内网地址可以直接和mac地址绑定，不用通知你。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-11-18T04:52:33.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.658Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="nas">
+<meta property="article:tag" content="ipv6">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/2024/11/18/nas-ipv6/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2024/11/18/nas-ipv6/","path":"2024/11/18/nas-ipv6/","title":"nx54的ipv6配置nas，内网穿透访问，nxginx、DDNS都在这里"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>nx54的ipv6配置nas，内网穿透访问，nxginx、DDNS都在这里 | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ip%E5%8F%98%E5%8C%96%E9%80%9A%E7%9F%A5%EF%BC%8C%E5%90%8C%E6%97%B6%E6%9B%B4%E6%96%B0%E8%B7%AF%E7%94%B1%E9%98%B2%E7%81%AB%E5%A2%99%E8%A7%84%E5%88%99"><span class="nav-number">2.</span> <span class="nav-text">ip变化通知，同时更新路由防火墙规则</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#nginx-alist"><span class="nav-number">3.</span> <span class="nav-text">nginx &amp; alist</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ssl-ddns"><span class="nav-number">4.</span> <span class="nav-text">ssl &amp; ddns</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#ssl"><span class="nav-number">4.1.</span> <span class="nav-text">ssl</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ddns"><span class="nav-number">4.2.</span> <span class="nav-text">ddns</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2024/11/18/nas-ipv6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="nx54的ipv6配置nas，内网穿透访问，nxginx、DDNS都在这里 | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          nx54的ipv6配置nas，内网穿透访问，nxginx、DDNS都在这里
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2024-11-18 12:52:33" itemprop="dateCreated datePublished" datetime="2024-11-18T12:52:33+08:00">2024-11-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/nx54/" itemprop="url" rel="index"><span itemprop="name">nx54</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>上一篇说到nx54路由器如何在官方防火墙上加一个自己主机允许访问的规则，在不关闭防火墙的情况下，还能走ipv6访问到内网设备，里面有提到ipv6地址变化的问题。这篇主要说说ipv6变化后如何通知你，通知路由器，以及一部分nginx配置心得。</p>
+<h1 id="ip变化通知，同时更新路由防火墙规则"><a href="#ip变化通知，同时更新路由防火墙规则" class="headerlink" title="ip变化通知，同时更新路由防火墙规则"></a>ip变化通知，同时更新路由防火墙规则</h1><blockquote>
+<p>注意以下所说的ip都是指ipv6，因为ipv4内网地址可以直接和mac地址绑定，不用通知你。</p>
+</blockquote>
+<span id="more"></span>
+<p>我发现新固件在重启设备后，ip也不会变了，这算是一个好事吧，也不用经常更新ip地址。不过，以防正需用的时候ip地址变化。我使用的是python脚本，当检测到ip变化，就向我的邮箱发送一封email。(你也可以直接做DDNS，自己写api调用脚本或者ddns-go)。有几点要求：</p>
+<ol>
+<li>你的邮箱开通smtp，smtp是一个用于发邮件的，一般在邮箱的设置页。</li>
+<li>你的路由已经常开telnet，参考之前的文章，我因为找到了常开方式，直接常开了。<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># coding=utf-8</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> socket  </span><br><span class="line"><span class="keyword">import</span> smtplib  </span><br><span class="line"><span class="keyword">import</span> subprocess </span><br><span class="line"><span class="keyword">import</span> os  </span><br><span class="line"><span class="keyword">import</span> telnetlib</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> email.mime.text <span class="keyword">import</span> MIMEText  </span><br><span class="line"><span class="keyword">from</span> email.mime.multipart <span class="keyword">import</span> MIMEMultipart  </span><br><span class="line"></span><br><span class="line"><span class="comment"># Telnet 连接信息</span></span><br><span class="line">HOST = <span class="string">&quot;192.168.124.1&quot;</span> <span class="comment"># 路由的ip</span></span><br><span class="line">PORT = <span class="number">15000</span></span><br><span class="line">PASSWORD = <span class="string">&quot;password&quot;</span>  <span class="comment"># 替换为实际密码</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置发件人和收件人信息  </span></span><br><span class="line">sender_email = <span class="string">&#x27;发件邮箱&#x27;</span></span><br><span class="line">password = <span class="string">&#x27;smtp password&#x27;</span>  <span class="comment"># 一般都有SMTP应用专用密码 </span></span><br><span class="line"><span class="comment"># 设置SMTP服务器地址和端口  我使用的是126，qq和网易都支持SSL，能避免密码明文传输</span></span><br><span class="line">smtp_server = <span class="string">&#x27;smtp.126.com&#x27;</span>  </span><br><span class="line">smtp_port = <span class="number">465</span>  <span class="comment"># 通常是587用于TLS或465用于SSL  SMTP默认是25，但是25不加密，我们使用SSL，网易支持SSL</span></span><br><span class="line">receiver_email = <span class="string">&#x27;接收ip的邮箱&#x27;</span>  </span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建一个socket对象  主要是为了获取主机名，其实没什么用</span></span><br><span class="line">sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)  </span><br><span class="line"></span><br><span class="line">save_ip = <span class="string">&#x27;&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">save_ip_string_to_file</span>(<span class="params">ip_string, filename=<span class="string">&quot;ip_string.txt&quot;</span></span>):  </span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(filename, <span class="string">&quot;w&quot;</span>) <span class="keyword">as</span> file:  </span><br><span class="line">        file.write(ip_string)  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">check_ip_string_in_file</span>(<span class="params">ip_string, filename=<span class="string">&quot;ip_string.txt&quot;</span></span>):</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(filename):</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">    <span class="keyword">else</span> :  </span><br><span class="line">        <span class="keyword">with</span> <span class="built_in">open</span>(filename, <span class="string">&quot;r&quot;</span>) <span class="keyword">as</span> file:  </span><br><span class="line">            file_content = file.read()  </span><br><span class="line">            <span class="keyword">return</span> file_content == ip_string </span><br><span class="line">    </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_host_name</span>():</span><br><span class="line">    <span class="comment"># 获取主机名  </span></span><br><span class="line">    host_name = socket.gethostname()  </span><br><span class="line">    <span class="keyword">return</span> host_name</span><br><span class="line">  </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_ipv6_addresses</span>():  </span><br><span class="line">    <span class="comment"># 执行ip -6 addr命令获取IPv6地址信息  </span></span><br><span class="line">    result = subprocess.run([<span class="string">&#x27;ip&#x27;</span>, <span class="string">&#x27;-6&#x27;</span>, <span class="string">&#x27;addr&#x27;</span>], capture_output=<span class="literal">True</span>, text=<span class="literal">True</span>)  </span><br><span class="line">    <span class="comment">#result = subprocess.run([&#x27;ip&#x27;, &#x27;-6&#x27;, &#x27;addr&#x27;], stdout=subprocess.PIPE, stdin=subprocess.PIPE, universal_newlines=True)   #python 3.6</span></span><br><span class="line">    <span class="keyword">if</span> result.returncode != <span class="number">0</span>:  </span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Error executing ip command&quot;</span>)  </span><br><span class="line">        <span class="keyword">return</span> []  </span><br><span class="line">      </span><br><span class="line">    <span class="comment"># 解析输出以获取IPv6地址  </span></span><br><span class="line">    lines = result.stdout.split(<span class="string">&#x27;\n&#x27;</span>)  </span><br><span class="line">    ipv6_addresses = []  </span><br><span class="line">    <span class="keyword">for</span> line <span class="keyword">in</span> lines:  </span><br><span class="line">        <span class="keyword">if</span> <span class="string">&#x27;inet6&#x27;</span> <span class="keyword">in</span> line <span class="keyword">and</span> <span class="string">&#x27;dynamic mngtmpaddr noprefixroute&#x27;</span> <span class="keyword">in</span> line <span class="keyword">and</span> <span class="string">&#x27; deprecated &#x27;</span> <span class="keyword">not</span> <span class="keyword">in</span> line:  </span><br><span class="line">            <span class="comment"># 查找inet6行中的IPv6地址  </span></span><br><span class="line">            address = line.split(<span class="string">&#x27;inet6 &#x27;</span>)[<span class="number">1</span>].split(<span class="string">&#x27;/&#x27;</span>)[<span class="number">0</span>].strip()  </span><br><span class="line">            <span class="keyword">if</span> address != <span class="string">&#x27;::1&#x27;</span>:  <span class="comment"># 忽略本地回环地址  </span></span><br><span class="line">                ipv6_addresses.append(address)  </span><br><span class="line">               <span class="comment"># if ipv6_addresses.count() &gt; 5 :</span></span><br><span class="line">               <span class="comment">#     break;</span></span><br><span class="line">      </span><br><span class="line">    <span class="keyword">return</span> ipv6_addresses </span><br><span class="line">        </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">send_email</span>(<span class="params">title, content</span>) :</span><br><span class="line">    <span class="comment"># 创建邮件对象  </span></span><br><span class="line">    msg = MIMEMultipart()  </span><br><span class="line">    msg[<span class="string">&#x27;From&#x27;</span>] = sender_email  </span><br><span class="line">    msg[<span class="string">&#x27;To&#x27;</span>] = receiver_email  </span><br><span class="line">    msg[<span class="string">&#x27;Subject&#x27;</span>] = title</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 添加邮件正文  </span></span><br><span class="line">    body = content</span><br><span class="line">    msg.attach(MIMEText(body, <span class="string">&#x27;plain&#x27;</span>))  </span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 创建SMTP对象并发送邮件  </span></span><br><span class="line">    <span class="keyword">with</span> smtplib.SMTP_SSL(smtp_server, smtp_port) <span class="keyword">as</span> server:  </span><br><span class="line">        <span class="comment">#server.starttls()  # 启动TLS加密  </span></span><br><span class="line">        server.login(sender_email, password)  <span class="comment"># 登录邮箱  </span></span><br><span class="line">        text = msg.as_string()  <span class="comment"># 将邮件对象转换为字符串  </span></span><br><span class="line">        server.sendmail(sender_email, receiver_email, text)  <span class="comment"># 发送邮件  </span></span><br><span class="line">        server.quit()  <span class="comment"># 关闭连接  </span></span><br><span class="line">    </span><br><span class="line"><span class="comment">#    print(&quot;邮件发送成功！&quot;)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">change_ip6tables</span>(<span class="params">ip6_addr</span>):</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="comment"># 连接到目标主机</span></span><br><span class="line">        tn = telnetlib.Telnet(HOST, <span class="number">15000</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Connected to <span class="subst">&#123;HOST&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 等待并输入密码</span></span><br><span class="line">        <span class="comment">#tn.read_until(b&quot;Password: &quot;)</span></span><br><span class="line">        time.sleep(<span class="number">3</span>)</span><br><span class="line">        tn.write(PASSWORD.encode(<span class="string">&#x27;ascii&#x27;</span>) + <span class="string">b&quot;\n&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Password entered&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 执行 debugshell 命令</span></span><br><span class="line">        tn.write(<span class="string">b&quot;debugshell\n&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Entered debugshell&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 执行 ip6tables -F forwarding_rule 命令</span></span><br><span class="line">        time.sleep(<span class="number">2</span>)</span><br><span class="line">        tn.write(<span class="string">b&quot;ip6tables -F forwarding_rule\n&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Flushed forwarding_rule&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 执行 ip6tables -A forwarding_rule -d device_ipv6 -j ACCEPT 命令</span></span><br><span class="line">        time.sleep(<span class="number">2</span>)</span><br><span class="line">        add_rule_command = <span class="string">f&quot;ip6tables -A forwarding_rule -d <span class="subst">&#123;ip6_addr&#125;</span> -j ACCEPT\n&quot;</span></span><br><span class="line">        tn.write(add_rule_command.encode(<span class="string">&#x27;ascii&#x27;</span>))</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Added ACCEPT rule for <span class="subst">&#123;ip6_addr&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 读取命令输出</span></span><br><span class="line">        time.sleep(<span class="number">2</span>)</span><br><span class="line">        output = tn.read_very_eager().decode(<span class="string">&#x27;ascii&#x27;</span>)</span><br><span class="line">        <span class="comment">#print(&quot;Command output:\n&quot;, output)</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 关闭连接</span></span><br><span class="line">        tn.write(<span class="string">b&quot;exit\n&quot;</span>)</span><br><span class="line">        tn.close()</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;Connection closed&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&quot;Error: <span class="subst">&#123;e&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line">    host_name = get_host_name()</span><br><span class="line">    <span class="comment"># 获取并打印IPv6地址  </span></span><br><span class="line">    ipv6_addrs = get_ipv6_addresses()  </span><br><span class="line">    result = <span class="string">&#x27;\n&#x27;</span>.join(ipv6_addrs)</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;IPv6地址: <span class="subst">&#123;result&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> check_ip_string_in_file(result) :</span><br><span class="line">        save_ip_string_to_file(result)</span><br><span class="line">        send_email(host_name + <span class="string">&#x27; ip &#x27;</span>,result)</span><br><span class="line">        change_ip6tables(result)</span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+简单说一下上面的逻辑，获取ip地址，当前目录会保存一个ip_string.txt，用来保存上一次获取的ip，如果不一致，就发送email，更新路由防火墙规则，同时保存新ip。获取ip其实是执行了一条 ip -6 addr 的指令，这条指令能获取多条ip，大部分是temp的，我过滤ip的条件有点冗余，可以根据自己要求配置。</li>
+</ol>
+<p>另外，我的脚本有一点点弊端，就是telnet联过路由后，后面是不用再输入密码的，但这里多输了一次，无伤大雅，毕竟你的密码不是一个可执行命令。</p>
+<p>使用crontab -e，将你的脚本添加到定时任务自动执行，关于定时任务的配置，就不讲了。</p>
+<h1 id="nginx-alist"><a href="#nginx-alist" class="headerlink" title="nginx &amp; alist"></a>nginx &amp; alist</h1><blockquote>
+<p>关于SSH访问及控制，参考之前的文章。</p>
+</blockquote>
+<p>因为我主要是为了方便存储文件，跑了个alist，其实alist也是够用的，不用再装nginx，但有nginx，配置可以更灵活。alist支持otp动态密码，配合前面的email接收邮件，足够使用了。不过http毕竟是明文传输，我为了安全起见，还是装了ssl证书。我看alist的配置有ssl证书，但最后还是采用了nginx的反向代理，根据server控制更方便,内网外网控制更灵活。</p>
+<p>如果你没有域名，搭建好后使用ip访问，也可以，但是let‘s encrypt的https就不能支持了，为了方便还是建议大家注册一个域名。</p>
+<p>自己建服务器主要涉及以下几个问题：</p>
+<ol>
+<li>你的服务不要搭建在常规端口上。(80 443 445端口封锁，这三个通常用于http https smb协议。)</li>
+<li>域名在国外服务商注册，且不要使用国内dns加速服务 (可能会有上报，当然流量追踪也可能被查。)</li>
+<li>添加ssl (http是明文传输，尽量使用https)</li>
+</ol>
+<p>综上所述，大概配置要做到如下几点：</p>
+<ol>
+<li>alist的address配置为127.0.0.1，这样公网ip访问不到你的主alist服务。本来想再加内网ip，我尝试了一下，alist不能指定多个address，所以用反向代理。</li>
+<li>nginx配置一个ssl server，server_name可以绑定你的域名，也可以写_。</li>
+<li>nginx配置一个http server，端口可以是80，server_name使用你192.168.124.x的ipv4地址，供你内网访问。</li>
+<li>以上两个nginx，全使用反向代理连接到alist，反向代理在alist的文档里有。</li>
+</ol>
+<p>做完以上操作，能达到的效果是：外网通过https走加密通道访问(注意端口)，内网可以直接通过192.168.124.x走http直接访问。</p>
+<h1 id="ssl-ddns"><a href="#ssl-ddns" class="headerlink" title="ssl &amp; ddns"></a>ssl &amp; ddns</h1><p>没关系的两个内容为什么放一起写，因为ssl签发证书，只能通过dns认证，其它的方式要求80端口开放。</p>
+<h2 id="ssl"><a href="#ssl" class="headerlink" title="ssl"></a>ssl</h2><ol>
+<li>使用certbot，或者acme.sh申请证书，有效期90天。</li>
+<li>因为80被封，只能手动改dns认证。它会要求你加一条txt解析，续期值会不一样。</li>
+<li>如果你的域名服务商是cloudflare，有插件支持，没插件的服务商需要自己申请一下key，发请求。顺带说一下，godaddy的dns api大陆访问不了。</li>
+<li>如果你能做了dns自动认证，那就加到crontab -e上，定时自动续期，这里不要太频繁，因为有效期有90天，可以两个月续一次。</li>
+</ol>
+<p>如果你脚本搞不定，90天手动更新一次也是可以的。</p>
+<h2 id="ddns"><a href="#ddns" class="headerlink" title="ddns"></a>ddns</h2><p>如果你上面dns的一步搞定了，推荐你使用你的脚本，结合之前获取ip，自己做ddns。小白就使用ddns-go吧。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/nas/" rel="tag"># nas</a>
+              <a href="/tags/ipv6/" rel="tag"># ipv6</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2024/11/10/nx54-ip6tables/" rel="prev" title="H3C NX54不关ipv6防火墙，允许外网访问内网">
+                  <i class="fa fa-angle-left"></i> H3C NX54不关ipv6防火墙，允许外网访问内网
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2024/12/31/sm3-totp/" rel="next" title="GmSSL中的totp">
+                  GmSSL中的totp <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

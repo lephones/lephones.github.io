@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="前言之前买了一台NX54路由器，结果这路由固件完全不给用户定制化的机会，研究如何保存ip6table的配置没有成功，但是成功保存了telnet开启配置，分享一下。这套固件的情况如下:  默认开启ipv6防火墙，且关闭后，重启会失效，再次打开。 可以通过telnet连接路由，telnet配置也不保存，停电或者重启后失效。 根目录使用overlayfs做到了tmp下，是整个系统会恢复的主要原因。 提供">
+<meta property="og:type" content="article">
+<meta property="og:title" content="H3C NX54路由器如何永久开telnet，永久关闭ipv6防火墙">
+<meta property="og:url" content="https://lefo.me/2024/02/20/nx54-telnet/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="前言之前买了一台NX54路由器，结果这路由固件完全不给用户定制化的机会，研究如何保存ip6table的配置没有成功，但是成功保存了telnet开启配置，分享一下。这套固件的情况如下:  默认开启ipv6防火墙，且关闭后，重启会失效，再次打开。 可以通过telnet连接路由，telnet配置也不保存，停电或者重启后失效。 根目录使用overlayfs做到了tmp下，是整个系统会恢复的主要原因。 提供">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-02-20T03:17:40.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.658Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="h3c">
+<meta property="article:tag" content="nx54">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/2024/02/20/nx54-telnet/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2024/02/20/nx54-telnet/","path":"2024/02/20/nx54-telnet/","title":"H3C NX54路由器如何永久开telnet，永久关闭ipv6防火墙"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>H3C NX54路由器如何永久开telnet，永久关闭ipv6防火墙 | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%B3%E9%97%ADipv6%E9%98%B2%E7%81%AB%E5%A2%99"><span class="nav-number">2.</span> <span class="nav-text">关闭ipv6防火墙</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%B0%B8%E4%B9%85%E5%BC%80telnet"><span class="nav-number">3.</span> <span class="nav-text">永久开telnet</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E7%90%86"><span class="nav-number">3.1.</span> <span class="nav-text">原理</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%B7%E4%BD%93%E6%93%8D%E4%BD%9C"><span class="nav-number">4.</span> <span class="nav-text">具体操作</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BF%AB%E9%80%9F%E6%96%B9%E6%B3%95"><span class="nav-number">4.1.</span> <span class="nav-text">快速方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E5%B8%A6%E4%B8%AD%E6%96%87%E6%88%96%E8%80%85%E6%A0%BC%E5%BC%8F%E9%94%99%E8%AF%AF%E7%9A%84%E6%89%8B%E5%8A%A8%E5%A4%84%E7%90%86%E6%96%B9%E6%B3%95"><span class="nav-number">4.2.</span> <span class="nav-text">配置文件带中文或者格式错误的手动处理方法</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%B3%A8%E6%84%8F"><span class="nav-number">5.</span> <span class="nav-text">注意</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%90%8E%E8%AE%B0"><span class="nav-number">6.</span> <span class="nav-text">后记</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2024/02/20/nx54-telnet/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="H3C NX54路由器如何永久开telnet，永久关闭ipv6防火墙 | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          H3C NX54路由器如何永久开telnet，永久关闭ipv6防火墙
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2024-02-20 11:17:40" itemprop="dateCreated datePublished" datetime="2024-02-20T11:17:40+08:00">2024-02-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/nx54/" itemprop="url" rel="index"><span itemprop="name">nx54</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>之前买了一台NX54路由器，结果这路由固件完全不给用户定制化的机会，研究如何保存ip6table的配置没有成功，但是成功保存了telnet开启配置，分享一下。这套固件的情况如下:</p>
+<ol>
+<li>默认开启ipv6防火墙，且关闭后，重启会失效，再次打开。</li>
+<li>可以通过telnet连接路由，telnet配置也不保存，停电或者重启后失效。</li>
+<li>根目录使用overlayfs做到了tmp下，是整个系统会恢复的主要原因。</li>
+<li>提供了&#x2F;mnt目录保存数据，&#x2F;mnt&#x2F;bak&#x2F;startup.bak就是所有配置项。<span id="more"></span></li>
+</ol>
+<h1 id="关闭ipv6防火墙"><a href="#关闭ipv6防火墙" class="headerlink" title="关闭ipv6防火墙"></a>关闭ipv6防火墙</h1><ol>
+<li>访问http:&#x2F;&#x2F;[ip]&#x2F;debug.asp</li>
+<li>向下拉，找到telnet管理，勾选启动telnet，点旁边应用</li>
+<li>在命令行执行如下命令，关闭ipv6防火墙<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">telnet &lt;路由ip&gt; 15000</span><br><span class="line"><span class="comment"># 输入密码</span></span><br><span class="line">&lt;your password&gt;</span><br><span class="line"><span class="comment"># &lt;H3C_NX54&gt;后输入 debugshell</span></span><br><span class="line">debugshell</span><br><span class="line">ip6tables -D FORWARD -j ACCEPT</span><br><span class="line">ip6tables -I FORWARD -j ACCEPT</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h1 id="永久开telnet"><a href="#永久开telnet" class="headerlink" title="永久开telnet"></a>永久开telnet</h1><h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><ol>
+<li>系统保存有一份配置文件，重启后会根据这份配置文件恢复配置。</li>
+<li>配置文件格式如下 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;md5&gt; /var/run/.tmpcfg</span><br><span class="line">&lt;版本&gt;</span><br><span class="line">&lt;具体配置...&gt;</span><br></pre></td></tr></table></figure></li>
+<li>其中md5用于校验整个文件，就是从版本号开始，后续所有配置计算得到的。</li>
+<li>后续有个telnetenable&#x3D;的配置，但系统做了特殊设定，后台修改telnet并不会保存到配置中，导致telnet不能自动开，这里我们就需要手动修改配置文件。</li>
+<li>修改后，替换md5摘要，整个配置就是一个有效配置。</li>
+</ol>
+<p>流程简单如下，移除第一行 -&gt; 计算md5 -&gt; md5重新加到第一行。</p>
+<h1 id="具体操作"><a href="#具体操作" class="headerlink" title="具体操作"></a>具体操作</h1><h2 id="快速方法"><a href="#快速方法" class="headerlink" title="快速方法"></a><del>快速方法</del></h2><p>本方法只适合配置纯英文，不支持配置文件中有中文，如果失败，可以尝试下一节的手动处理方法。</p>
+<ul>
+<li><a href="/html/nx54config.html"><strong>NX54开启telnet配置生成器</strong></a>(输入所有配置文件内容，网页会帮你修改)</li>
+<li><a href="/html/md5.html">md5在线计算</a>(注意本站会计算所有内容的md5，这里用不上，只做参考)<br>我搭建了一个网页，只要把路由的配置复制过来，就会生成开telnet的新配置。网页纯静态，不会向外发送你的任何配置信息，纯javascript本地运行的，这里教如何用网页转化配置。配置信息里有宽带密码账号，如果实在不放心我，下一个大标题的环节是纯手动改。</li>
+</ul>
+<ol>
+<li>登录路由后台，设备管理 -&gt; 基本管理，备份，下载完成后，复制一份(防止万一需要初始化后恢复得再配置)。</li>
+<li>用文本编辑器打开下载的文件</li>
+<li>复制所有内容到 <a href="/html/nx54config.html">NX54开启telnet配置生成器</a> 左侧，在右侧会生成一份新配置。</li>
+<li>点<code>COPY</code>，替换掉原配置文件内容，保存。</li>
+<li>路由后台，选择文件，恢复。</li>
+<li>等重启后，telnet就永久开了。接下来我们写一个shell，自动执行telnet并开ipv6，这些内容就自己找文心一言或者chatgpt生成吧。</li>
+</ol>
+<h2 id="配置文件带中文或者格式错误的手动处理方法"><a href="#配置文件带中文或者格式错误的手动处理方法" class="headerlink" title="配置文件带中文或者格式错误的手动处理方法"></a>配置文件带中文或者格式错误的手动处理方法</h2><p><strong>推荐，用上面的网页更快，但是配置中不得含有中文，否则生成的文件验证不通过。这里只是把流程纯手动，原理一样，但支持特殊符号、中文。</strong><br><strong><a href="/html/filemd5.html">文件md5计算</a></strong></p>
+<ol>
+<li>登录路由后台，设备管理 -&gt; 基本管理，备份，下载完成后，复制一份备份(防止万一需要初始化后恢复得再配置)。</li>
+<li>打开如下 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">5f0521762cfa7553351d4173706b4c99  /var/run/.tmpcfg</span><br><span class="line">NX54/NX54V100D011</span><br><span class="line">....</span><br></pre></td></tr></table></figure></li>
+<li>找到<code>telnetenable=</code>，将&#x3D;后面的内容改为enable，保存。 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">@telnet</span><br><span class="line">#</span><br><span class="line">    telnetenable=enable</span><br></pre></td></tr></table></figure></li>
+<li>删除第一行，只保留第二行<code>NX54/NX54V100D011</code>开始及后面内容，保存文件。</li>
+<li>打开<a href="/html/filemd5.html">文件md5计算</a>计算，你也可以验证一下修改前的md5。</li>
+<li>将生成的md5再次粘贴到第一行替换原md5(注意一定是小写) <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">新md5 /var/run/.tmpcfg</span><br><span class="line">NX54/NX54V100D011</span><br><span class="line">...</span><br><span class="line">@telnet</span><br><span class="line">#</span><br><span class="line">    telnetenable=enable</span><br><span class="line">...</span><br></pre></td></tr></table></figure></li>
+<li>去路由后台，备份那里找从文件中恢复设置信息，选择文件，点恢复。</li>
+</ol>
+<h1 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h1><ol>
+<li>最好不要直接全关ipv6防火墙，可以指定ip允许转发。</li>
+<li>nx54分配的ip6地址不固定，所以如果指定ip后，每次需要移除旧的规则</li>
+<li>通常我们都是让文件服务器或者NAS在外网访问，所以可以直接把命令写到nas上，一旦ip变动，则执行命令</li>
+<li>具体iptable指令怎么调整，还是边学指令边问chatgpt吧，我这里就不弄了，我也没NAS，有个旧的arm板子，没怎么搭，去年看了一下快买不起硬盘了，硬盘现在价格逆天了。</li>
+<li>全网首发，没找到怎么配置的方法，要转载请附上我的网址，给点流量。</li>
+</ol>
+<h1 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h1><p>不能用中文是后来发现的，感谢新疆的大哥，提供了他的配置文件让我发现了问题。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/h3c/" rel="tag"># h3c</a>
+              <a href="/tags/nx54/" rel="tag"># nx54</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2024/01/30/jetpack/" rel="prev" title="重学安卓之Jetpack">
+                  <i class="fa fa-angle-left"></i> 重学安卓之Jetpack
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2024/05/12/build-pdfium/" rel="next" title="如何构建一个pdfium.so">
+                  如何构建一个pdfium.so <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

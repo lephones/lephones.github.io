@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clash 配置转 Shadowrocket 配置</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script> <!-- 引入 js-yaml 库 -->
+</head>
+<body>
+  <h1>Clash 配置转 Shadowrocket 配置</h1>
+  
+  <label for="file-input">选择 Clash 配置文件（YAML 格式）：</label>
+  <input type="file" id="file-input" />
+  <br/><br/>
+  
+  <button id="convert-btn">转换</button>
+  
+  <h2>转换结果：</h2>
+  <textarea id="output" rows="20" cols="80" readonly></textarea>
+  
+  <script>
+    // 处理文件上传
+    document.getElementById("convert-btn").addEventListener("click", function () {
+      const fileInput = document.getElementById("file-input");
+      const file = fileInput.files[0];
+      
+      if (!file) {
+        alert("请先选择一个 Clash 配置文件");
+        return;
+      }
+      
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+        try {
+          // 解析 Clash YAML 配置
+          const clashConfig = jsyaml.load(e.target.result);
+          
+          // 转换为 Shadowrocket 配置
+          const shadowrocketConfig = convertToShadowrocket(clashConfig);
+          
+          // 输出转换后的配置
+          document.getElementById("output").value = shadowrocketConfig;
+        } catch (error) {
+          alert("配置文件解析失败，请确保是有效的 YAML 格式");
+        }
+      };
+      
+      reader.readAsText(file);
+    });
+    
+    // 将 Clash 配置转换为 Shadowrocket 配置
+    function convertToShadowrocket(clashConfig) {
+      let shadowrocketConfig = '';
+
+      // 处理代理组配置
+      if (clashConfig['proxy-groups']) {
+        shadowrocketConfig += '[Proxy Group]\n';
+        
+        clashConfig['proxy-groups'].forEach((group) => {
+          const proxies = group.proxies.join(', ');
+          shadowrocketConfig += `${group.name} = select, ${proxies}\n`;
+        });
+        shadowrocketConfig += '\n';
+      }
+
+      // 处理规则配置
+      if (clashConfig.rules) {
+        shadowrocketConfig += '[Rule]\n';
+        
+        clashConfig.rules.forEach((rule) => {
+          // 直接使用规则字符串
+          shadowrocketConfig += `${rule}\n`;
+        });
+      }
+
+      return shadowrocketConfig;
+    }
+  </script>
+</body>
+</html>

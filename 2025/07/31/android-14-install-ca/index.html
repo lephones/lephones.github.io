@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="前言前两天给模拟器上安装CA证书，发现即使放入&#x2F;system&#x2F;etc&#x2F;security&#x2F;cacerts&#x2F;，依然不能用Charles抓包，设置里查看，证书也没有生效，终于找到了一篇详细介绍原因的文章，记录一下，以后更好找。 准备证书准备你的SSL证书，重命名。 123openssl x509 -inform PEM -subject_hash_old -in charles_ssl.pem | he">
+<meta property="og:type" content="article">
+<meta property="og:title" content="android 14安装CA证书">
+<meta property="og:url" content="https://lefo.me/2025/07/31/android-14-install-ca/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="前言前两天给模拟器上安装CA证书，发现即使放入&#x2F;system&#x2F;etc&#x2F;security&#x2F;cacerts&#x2F;，依然不能用Charles抓包，设置里查看，证书也没有生效，终于找到了一篇详细介绍原因的文章，记录一下，以后更好找。 准备证书准备你的SSL证书，重命名。 123openssl x509 -inform PEM -subject_hash_old -in charles_ssl.pem | he">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-07-31T09:18:29.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.658Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="android">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/2025/07/31/android-14-install-ca/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2025/07/31/android-14-install-ca/","path":"2025/07/31/android-14-install-ca/","title":"android 14安装CA证书"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>android 14安装CA证书 | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%87%86%E5%A4%87%E8%AF%81%E4%B9%A6"><span class="nav-number">2.</span> <span class="nav-text">准备证书</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%85%8D%E7%BD%AEavd"><span class="nav-number">3.</span> <span class="nav-text">配置avd</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">4.</span> <span class="nav-text">参考</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2025/07/31/android-14-install-ca/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="android 14安装CA证书 | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          android 14安装CA证书
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-07-31 17:18:29" itemprop="dateCreated datePublished" datetime="2025-07-31T17:18:29+08:00">2025-07-31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/android/" itemprop="url" rel="index"><span itemprop="name">android</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>前两天给模拟器上安装CA证书，发现即使放入<code>/system/etc/security/cacerts/</code>，依然不能用Charles抓包，设置里查看，证书也没有生效，终于找到了一篇详细介绍原因的文章，记录一下，以后更好找。</p>
+<h1 id="准备证书"><a href="#准备证书" class="headerlink" title="准备证书"></a>准备证书</h1><p>准备你的SSL证书，重命名。</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">openssl x509 -inform PEM -subject_hash_old -<span class="keyword">in</span> charles_ssl.pem | <span class="built_in">head</span> -1</span><br><span class="line"><span class="comment">#将证书命名为得到的的结果.0</span></span><br><span class="line">adb push xxxxxx.0 /sdcard/</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+<h1 id="配置avd"><a href="#配置avd" class="headerlink" title="配置avd"></a>配置avd</h1><p>首先你得是可写入的模拟器，所以运行以下shell，注意替换你的Device</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">emulator -avd Pixel_API_34 -writable-system</span><br><span class="line">adb root</span><br><span class="line">adb remount</span><br></pre></td></tr></table></figure>
+<p>将下列脚本保存成sh文件</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Create a separate temp directory, to hold the current certificates</span></span><br><span class="line"><span class="comment"># Otherwise, when we add the mount we can&#x27;t read the current certs anymore.</span></span><br><span class="line"><span class="built_in">mkdir</span> -p -m 700 /data/local/tmp/tmp-ca-copy</span><br><span class="line"></span><br><span class="line"><span class="comment"># Copy out the existing certificates</span></span><br><span class="line"><span class="built_in">cp</span> /apex/com.android.conscrypt/cacerts/* /data/local/tmp/tmp-ca-copy/</span><br><span class="line"></span><br><span class="line"><span class="comment"># Create the in-memory mount on top of the system certs folder</span></span><br><span class="line">mount -t tmpfs tmpfs /system/etc/security/cacerts</span><br><span class="line"></span><br><span class="line"><span class="comment"># Copy the existing certs back into the tmpfs, so we keep trusting them</span></span><br><span class="line"><span class="built_in">mv</span> /data/local/tmp/tmp-ca-copy/* /system/etc/security/cacerts/</span><br><span class="line"></span><br><span class="line"><span class="comment"># Copy our new cert in, so we trust that too</span></span><br><span class="line"><span class="built_in">mv</span> <span class="variable">$CERTIFICATE_PATH</span> /system/etc/security/cacerts/</span><br><span class="line"></span><br><span class="line"><span class="comment"># Update the perms &amp; selinux context labels</span></span><br><span class="line"><span class="built_in">chown</span> root:root /system/etc/security/cacerts/*</span><br><span class="line"><span class="built_in">chmod</span> 644 /system/etc/security/cacerts/*</span><br><span class="line"><span class="built_in">chcon</span> u:object_r:system_file:s0 /system/etc/security/cacerts/*</span><br><span class="line"></span><br><span class="line"><span class="comment"># Deal with the APEX overrides, which need injecting into each namespace:</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># First we get the Zygote process(es), which launch each app</span></span><br><span class="line">ZYGOTE_PID=$(pidof zygote || <span class="literal">true</span>)</span><br><span class="line">ZYGOTE64_PID=$(pidof zygote64 || <span class="literal">true</span>)</span><br><span class="line"><span class="comment"># N.b. some devices appear to have both!</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Apps inherit the Zygote&#x27;s mounts at startup, so we inject here to ensure</span></span><br><span class="line"><span class="comment"># all newly started apps will see these certs straight away:</span></span><br><span class="line"><span class="keyword">for</span> Z_PID <span class="keyword">in</span> <span class="string">&quot;<span class="variable">$ZYGOTE_PID</span>&quot;</span> <span class="string">&quot;<span class="variable">$ZYGOTE64_PID</span>&quot;</span>; <span class="keyword">do</span></span><br><span class="line">    <span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$Z_PID</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">        nsenter --mount=/proc/<span class="variable">$Z_PID</span>/ns/mnt -- \</span><br><span class="line">            /bin/mount --<span class="built_in">bind</span> /system/etc/security/cacerts /apex/com.android.conscrypt/cacerts</span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Then we inject the mount into all already running apps, so they</span></span><br><span class="line"><span class="comment"># too see these CA certs immediately:</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Get the PID of every process whose parent is one of the Zygotes:</span></span><br><span class="line">APP_PIDS=$(</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;<span class="variable">$ZYGOTE_PID</span> <span class="variable">$ZYGOTE64_PID</span>&quot;</span> | \</span><br><span class="line">    xargs -n1 ps -o <span class="string">&#x27;PID&#x27;</span> -P | \</span><br><span class="line">    grep -v PID</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Inject into the mount namespace of each of those apps:</span></span><br><span class="line"><span class="keyword">for</span> PID <span class="keyword">in</span> <span class="variable">$APP_PIDS</span>; <span class="keyword">do</span></span><br><span class="line">    nsenter --mount=/proc/<span class="variable">$PID</span>/ns/mnt -- \</span><br><span class="line">        /bin/mount --<span class="built_in">bind</span> /system/etc/security/cacerts /apex/com.android.conscrypt/cacerts &amp;</span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"><span class="built_in">wait</span> <span class="comment"># Launched in parallel - wait for completion here</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;System certificate injected&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>将sh脚本推送到任意目录，然后配一个CERTIFICATE_PATH变量，然后执行sh</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">adb push install-ca.sh /data/local/</span><br><span class="line">adb shell</span><br><span class="line">export CERTIFICATE_PATH=/sdcard/xxxxxx.0</span><br><span class="line">chmod +x /data/local/install-ca.sh</span><br><span class="line">/data/local/install-ca.sh</span><br></pre></td></tr></table></figure>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a target="_blank" rel="noopener" href="https://httptoolkit.com/blog/android-14-install-system-ca-certificate/">代码摘自这里</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/android/" rel="tag"># android</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/04/24/macmini/" rel="prev" title="mac mini配合linux当服务器使用">
+                  <i class="fa fa-angle-left"></i> mac mini配合linux当服务器使用
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2025/08/18/fk-hw-dns/" rel="next" title="遥遥领先的DNS配置">
+                  遥遥领先的DNS配置 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

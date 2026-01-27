@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="下载安装jenkins官网地址：https:&#x2F;&#x2F;jenkins.io&#x2F;没什么好说的，网上教程一大堆，唯一要做的是要修改jenkins_home目录所在分区，因为将来所有的内容都要放在这里，如果分区太小，指不定哪天就满了，到时就打不了包了。 实践中，发现&#x2F;home&#x2F;jenkins目录也要处理一下，我就碰上了&#x2F;home&#x2F;jenkins目录占满了根分区，打开发现都">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用jenkins为android工程打包，支持多包名，改资源（简单上手）">
+<meta property="og:url" content="https://lefo.me/2019/03/26/jenkins-android-1/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="下载安装jenkins官网地址：https:&#x2F;&#x2F;jenkins.io&#x2F;没什么好说的，网上教程一大堆，唯一要做的是要修改jenkins_home目录所在分区，因为将来所有的内容都要放在这里，如果分区太小，指不定哪天就满了，到时就打不了包了。 实践中，发现&#x2F;home&#x2F;jenkins目录也要处理一下，我就碰上了&#x2F;home&#x2F;jenkins目录占满了根分区，打开发现都">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://lefo.me/image/20190326/create-jenkins.jpg">
+<meta property="og:image" content="https://lefo.me/image/20190326/source.jpg">
+<meta property="og:image" content="https://lefo.me/image/20190326/formatted-version-number.jpg">
+<meta property="article:published_time" content="2019-03-26T06:44:00.000Z">
+<meta property="article:modified_time" content="2026-01-27T02:36:14.656Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="android">
+<meta property="article:tag" content="jenkins">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://lefo.me/image/20190326/create-jenkins.jpg">
+
+
+<link rel="canonical" href="https://lefo.me/2019/03/26/jenkins-android-1/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2019/03/26/jenkins-android-1/","path":"2019/03/26/jenkins-android-1/","title":"使用jenkins为android工程打包，支持多包名，改资源（简单上手）"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>使用jenkins为android工程打包，支持多包名，改资源（简单上手） | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BD%E5%AE%89%E8%A3%85jenkins"><span class="nav-number">1.</span> <span class="nav-text">下载安装jenkins</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%96%B0%E5%BB%BAjenkins%E9%A1%B9%E7%9B%AE"><span class="nav-number">2.</span> <span class="nav-text">新建jenkins项目</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%94%B9%E6%B8%A0%E9%81%93%E5%8F%B7%E3%80%81%E7%89%88%E6%9C%AC%E5%8F%B7%E6%89%93%E5%8C%85"><span class="nav-number">3.</span> <span class="nav-text">改渠道号、版本号打包</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E5%8C%96%E6%89%93%E5%8C%85%EF%BC%8C%E6%89%93%E5%8C%85%E6%97%B6%E4%BF%AE%E6%94%B9%E6%B8%A0%E9%81%93%E5%8F%B7%EF%BC%8C%E7%89%88%E6%9C%AC%E5%8F%B7"><span class="nav-number">3.1.</span> <span class="nav-text">参数化打包，打包时修改渠道号，版本号</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%94%B9%E5%8C%85%E5%90%8D"><span class="nav-number">3.2.</span> <span class="nav-text">改包名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E6%9E%84%E5%BB%BA%E5%90%8E%E7%94%9F%E6%88%90%E7%9A%84%E5%90%8D%E7%A7%B0"><span class="nav-number">3.3.</span> <span class="nav-text">修改构建后生成的名称</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%90%8E%E7%BB%AD"><span class="nav-number">4.</span> <span class="nav-text">后续</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">31</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2019/03/26/jenkins-android-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="使用jenkins为android工程打包，支持多包名，改资源（简单上手） | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          使用jenkins为android工程打包，支持多包名，改资源（简单上手）
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-03-26 14:44:00" itemprop="dateCreated datePublished" datetime="2019-03-26T14:44:00+08:00">2019-03-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-01-27 10:36:14" itemprop="dateModified" datetime="2026-01-27T10:36:14+08:00">2026-01-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/android%E6%89%93%E5%8C%85/" itemprop="url" rel="index"><span itemprop="name">android打包</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="下载安装jenkins"><a href="#下载安装jenkins" class="headerlink" title="下载安装jenkins"></a>下载安装jenkins</h1><p>官网地址：<a target="_blank" rel="noopener" href="https://jenkins.io/">https://jenkins.io/</a><br>没什么好说的，网上教程一大堆，唯一要做的是要修改jenkins_home目录所在分区，因为将来所有的内容都要放在这里，如果分区太小，指不定哪天就满了，到时就打不了包了。</p>
+<p>实践中，发现&#x2F;home&#x2F;jenkins目录也要处理一下，我就碰上了&#x2F;home&#x2F;jenkins目录占满了根分区，打开发现都是gradle打包时生成的一些缓存，就将&#x2F;home&#x2F;jenkins使用<code>ln</code>命令做了个软连接到另一个分区目录下。</p>
+<span id="more"></span>
+
+<h1 id="新建jenkins项目"><a href="#新建jenkins项目" class="headerlink" title="新建jenkins项目"></a>新建jenkins项目</h1><p><img src="/image/20190326/create-jenkins.jpg" alt="创建项目"><br><img src="/image/20190326/source.jpg" alt="代码库"></p>
+<p>选择<code>新建任务</code>,填一个名字，选择自由风格的项目，点下方OK<br>进入配置页，源码管理里选择你们所用的源码管理工具，填入地址，用户名认证信息等。<br>注意，这里可能没有git和svn，那么需要你去系统管理，管理插件模块，搜索git或者svn插件并安装。后续还有其它功能需要安装插件。</p>
+<p>构建步骤 选择 Execute shell，Command里填入<code>./gradlew assembleRelease</code>就好了。</p>
+<h1 id="改渠道号、版本号打包"><a href="#改渠道号、版本号打包" class="headerlink" title="改渠道号、版本号打包"></a>改渠道号、版本号打包</h1><p>我们搭建jenkins，肯定不只是简单的打个包。一般常见的需求有，打渠道包，改包名，改资源文件。</p>
+<h2 id="参数化打包，打包时修改渠道号，版本号"><a href="#参数化打包，打包时修改渠道号，版本号" class="headerlink" title="参数化打包，打包时修改渠道号，版本号"></a>参数化打包，打包时修改渠道号，版本号</h2><p>jenkins提供了一个功能叫<code>参数化构建</code>，打包时，可以手动配一些参数。在<code>配置</code>中勾选<code>参数化构建过程</code>，下面添加你需要的参数，支持布尔型，字符串型。这些添加的参数，在shell中可以直接使用${参数名}使用，比如我们可以填入渠道号，versionname，versioncode等，如果你想填APP的名称也可以。</p>
+<p>参数填了，如何在打包时配到gradle文件中呢？</p>
+<p><strong>因为这里的脚本过于繁琐，请大家不要使用sed修改这种方案，直接去这里[<a href="2020/09/04/jenkins-android-3/">使用jenkins为android工程打包，支持多包名，改资源（优化方案）</a></strong></p>
+<p>使用<code>sed</code>命令开修改</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">#echo get versioncode</span><br><span class="line">vc=$VERSION_CODE;</span><br><span class="line">sed -i &#x27;s/android:versionCode=\&quot;\([a-zA-Z0-9.]*\)\&quot;/android:versionCode=\&quot;&#x27;$vc&#x27;\&quot;/g&#x27;  AndroidManifest.xml</span><br><span class="line">echo &quot;version code : $vc&quot;</span><br><span class="line"></span><br><span class="line">#echo get  versionname</span><br><span class="line">vn=$VERSION_NAME</span><br><span class="line">sed -i &#x27;s/android:versionName=\&quot;\([a-zA-Z0-9.]*\)\&quot;/android:versionName=\&quot;&#x27;$vn&#x27;\&quot;/g&#x27;  AndroidManifest.xml</span><br><span class="line">echo &quot;version name : $vn&quot;</span><br><span class="line"></span><br><span class="line">./gradlew assembleRelease</span><br></pre></td></tr></table></figure>
+<p>其中，VERSION_CODE和VERSION_NAME就是在jenkins中配置的参数，我这里是改的manifest文件，我们也可以用sed命令修改gradle文件。</p>
+<h2 id="改包名"><a href="#改包名" class="headerlink" title="改包名"></a>改包名</h2><p>通过sed命令修改gradle文件中的<code>build applicationId packagename</code>，首先在参数化构建中，添加一个名称为PACKAGE_NAME的变量，供打包的人填写包名。然后在构建shell前面加入下列shell脚本。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">toReplace=&#x27;applicationId \&quot;&#x27;$PACKAGE_NAME&#x27;\&quot;&#x27;</span><br><span class="line">echo $toReplace</span><br><span class="line">sed -i &#x27;s/applicationId \&quot;com.old.pkgname\&quot;/&#x27;&quot;$toReplace&quot;&#x27;/g&#x27; build.gradle</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="修改构建后生成的名称"><a href="#修改构建后生成的名称" class="headerlink" title="修改构建后生成的名称"></a>修改构建后生成的名称</h2><p>通常jenkins打包完成后，左侧的构建历史，是一个数字序号，时间一长可能就忘了对应关系，所以一般情况需要将名称修改成可读的格式，那么如何在构建时，自动就修改好名称？</p>
+<p>使用插件<code>Version Number</code>，安装该插件后，去到项目配置页，在构建环境下，勾选<code>Create a formatted version number</code>，再在下面的<code>	Build Display Name</code>选项勾选<code>Build Display Name</code></p>
+<p>在<code>Environment Variable Name</code>中可以将生成的名称赋值给一个变量名，在后续构建时的shell中可以使用，根据自己喜好起一个就行。</p>
+<p>在<code>Version Number Format String</code>中可以填写想要生成的名称格式，可以使用<code>$&#123;变量名&#125;</code>引用环境变量和参数名称，同时点右侧的问号可以看到系统提供的一部分时间相关的变量名。</p>
+<p>如：<code>$&#123;VERSION_CODE&#125;_$&#123;VERSION_NAME&#125;_$&#123;BUILD_ID&#125;</code></p>
+<p><img src="/image/20190326/formatted-version-number.jpg" alt="构建名称"></p>
+<h1 id="后续"><a href="#后续" class="headerlink" title="后续"></a>后续</h1><p>以上讲的就是基本打包流程，但是实际应用中，还存在一些问题，比如，改了包名后，一些第三方的client key也要修改。再加上产品的对资源、功能定制需求也越来越复杂，上面的方式是绝对难满足他们定制化的要求的。下篇见。。。</p>
+<p>下篇博客写在打包实际应用中，是如何通过jenkins改包名和改资源，以及解决一些随包名存在的问题和注意事项。</p>
+<p><strong>写了一篇最新的介绍，打包脚本更简洁，大家可以结合着看[<a href="2020/09/04/jenkins-android-3/">使用jenkins为android工程打包，支持多包名，改资源（优化方案）</a></strong></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/android/" rel="tag"># android</a>
+              <a href="/tags/jenkins/" rel="tag"># jenkins</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/10/13/apple-itunes-volume/" rel="prev" title="Mac系统的TM快照占了空间导致iTunes不能备份手机">
+                  <i class="fa fa-angle-left"></i> Mac系统的TM快照占了空间导致iTunes不能备份手机
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/03/29/jenkins-android-2/" rel="next" title="使用jenkins为android工程打包，支持多包名，改资源（踩坑指南）">
+                  使用jenkins为android工程打包，支持多包名，改资源（踩坑指南） <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>
