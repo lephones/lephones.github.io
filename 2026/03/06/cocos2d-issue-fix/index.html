@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="背景修复v8::HandleScope::Initialize(v8::Isolate*)+144 接上一篇文章。由于平时更新不算频繁，加上个人也有些懒，一直没有深入思考 Cocos2d-x 2.x 在 Android 15&#x2F;16 上的 V8 Crash 问题如何彻底修复。 最近重新整理这个问题时，想到一个新的思路：如何可以通过复用同一个 GLThread 来避免问题？ 因为之前分析发现">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android 15&#x2F;16 Cocos2d-x V8 Crash 问题分析与 GLThread 复用解决方案">
+<meta property="og:url" content="https://lefo.me/2026/03/06/cocos2d-issue-fix/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="背景修复v8::HandleScope::Initialize(v8::Isolate*)+144 接上一篇文章。由于平时更新不算频繁，加上个人也有些懒，一直没有深入思考 Cocos2d-x 2.x 在 Android 15&#x2F;16 上的 V8 Crash 问题如何彻底修复。 最近重新整理这个问题时，想到一个新的思路：如何可以通过复用同一个 GLThread 来避免问题？ 因为之前分析发现">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-03-06T07:45:02.000Z">
+<meta property="article:modified_time" content="2026-10-29T11:18:42.160Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="android">
+<meta property="article:tag" content="cocos">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/2026/03/06/cocos2d-issue-fix/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2026/03/06/cocos2d-issue-fix/","path":"2026/03/06/cocos2d-issue-fix/","title":"Android 15/16 Cocos2d-x V8 Crash 问题分析与 GLThread 复用解决方案"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Android 15/16 Cocos2d-x V8 Crash 问题分析与 GLThread 复用解决方案 | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">源码分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%E8%AE%BE%E8%AE%A1"><span class="nav-number">3.</span> <span class="nav-text">解决方案设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%85%A8%E5%B1%80%E5%8F%AA%E4%BD%BF%E7%94%A8%E4%B8%80%E4%B8%AA-View"><span class="nav-number">3.0.1.</span> <span class="nav-text">1. 全局只使用一个 View</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E7%A0%B4%E5%9D%8F-onAttachedToWindow-%E4%B8%AD%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%88%9B%E5%BB%BA"><span class="nav-number">3.0.2.</span> <span class="nav-text">2. 破坏 onAttachedToWindow 中的线程创建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E4%BF%AE%E6%94%B9-onDetachedFromWindow"><span class="nav-number">3.0.3.</span> <span class="nav-text">3. 修改 onDetachedFromWindow</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AE%80%E5%8D%95%E6%B5%8B%E8%AF%95"><span class="nav-number">4.</span> <span class="nav-text">简单测试</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Cocos2dxSurfaceView-%E5%92%8C-Renderer-%E5%8D%95%E4%BE%8B%E5%AE%9E%E7%8E%B0"><span class="nav-number">4.1.</span> <span class="nav-text">Cocos2dxSurfaceView 和 Renderer 单例实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9-GLSurfaceView-%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E9%80%BB%E8%BE%91"><span class="nav-number">4.2.</span> <span class="nav-text">修改 GLSurfaceView 生命周期逻辑</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%BF%9B%E4%B8%80%E6%AD%A5%E4%BC%98%E5%8C%96"><span class="nav-number">5.</span> <span class="nav-text">进一步优化</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E7%9B%B4%E6%8E%A5%E4%BD%BF%E7%94%A8%E7%BB%A7%E6%89%BF%EF%BC%9F"><span class="nav-number">5.1.</span> <span class="nav-text">为什么不直接使用继承？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Cocos2dxGLSurfaceView-%E7%9A%84%E5%8F%98%E5%8C%96"><span class="nav-number">5.2.</span> <span class="nav-text">Cocos2dxGLSurfaceView 的变化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JNI-%E8%B0%83%E7%94%A8-%E7%88%B6%E7%B1%BBSurfaceView-%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-number">5.3.</span> <span class="nav-text">JNI 调用 父类SurfaceView 的实现</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">47</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">38</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2026/03/06/cocos2d-issue-fix/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Android 15/16 Cocos2d-x V8 Crash 问题分析与 GLThread 复用解决方案 | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Android 15/16 Cocos2d-x V8 Crash 问题分析与 GLThread 复用解决方案
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-03-06 15:45:02" itemprop="dateCreated datePublished" datetime="2026-03-06T15:45:02+08:00">2026-03-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-10-29 19:18:42" itemprop="dateModified" datetime="2026-10-29T19:18:42+08:00">2026-10-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/android/" itemprop="url" rel="index"><span itemprop="name">android</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p><strong><code>修复v8::HandleScope::Initialize(v8::Isolate*)+144</code></strong></p>
+<p>接上一篇文章。由于平时更新不算频繁，加上个人也有些懒，一直没有深入思考 <strong>Cocos2d-x 2.x 在 Android 15&#x2F;16 上的 V8 Crash 问题如何彻底修复</strong>。</p>
+<p>最近重新整理这个问题时，想到一个新的思路：<br><strong>如何可以通过复用同一个 GLThread 来避免问题？</strong></p>
+<p>因为之前分析发现，Crash 的核心原因很可能来自 <strong>GLSurfaceView 在 View 重建时重新创建 GLThread</strong>。如果能够保证整个生命周期中始终使用 <strong>同一个 GLThread</strong>，也许就可以绕开这个问题。</p>
+<p>于是开始重新阅读 <code>GLSurfaceView</code> 的源码，并尝试寻找可行的干预点。</p>
+<span id="more"></span>
+
+<hr>
+<h1 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h1><p>在上一篇文章中已经提到，V8 Crash 的主要原因在于：</p>
+<ul>
+<li><code>Cocos2dxGLSurfaceView</code> 在 <strong>View 被 remove 或 Activity 重建时</strong></li>
+<li><code>GLSurfaceView</code> 会 <strong>重新创建 GLThread</strong></li>
+<li>导致 <strong>V8 所在线程状态异常</strong></li>
+</ul>
+<p><code>Cocos2dxGLSurfaceView</code> 继承自 <code>GLSurfaceView</code>，在查看 <code>GLSurfaceView</code> 源码后发现：</p>
+<p><strong>GLThread 创建的入口主要有两处：</strong></p>
+<ol>
+<li><code>setRenderer</code></li>
+<li><code>onAttachedToWindow</code></li>
+</ol>
+<p><code>setRenderer</code> 比较简单，通常只会调用一次。</p>
+<p>而 <code>onAttachedToWindow</code> 则会在 <strong>View detach 后重新 attach 时触发</strong>，这也是 Activity 重建或 View 重新添加时的关键路径。</p>
+<p>只要能够干预这两个位置的 <code>GLThread</code> 创建逻辑，就有机会避免线程被重新创建。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setRenderer</span><span class="params">(Renderer renderer)</span> &#123;</span><br><span class="line">    checkRenderThreadState();</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">    mRenderer = renderer;</span><br><span class="line">    mGLThread = <span class="keyword">new</span> <span class="title class_">GLThread</span>(mThisWeakRef);</span><br><span class="line">    mGLThread.start();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onAttachedToWindow</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>.onAttachedToWindow();</span><br><span class="line">        <span class="keyword">if</span> (LOG_ATTACH_DETACH) &#123;</span><br><span class="line">            Log.d(TAG, <span class="string">&quot;onAttachedToWindow reattach =&quot;</span> + mDetached);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (mDetached &amp;&amp; (mRenderer != <span class="literal">null</span>)) &#123;</span><br><span class="line">            <span class="type">int</span> <span class="variable">renderMode</span> <span class="operator">=</span> RENDERMODE_CONTINUOUSLY;</span><br><span class="line">            <span class="keyword">if</span> (mGLThread != <span class="literal">null</span>) &#123;</span><br><span class="line">                renderMode = mGLThread.getRenderMode();</span><br><span class="line">            &#125;</span><br><span class="line">            mGLThread = <span class="keyword">new</span> <span class="title class_">GLThread</span>(mThisWeakRef);</span><br><span class="line">            <span class="keyword">if</span> (renderMode != RENDERMODE_CONTINUOUSLY) &#123;</span><br><span class="line">                mGLThread.setRenderMode(renderMode);</span><br><span class="line">            &#125;</span><br><span class="line">            mGLThread.start();</span><br><span class="line">        &#125;</span><br><span class="line">        mDetached = <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="解决方案设计"><a href="#解决方案设计" class="headerlink" title="解决方案设计"></a>解决方案设计</h1><p>基于上述分析，最终形成了三个核心思路：</p>
+<h3 id="1-全局只使用一个-View"><a href="#1-全局只使用一个-View" class="headerlink" title="1. 全局只使用一个 View"></a>1. 全局只使用一个 View</h3><p><code>MutableContextWrapper</code></p>
+<p>让整个游戏只使用 <strong>一个 <code>Cocos2dxSurfaceView</code> 单例</strong>。当 Activity 切换时，不重新创建 View，而是通过：<code>MutableContextWrapper</code>动态替换 View 所绑定的 <code>Context</code>。</p>
+<p>这样可以做到：</p>
+<ul>
+<li>View 不销毁</li>
+<li>GLThread 不重建</li>
+<li>渲染线程保持稳定</li>
+</ul>
+<hr>
+<h3 id="2-破坏-onAttachedToWindow-中的线程创建"><a href="#2-破坏-onAttachedToWindow-中的线程创建" class="headerlink" title="2. 破坏 onAttachedToWindow 中的线程创建"></a>2. 破坏 <code>onAttachedToWindow</code> 中的线程创建</h3><p>避免执行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">glThread = new GLThread(mThisWeakRef);</span><br></pre></td></tr></table></figure>
+
+<p>从而防止重新 attach 时创建新的渲染线程。</p>
+<hr>
+<h3 id="3-修改-onDetachedFromWindow"><a href="#3-修改-onDetachedFromWindow" class="headerlink" title="3. 修改 onDetachedFromWindow"></a>3. 修改 <code>onDetachedFromWindow</code></h3><p>原始实现中：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mGLThread.requestExitAndWait();</span><br></pre></td></tr></table></figure>
+
+<p>会直接退出渲染线程。</p>
+<p>在新的方案中，将其替换为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">onPause()</span><br></pre></td></tr></table></figure>
+
+<p>这样只暂停渲染，而不会销毁线程。</p>
+<hr>
+<h1 id="简单测试"><a href="#简单测试" class="headerlink" title="简单测试"></a>简单测试</h1><h2 id="Cocos2dxSurfaceView-和-Renderer-单例实现"><a href="#Cocos2dxSurfaceView-和-Renderer-单例实现" class="headerlink" title="Cocos2dxSurfaceView 和 Renderer 单例实现"></a>Cocos2dxSurfaceView 和 Renderer 单例实现</h2><p>通过一个 <code>Manager</code> 管理全局唯一的 SurfaceView 与 Renderer。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CocosSurfaceViewManager</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="variable">TAG</span> <span class="operator">=</span> <span class="string">&quot;CocosSurfaceViewManager&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">CocosSurfaceViewManager</span> <span class="variable">instance</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">private</span> MutableContextWrapper mutableContextWrapper;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="title function_">CocosSurfaceViewManager</span><span class="params">()</span> &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Cocos2dxGLSurfaceView gameView;</span><br><span class="line">    <span class="keyword">private</span> Cocos2dxRenderer renderer;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">synchronized</span> CocosSurfaceViewManager <span class="title function_">getInstance</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (instance == <span class="literal">null</span>) &#123;</span><br><span class="line">            instance = <span class="keyword">new</span> <span class="title class_">CocosSurfaceViewManager</span>();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> instance;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setContext</span><span class="params">(Context context)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (mutableContextWrapper == <span class="literal">null</span>) &#123;</span><br><span class="line">            mutableContextWrapper = <span class="keyword">new</span> <span class="title class_">MutableContextWrapper</span>(context);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            mutableContextWrapper.setBaseContext(context);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Cocos2dxGLSurfaceView <span class="title function_">getGameView</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (gameView == <span class="literal">null</span>) &#123;</span><br><span class="line">            gameView = <span class="keyword">new</span> <span class="title class_">Cocos2dxGLSurfaceView</span>(mutableContextWrapper);</span><br><span class="line">            gameView.setPreserveEGLContextOnPause(<span class="literal">true</span>);</span><br><span class="line">            <span class="comment">// Should set to transparent, or it will hide EditText</span></span><br><span class="line">            <span class="comment">// https://stackoverflow.com/questions/2978290/androids-edittext-is-hidden-when-the-virtual-keyboard-is-shown-and-a-surfacevie</span></span><br><span class="line">            gameView.setBackgroundColor(Color.TRANSPARENT);</span><br><span class="line">            gameView.setEGLConfigChooser(<span class="number">5</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">0</span>, <span class="number">16</span>, <span class="number">8</span>);</span><br><span class="line">            <span class="comment">// Switch to supported OpenGL (ARGB888) mode on emulator</span></span><br><span class="line">            <span class="keyword">if</span> (isAndroidEmulator())</span><br><span class="line">                gameView.setEGLConfigChooser(<span class="number">8</span>, <span class="number">8</span>, <span class="number">8</span>, <span class="number">8</span>, <span class="number">16</span>, <span class="number">0</span>);</span><br><span class="line">            renderer = <span class="keyword">new</span> <span class="title class_">Cocos2dxRenderer</span>();</span><br><span class="line">            gameView.setCocos2dxRenderer(renderer);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> gameView;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Cocos2dxRenderer <span class="title function_">getRenderer</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> renderer;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">boolean</span> <span class="title function_">isAndroidEmulator</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">model</span> <span class="operator">=</span> Build.MODEL;</span><br><span class="line">        Log.d(TAG, <span class="string">&quot;model=&quot;</span> + model);</span><br><span class="line">        <span class="type">String</span> <span class="variable">product</span> <span class="operator">=</span> Build.PRODUCT;</span><br><span class="line">        Log.d(TAG, <span class="string">&quot;product=&quot;</span> + product);</span><br><span class="line">        <span class="type">boolean</span> <span class="variable">isEmulator</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">        <span class="keyword">if</span> (product != <span class="literal">null</span>) &#123;</span><br><span class="line">            isEmulator = product.equals(<span class="string">&quot;sdk&quot;</span>) || product.contains(<span class="string">&quot;_sdk&quot;</span>) || product.contains(<span class="string">&quot;sdk_&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        Log.d(TAG, <span class="string">&quot;isEmulator=&quot;</span> + isEmulator);</span><br><span class="line">        <span class="keyword">return</span> isEmulator;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="修改-GLSurfaceView-生命周期逻辑"><a href="#修改-GLSurfaceView-生命周期逻辑" class="headerlink" title="修改 GLSurfaceView 生命周期逻辑"></a>修改 GLSurfaceView 生命周期逻辑</h2><p>最直接的方法是 <strong>复制一份 <code>GLSurfaceView</code> 源码</strong>，然后修改关键生命周期函数。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onAttachedToWindow</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="built_in">super</span>.onAttachedToWindow();</span><br><span class="line">    mDetached = <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onDetachedFromWindow</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (LOG_ATTACH_DETACH) &#123;</span><br><span class="line">        Log.d(TAG, <span class="string">&quot;onDetachedFromWindow&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (mGLThread != <span class="literal">null</span>) &#123;</span><br><span class="line">        mGLThread.onPause();</span><br><span class="line"><span class="comment">//            mGLThread.requestExitAndWait();</span></span><br><span class="line">    &#125;</span><br><span class="line">    mDetached = <span class="literal">true</span>;</span><br><span class="line">    <span class="built_in">super</span>.onDetachedFromWindow();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>完成这一套修改后，再调整 <code>AppActivity</code> 的 <code>onCreateView</code>。</p>
+<p>测试发现：removeView再addView，<strong>之前必现的 V8 Crash 不再出现</strong></p>
+<p>不过这种方案侵入性较强，相当于直接替换 SDK 中的 <code>GLSurfaceView</code> 实现，经过版本对比，可能不用考虑兼容性，但难免有些让人不舒服，一旦是某个优化版或者未来有优化，就没办法兼容了。</p>
+<hr>
+<h1 id="进一步优化"><a href="#进一步优化" class="headerlink" title="进一步优化"></a>进一步优化</h1><h2 id="为什么不直接使用继承？"><a href="#为什么不直接使用继承？" class="headerlink" title="为什么不直接使用继承？"></a>为什么不直接使用继承？</h2><p>一开始想到的方案其实是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">class BaseSurfaceView extends GLSurfaceView</span><br></pre></td></tr></table></figure>
+
+<p>但很快遇到一个问题。</p>
+<p><code>GLSurfaceView</code> 继承自 <code>SurfaceView</code>，如果直接 override：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">onAttachedToWindow</span><br><span class="line">onDetachedFromWindow</span><br></pre></td></tr></table></figure>
+
+<p>并调用 <code>super</code>，实际调用的是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GLSurfaceView -&gt; SurfaceView</span><br></pre></td></tr></table></figure>
+
+<p>而我们需要的是：</p>
+<p><strong>跳过 GLSurfaceView 的实现，直接调用 SurfaceView 的版本。</strong></p>
+<p>然而 Java 本身并不支持：<code>super.super.onAttachedToWindow()</code></p>
+<p>经过多次尝试（甚至尝试过反射调用），最终发现 <strong>Java 层无法优雅实现这一点</strong>。AI一开始也在强调JAVA不支持，尝试问了一下JNI，终于给出了一个可行方案：<code>env-&gt;CallNonvirtualVoidMethod</code>，该函数可以直接调用父类实现。</p>
+<hr>
+<h2 id="Cocos2dxGLSurfaceView-的变化"><a href="#Cocos2dxGLSurfaceView-的变化" class="headerlink" title="Cocos2dxGLSurfaceView 的变化"></a>Cocos2dxGLSurfaceView 的变化</h2><p>最终方案：</p>
+<ul>
+<li>依然继承自 <code>GLSurfaceView</code>，其实直接让，在 Android 15 以上系统中绕过 <code>GLSurfaceView</code> 的线程创建逻辑</li>
+<li>在 Android 15 以上，使用自己的单例view，当activity被create时替换Context，destory时，记得removeView</li>
+</ul>
+<p>这里其实是为了方便和上一个方案切换测试，只需要改继承就行，如果不想加个类，直接修改<code>Cocos2dxGLSurfaceView</code>就行,只需要复制<strong>onAttachedToWindow</strong>，<strong>onDetachedFromWindow</strong>，修改对应的jni路径。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Cocos2dxFixGLSurfaceView</span> <span class="keyword">extends</span> <span class="title class_">GLSurfaceView</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">Cocos2dxFixGLSurfaceView</span><span class="params">(Context context)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(context);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">Cocos2dxFixGLSurfaceView</span><span class="params">(Context context, AttributeSet attrs)</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>(context, attrs);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onAttachedToWindow</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (Build.VERSION.SDK_INT &gt;= <span class="number">35</span>) &#123;</span><br><span class="line">            <span class="comment">// 1. 获取 SurfaceView 类的该方法（假设你想跳过 GLSurfaceView 直接调 SurfaceView）</span></span><br><span class="line">            nativeSurfaceViewOnAttachedToWindow();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="built_in">super</span>.onAttachedToWindow();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">onDetachedFromWindow</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (Build.VERSION.SDK_INT &gt;= <span class="number">35</span>) &#123;</span><br><span class="line">            <span class="comment">// 1. 获取 SurfaceView 类的该方法（假设你想跳过 GLSurfaceView 直接调 SurfaceView）</span></span><br><span class="line">            nativeSurfaceViewonDetachedFromWindow();</span><br><span class="line">            onPause();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="built_in">super</span>.onDetachedFromWindow();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果你是直接修改的CocosGLSurfaceView，注意替换JNI函数的路径</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">native</span> <span class="keyword">void</span> <span class="title function_">nativeSurfaceViewOnAttachedToWindow</span><span class="params">()</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">native</span> <span class="keyword">void</span> <span class="title function_">nativeSurfaceViewonDetachedFromWindow</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="JNI-调用-父类SurfaceView-的实现"><a href="#JNI-调用-父类SurfaceView-的实现" class="headerlink" title="JNI 调用 父类SurfaceView 的实现"></a>JNI 调用 父类SurfaceView 的实现</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cocos/platform/android/jni/JniImp.cpp</span></span><br><span class="line"><span class="comment">// fix glthread</span></span><br><span class="line">JNIEXPORT <span class="type">void</span> JNICALL <span class="title function_">Java_org_cocos2dx_lib_Cocos2dxFixGLSurfaceView_nativeSurfaceViewonDetachedFromWindow</span><span class="params">(JNIEnv* env, jobject thiz)</span> &#123;</span><br><span class="line">    jclass surfaceViewClass = env-&gt;FindClass(<span class="string">&quot;android/view/SurfaceView&quot;</span>);</span><br><span class="line">    jmethodID methodID = env-&gt;GetMethodID(surfaceViewClass, <span class="string">&quot;onDetachedFromWindow&quot;</span>, <span class="string">&quot;()V&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (methodID != nullptr) &#123;</span><br><span class="line">        env-&gt;CallNonvirtualVoidMethod(thiz, surfaceViewClass, methodID);</span><br><span class="line">    &#125;</span><br><span class="line">    env-&gt;DeleteLocalRef(surfaceViewClass);</span><br><span class="line">&#125;</span><br><span class="line">JNIEXPORT <span class="type">void</span> JNICALL <span class="title function_">Java_org_cocos2dx_lib_Cocos2dxFixGLSurfaceView_nativeSurfaceViewOnAttachedToWindow</span><span class="params">(JNIEnv* env, jobject thiz)</span> &#123;</span><br><span class="line">    jclass surfaceViewClass = env-&gt;FindClass(<span class="string">&quot;android/view/SurfaceView&quot;</span>);</span><br><span class="line">    jmethodID methodID = env-&gt;GetMethodID(surfaceViewClass, <span class="string">&quot;onAttachedToWindow&quot;</span>, <span class="string">&quot;()V&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (methodID != nullptr) &#123;</span><br><span class="line">        env-&gt;CallNonvirtualVoidMethod(thiz, surfaceViewClass, methodID);</span><br><span class="line">    &#125;</span><br><span class="line">    env-&gt;DeleteLocalRef(surfaceViewClass);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>核心思路是：</p>
+<ul>
+<li><strong>复用 GLThread，从而考虑使用同一个GLSurfaceView</strong></li>
+<li><strong>避免 GLSurfaceView 在 View 状态改变时重新创建线程</strong></li>
+<li><strong>加入版本控制，不破坏没问题的系统版本逻辑</strong></li>
+</ul>
+<p>经过两天的调试与验证，最终形成了一套较为稳定且最小改动的解决方案：</p>
+<p>最终实现方式包括：</p>
+<ol>
+<li>全局只使用一个 <code>GLSurfaceView</code></li>
+<li>通过 <code>MutableContextWrapper</code> 动态切换 Activity Context</li>
+<li>使用JNI调用super.super父类的函数，达到绕过线程创建逻辑</li>
+<li>通过 <strong>API Level 判断</strong> 控制影响范围：<strong>API 35 以上使用修复方案</strong>，这样既解决了 Android 新系统上的 V8 Crash，又避免影响旧设备的稳定性。</li>
+</ol>
+<p>相比最初直接复制 <code>GLSurfaceView</code> 的实现，这种 <strong>继承 + JNI 的方式更加工程化，也更易维护</strong>。</p>
+<p>另外，还有些其它地方的改动，像Activity中一些判断，setEGLConfigChooser只能调用一次，替换MutableContextWrapper，AppActivity(有个单独的glSurfaceView，实际没什么用)的onCreateView替换修改等，这些具体的代码我就不全放了，如果有需要交流，欢迎联系。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Cocos2dxActivity</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">init</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="comment">// this.addSurfaceView();</span></span><br><span class="line">    <span class="type">Cocos2dxRenderer</span> <span class="variable">renderer</span> <span class="operator">=</span> Build.VERSION.SDK_INT &gt;= <span class="number">35</span> ? <span class="built_in">this</span>.add35SurfaceView() : <span class="built_in">this</span>.addSurfaceView();</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> Cocos2dxRenderer <span class="title function_">add35SurfaceView</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.mGLSurfaceView = onCreate35View();</span><br><span class="line">    mFrameLayout.addView(<span class="built_in">this</span>.mGLSurfaceView);</span><br><span class="line">    <span class="keyword">return</span> CocosSurfaceViewManager.getInstance().getRenderer();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> Cocos2dxGLSurfaceView <span class="title function_">onCreate35View</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> CocosSurfaceViewManager.getInstance().getGameView();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其实一开始，我通过反射修改<code>mDetached</code>和<code>mGLThread</code>做过简单验证，算是一个临时测试方案。可参考GLSurfaceView源码。</p>
+<ol>
+<li><code>onAttachedToWindow</code>先反射替换<code>mDetached = false</code>，再调用super函数，此时if (mDetached &amp;&amp; (mRenderer !&#x3D; null))就进不了了</li>
+<li><code>onDetachedFromWindow</code>先反射替换<code>mGLThread = null</code>，再调用super函数，完成后再把mGLThread换回。</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/android/" rel="tag"># android</a>
+              <a href="/tags/cocos/" rel="tag"># cocos</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/01/17/cocos2d-issue/" rel="prev" title="Cocos2.x版本 HandleScope::Initialize(v8::Isolate*) 问题分析">
+                  <i class="fa fa-angle-left"></i> Cocos2.x版本 HandleScope::Initialize(v8::Isolate*) 问题分析
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/08/17/ollvm-ndk/" rel="next" title="Android NDK 28 自定义 Clang & OLLVM (New Pass Manager) 混淆编译实战指南">
+                  Android NDK 28 自定义 Clang & OLLVM (New Pass Manager) 混淆编译实战指南 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

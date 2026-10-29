@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="前言距上一篇折腾 NX54 的文章差不多过去一年了。 去年有同用 NX54 的朋友跟我倒苦水，说路由器升级到官方新版（R013）之后，原本用得好好的 Telnet 彻底打不开了。他之所以需要这个权限，其实和我一样，主要是因为官方固件自带的 IPv6 防火墙太死板，只能全开或者全关，没法给内网某台 NAS 或服务器单独放行端口，必须得靠脚本写自定义 ip6tables 规则。 我立刻把自己的 NX5">
+<meta property="og:type" content="article">
+<meta property="og:title" content="说说NX54 新Telnet(无具体方案)">
+<meta property="og:url" content="https://lefo.me/2026/09/15/nx54-telnet-r013/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="前言距上一篇折腾 NX54 的文章差不多过去一年了。 去年有同用 NX54 的朋友跟我倒苦水，说路由器升级到官方新版（R013）之后，原本用得好好的 Telnet 彻底打不开了。他之所以需要这个权限，其实和我一样，主要是因为官方固件自带的 IPv6 防火墙太死板，只能全开或者全关，没法给内网某台 NAS 或服务器单独放行端口，必须得靠脚本写自定义 ip6tables 规则。 我立刻把自己的 NX5">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-15T04:20:40.000Z">
+<meta property="article:modified_time" content="2026-10-29T11:18:42.161Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="h3c">
+<meta property="article:tag" content="nx54">
+<meta property="article:tag" content="openwrt">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/2026/09/15/nx54-telnet-r013/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2026/09/15/nx54-telnet-r013/","path":"2026/09/15/nx54-telnet-r013/","title":"说说NX54 新Telnet(无具体方案)"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>说说NX54 新Telnet(无具体方案) | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%96%B0%E7%89%88%E5%9B%BA%E4%BB%B6%E5%88%B0%E5%BA%95%E6%94%B9%E4%BA%86%E5%93%AA%E5%84%BF%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">新版固件到底改了哪儿？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-telnetd-%E5%9F%BA%E6%9C%AC%E6%B2%A1%E5%8F%98"><span class="nav-number">2.0.1.</span> <span class="nav-text">1. telnetd 基本没变</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E4%B9%8B%E5%89%8D%E5%86%99%E7%9A%84%E5%BC%80%E6%9C%BA%E5%9B%BA%E5%8C%96%E4%B8%BA%E4%BB%80%E4%B9%88%E5%A4%B1%E6%95%88%E4%BA%86%EF%BC%9F"><span class="nav-number">2.0.2.</span> <span class="nav-text">2. 之前写的开机固化为什么失效了？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E9%98%B2%E9%99%8D%E7%BA%A7%E9%99%90%E5%88%B6"><span class="nav-number">2.0.3.</span> <span class="nav-text">3. 防降级限制</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#telnet%E4%BE%9D%E7%84%B6%E6%98%AF%E8%80%81%E5%91%B3%E9%81%93"><span class="nav-number">3.</span> <span class="nav-text">telnet依然是老味道</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%98%AF%E6%80%8E%E4%B9%88%E5%9B%9E%E4%BA%8B%EF%BC%9F"><span class="nav-number">4.</span> <span class="nav-text">是怎么回事？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">47</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">38</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2026/09/15/nx54-telnet-r013/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="说说NX54 新Telnet(无具体方案) | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          说说NX54 新Telnet(无具体方案)
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-09-15 12:20:40" itemprop="dateCreated datePublished" datetime="2026-09-15T12:20:40+08:00">2026-09-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-10-29 19:18:42" itemprop="dateModified" datetime="2026-10-29T19:18:42+08:00">2026-10-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/nx54/" itemprop="url" rel="index"><span itemprop="name">nx54</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>距上一篇折腾 NX54 的文章差不多过去一年了。</p>
+<p>去年有同用 NX54 的朋友跟我倒苦水，说路由器升级到官方新版（R013）之后，原本用得好好的 Telnet 彻底打不开了。他之所以需要这个权限，其实和我一样，主要是因为官方固件自带的 IPv6 防火墙太死板，只能全开或者全关，没法给内网某台 NAS 或服务器单独放行端口，必须得靠脚本写自定义 ip6tables 规则。</p>
+<p>我立刻把自己的 NX54 固定在 R012，日常跑得挺稳，所以一直没升。但也好奇：官方发个大版本把调试口封死，甚至还加了防降级限制，底层到底改了些什么？</p>
+<span id="more"></span>
+<hr>
+<h1 id="新版固件到底改了哪儿？"><a href="#新版固件到底改了哪儿？" class="headerlink" title="新版固件到底改了哪儿？"></a>新版固件到底改了哪儿？</h1><p>先说结论：<strong>底层的 Telnet 一点没变，官方只是在门外加了把锁。</strong></p>
+<h3 id="1-telnetd-基本没变"><a href="#1-telnetd-基本没变" class="headerlink" title="1. telnetd 基本没变"></a>1. telnetd 基本没变</h3><p>telnetd是telnet服务端程序，启动方式几乎没变。</p>
+<p>只不过入口处的 <code>debug.asp</code> 页面改了。以前进调试页面点个开关就能启动，新版本里点开启需要输一个动态密码。这个密码是根据机器的硬件信息、用户信息算出来的，也就是“一机一密”。普通用户没密码，自然就打不开了。</p>
+<h3 id="2-之前写的开机固化为什么失效了？"><a href="#2-之前写的开机固化为什么失效了？" class="headerlink" title="2. 之前写的开机固化为什么失效了？"></a>2. 之前写的开机固化为什么失效了？</h3><p>之前在<a href="https://lefo.me/2024/02/20/nx54-telnet/">H3C NX54路由器如何永久开telnet</a>中提过，大家可以通过修改配置把 <code>telnetenable=enable</code> 固化下来，实现重启也能自动开 Telnet。</p>
+<p>新固件加了一道检测：开机读取配置时，系统会检查设备的一个出厂标识。只要这台路由器是正常出厂的量产机，不管你的配置表里有没有开 Telnet，telnetd的脚本都会强制跳过，直接不予启动。</p>
+<h3 id="3-防降级限制"><a href="#3-防降级限制" class="headerlink" title="3. 防降级限制"></a>3. 防降级限制</h3><p>新固件在 Web 升级逻辑里写死了最低版本号。一旦升到了 R013 或 R014，想在 Web 页面直接刷回 R012 固件就会提示版本过低拒绝刷入，把降级的路给堵了。</p>
+<hr>
+<h1 id="telnet依然是老味道"><a href="#telnet依然是老味道" class="headerlink" title="telnet依然是老味道"></a>telnet依然是老味道</h1><p>从R012上梳理一下调用的链路，R013其实一样。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Web 触发</span><br><span class="line">   │</span><br><span class="line">   ▼</span><br><span class="line">telnetd 守护进程</span><br><span class="line">   │ (-l /bin/login.sh)</span><br><span class="line">   ▼</span><br><span class="line">/bin/login.sh ──(直接跳过标准 Linux 登录)──► /bin/mwcli (Comware 命令行)</span><br><span class="line">                                               │</span><br><span class="line">                                               └─► 敲 debugshell ──► execvp(&quot;/bin/sh&quot;)</span><br><span class="line">                                                                      [拿到 Root Shell]</span><br></pre></td></tr></table></figure>
+
+
+<p>新老版本的 <code>telnet</code>和<code>mwcli</code> 在这块逻辑上一模一样，官方根本没碰这部分内容。</p>
+<hr>
+<h1 id="是怎么回事？"><a href="#是怎么回事？" class="headerlink" title="是怎么回事？"></a>是怎么回事？</h1><p>官方突然花心思把 telnet 入口封死，现在看，猜核心原因就是因为被报了漏洞——2025 年 6 月收录的 <a target="_blank" rel="noopener" href="https://www.cnvd.org.cn/flaw/show/CNVD-2025-13489">CNVD-2025-13489</a>。</p>
+<p>漏洞描述写得挺吓人：NX54 存在远程命令执行漏洞，而且评级是 <strong>“无需口令 &#x2F; 未授权”</strong>。但因为没有公布具体方式，也没办法验证。我不明白这个漏洞怎么产生的，我自己还是R012，尝试从开telnet请求到mwcli，除非之前登录过，一直没绕过鉴权，可能还是没找到对点，或者需要恢复出厂设置。漏洞是个高危，一但入库，厂家必须修改。但从固件的行为来看，怎么改，堵上telnet就行了。。</p>
+<hr>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><ol>
+<li>客服一律不提供telnet密码，之前刚封死 telnet 的时候，我也跟着朋友骂厂家。现在看来，多少有点错怪他们。</li>
+<li>CNVD-2025-13489在我眼里，感觉更像是一个KPI漏洞，但因为它是个高危评级，厂家只能修复，所以才有了堵死telnet的操作。</li>
+<li>既然厂家做了这套规则，尊重规则。口令的具体算法，为了避嫌，不能在这里公开，但如果有朋友特别需要telnet，可以找我协助，一机一密只能自用。</li>
+<li>也希望厂家高抬贵手，好用的路由器不好碰，别再加堵了，给点DIY活路。</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/h3c/" rel="tag"># h3c</a>
+              <a href="/tags/nx54/" rel="tag"># nx54</a>
+              <a href="/tags/openwrt/" rel="tag"># openwrt</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/08/17/ollvm-ndk/" rel="prev" title="Android NDK 28 自定义 Clang & OLLVM (New Pass Manager) 混淆编译实战指南">
+                  <i class="fa fa-angle-left"></i> Android NDK 28 自定义 Clang & OLLVM (New Pass Manager) 混淆编译实战指南
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

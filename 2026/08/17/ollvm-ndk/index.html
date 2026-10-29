@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha256-HtsXJanqjKTc8vVQjO4YMhiqFoXkfBsjBWcX91T1jr8=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"lefo.me","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.18.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="引言在移动端安全对抗中，对 C++ 核心逻辑（如 Cocos 游戏引擎逻辑、加解密算法）进行混淆是防逆向分析的重要一环。LLVM 混淆器（OLLVM &#x2F; Hikari &#x2F; Pluto）是最常用的方案。 随着 Android NDK 28（搭载 LLVM 19）的发布，旧版的 Pass 管理器（Legacy Pass Manager）已被完全移除，取而代之的是 **New Pas">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android NDK 28 自定义 Clang &amp; OLLVM (New Pass Manager) 混淆编译实战指南">
+<meta property="og:url" content="https://lefo.me/2026/08/17/ollvm-ndk/index.html">
+<meta property="og:site_name" content="lefo的菜鸡实录">
+<meta property="og:description" content="引言在移动端安全对抗中，对 C++ 核心逻辑（如 Cocos 游戏引擎逻辑、加解密算法）进行混淆是防逆向分析的重要一环。LLVM 混淆器（OLLVM &#x2F; Hikari &#x2F; Pluto）是最常用的方案。 随着 Android NDK 28（搭载 LLVM 19）的发布，旧版的 Pass 管理器（Legacy Pass Manager）已被完全移除，取而代之的是 **New Pas">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-08-17T07:55:03.000Z">
+<meta property="article:modified_time" content="2026-10-29T11:18:42.161Z">
+<meta property="article:author" content="lefo">
+<meta property="article:tag" content="Android">
+<meta property="article:tag" content="NDK">
+<meta property="article:tag" content="LLVM">
+<meta property="article:tag" content="OLLVM">
+<meta property="article:tag" content="Security">
+<meta property="article:tag" content="Cocos">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://lefo.me/2026/08/17/ollvm-ndk/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://lefo.me/2026/08/17/ollvm-ndk/","path":"2026/08/17/ollvm-ndk/","title":"Android NDK 28 自定义 Clang & OLLVM (New Pass Manager) 混淆编译实战指南"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Android NDK 28 自定义 Clang & OLLVM (New Pass Manager) 混淆编译实战指南 | lefo的菜鸡实录</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-65991901-1"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-65991901-1","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="lefo的菜鸡实录" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">lefo的菜鸡实录</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">又是一个android开发</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BC%95%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%9A%80-%E6%A0%B8%E5%BF%83%E4%BC%98%E5%8C%96%E4%B8%8E%E9%81%BF%E5%9D%91%E6%8C%87%E5%8D%97"><span class="nav-number">1.1.</span> <span class="nav-text">🚀 核心优化与避坑指南</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%9B%A0%EF%B8%8F-%E7%AC%AC%E4%B8%80%E6%AD%A5%EF%BC%9A%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%BA%90%E7%A0%81%E5%87%86%E5%A4%87"><span class="nav-number">1.2.</span> <span class="nav-text">🛠️ 第一步：环境配置与源码准备</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%AE%9A%E4%BD%8D-NDK-%E5%AF%B9%E5%BA%94%E7%9A%84-LLVM-Commit"><span class="nav-number">1.2.1.</span> <span class="nav-text">1. 定位 NDK 对应的 LLVM Commit</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E7%B2%BE%E5%87%86%E5%85%8B%E9%9A%86-AOSP-LLVM-%E6%BA%90%E7%A0%81"><span class="nav-number">1.2.2.</span> <span class="nav-text">2. 精准克隆 AOSP LLVM 源码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%85%8B%E9%9A%86%E6%B7%B7%E6%B7%86%E6%8F%92%E4%BB%B6%E6%BA%90%E7%A0%81"><span class="nav-number">1.2.3.</span> <span class="nav-text">3. 克隆混淆插件源码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%85%B6%E5%AE%83%E9%97%AE%E9%A2%98"><span class="nav-number">1.2.4.</span> <span class="nav-text">4.其它问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%9B%A0%EF%B8%8F-%E7%AC%AC%E4%BA%8C%E6%AD%A5%EF%BC%9A%E4%BF%AE%E8%A1%A5-LLVM-19-%E9%80%82%E9%85%8D%E6%80%A7%E9%97%AE%E9%A2%98"><span class="nav-number">1.3.</span> <span class="nav-text">🛠️ 第二步：修补 LLVM 19 适配性问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%9B%A0%EF%B8%8F-%E7%AC%AC%E4%B8%89%E6%AD%A5%EF%BC%9A%E6%9E%84%E5%BB%BA-Clang-%E4%B8%8E-LLVM-%E6%A0%B8%E5%BF%83"><span class="nav-number">1.4.</span> <span class="nav-text">🛠️ 第三步：构建 Clang 与 LLVM 核心</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%9B%A0%EF%B8%8F-%E7%AC%AC%E5%9B%9B%E6%AD%A5%EF%BC%9A%E6%9E%84%E5%BB%BA-OLLVM-%E6%B7%B7%E6%B7%86%E6%8F%92%E4%BB%B6"><span class="nav-number">1.5.</span> <span class="nav-text">🛠️ 第四步：构建 OLLVM 混淆插件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E2%9A%A1-%E7%AC%AC%E4%BA%94%E6%AD%A5%EF%BC%9A%E6%9C%AC%E5%9C%B0%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E6%B5%8B%E8%AF%95"><span class="nav-number">1.6.</span> <span class="nav-text">⚡ 第五步：本地交叉编译测试</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%F0%9F%8E%AF-Android"><span class="nav-number">2.</span> <span class="nav-text">🎯 Android</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lefo</p>
+  <div class="site-description" itemprop="description">lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">47</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">38</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="sidebar-inner sidebar-blogroll">
+      <div class="links-of-blogroll animated">
+        <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+          链接
+        </div>
+        <ul class="links-of-blogroll-list">
+            <li class="links-of-blogroll-item">
+              <a href="https://mark.lefo.me/" title="https:&#x2F;&#x2F;mark.lefo.me&#x2F;" rel="noopener" target="_blank">常用站点</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="http://www.niuquery.com/" title="http:&#x2F;&#x2F;www.niuquery.com&#x2F;" rel="noopener" target="_blank">20度</a>
+            </li>
+            <li class="links-of-blogroll-item">
+              <a href="/pages/pension.html" title="&#x2F;pages&#x2F;pension.html">在京退休</a>
+            </li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-inner">
+      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6334086715606061"
+    crossorigin="anonymous"></script>
+<!-- blog侧 -->
+<ins class="adsbygoogle"
+    style="display:block"
+    data-ad-client="ca-pub-6334086715606061"
+    data-ad-slot="1986102848"
+    data-ad-format="auto"
+    data-full-width-responsive="true"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://lefo.me/2026/08/17/ollvm-ndk/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="lefo">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lefo的菜鸡实录">
+      <meta itemprop="description" content="lefo.me，记录工作中碰到的开发相关内容。Android,Java,Kotlin.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Android NDK 28 自定义 Clang & OLLVM (New Pass Manager) 混淆编译实战指南 | lefo的菜鸡实录">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Android NDK 28 自定义 Clang & OLLVM (New Pass Manager) 混淆编译实战指南
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-08-17 15:55:03" itemprop="dateCreated datePublished" datetime="2026-08-17T15:55:03+08:00">2026-08-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-10-29 19:18:42" itemprop="dateModified" datetime="2026-10-29T19:18:42+08:00">2026-10-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E7%A7%BB%E5%8A%A8%E5%AE%89%E5%85%A8/" itemprop="url" rel="index"><span itemprop="name">移动安全</span></a>
+        </span>
+          ，
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E7%A7%BB%E5%8A%A8%E5%AE%89%E5%85%A8/%E9%80%86%E5%90%91%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">逆向工程</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>在移动端安全对抗中，对 C++ 核心逻辑（如 Cocos 游戏引擎逻辑、加解密算法）进行混淆是防逆向分析的重要一环。LLVM 混淆器（OLLVM &#x2F; Hikari &#x2F; Pluto）是最常用的方案。</p>
+<p>随着 <strong>Android NDK 28</strong>（搭载 <strong>LLVM 19</strong>）的发布，旧版的 Pass 管理器（Legacy Pass Manager）已被完全移除，取而代之的是 **New Pass Manager (NPM)**。这意味着以往传统的 <code>-Xclang -load</code> 注入方式已失效，我们必须为新版 NDK 构建自定义的 Clang 编译器并适配新版 Pass 插件。</p>
+<p>本文将详细介绍如何从源码一步步构建支持 NDK 28 的自定义 Clang 编译器和 <code>Obfuscator.dylib</code> 混淆插件，并规避交叉编译中的各种“大坑”（如编译时间过长、缺失 32 位目标后端等问题）。</p>
+<span id="more"></span>
+
+<hr>
+<h2 id="🚀-核心优化与避坑指南"><a href="#🚀-核心优化与避坑指南" class="headerlink" title="🚀 核心优化与避坑指南"></a>🚀 核心优化与避坑指南</h2><p>在动手之前，先总结在实际中碰上的关键痛点：</p>
+<ol>
+<li><strong>适配 LLVM 19 接口变更</strong>：LLVM 19 对指令插入点 API 进行了调整，直接编译旧版 OLLVM 插件会报错。本文提供了核心补丁说明。</li>
+<li><strong>clang++为什么要构建</strong>，因为google签名的和obfuscator.dylib在mac上会认证不通过，出现TEAM ID的问题。所以需要自己签clang或者自己构建一个。不想操作ndk的，索性就自己build了。</li>
+</ol>
+<hr>
+<h2 id="🛠️-第一步：环境配置与源码准备"><a href="#🛠️-第一步：环境配置与源码准备" class="headerlink" title="🛠️ 第一步：环境配置与源码准备"></a>🛠️ 第一步：环境配置与源码准备</h2><h3 id="1-定位-NDK-对应的-LLVM-Commit"><a href="#1-定位-NDK-对应的-LLVM-Commit" class="headerlink" title="1. 定位 NDK 对应的 LLVM Commit"></a>1. 定位 NDK 对应的 LLVM Commit</h3><p>为了使我们自己构建的编译器与官方 NDK 完美兼容，必须拉取与 NDK 28 版本完全一致的 LLVM 提交（Commit）。</p>
+<p>运行 NDK 内部的 <code>clang++</code> 查看版本信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> ANDROID_NDK_HOME=<span class="string">&quot;<span class="variable">$HOME</span>/Library/Android/sdk/ndk/28.2.13676358&quot;</span></span><br><span class="line"><span class="variable">$ANDROID_NDK_HOME</span>/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --version</span><br></pre></td></tr></table></figure>
+<p>输出中会显示类似于 <code>97a699bf4812a18fb657c2779f5296a4ab2694d2</code> 的哈希值。</p>
+<h3 id="2-精准克隆-AOSP-LLVM-源码"><a href="#2-精准克隆-AOSP-LLVM-源码" class="headerlink" title="2. 精准克隆 AOSP LLVM 源码"></a>2. 精准克隆 AOSP LLVM 源码</h3><p>由于 LLVM 仓库体积庞大，我们采用<strong>浅克隆（Shallow Clone）</strong>与<strong>延迟检出（Sparse Checkout）</strong>策略，仅拉取我们需要的那个 Commit：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> -p ~/llvm-ndk28</span><br><span class="line"><span class="built_in">cd</span> ~/llvm-ndk28</span><br><span class="line"></span><br><span class="line"><span class="comment"># 克隆元数据但不检出文件</span></span><br><span class="line">git <span class="built_in">clone</span> \</span><br><span class="line">    --filter=blob:none \</span><br><span class="line">    --no-checkout \</span><br><span class="line">    https://android.googlesource.com/toolchain/llvm-project.git \</span><br><span class="line">    llvm-project</span><br><span class="line"><span class="built_in">cd</span> llvm-project</span><br><span class="line"></span><br><span class="line"><span class="comment"># 获取并检出指定 Commit</span></span><br><span class="line">git fetch --depth=1 origin 97a699bf4812a18fb657c2779f5296a4ab2694d2</span><br><span class="line">git checkout FETCH_HEAD</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-克隆混淆插件源码"><a href="#3-克隆混淆插件源码" class="headerlink" title="3. 克隆混淆插件源码"></a>3. 克隆混淆插件源码</h3><p>这里以 Hikari&#x2F;Obfuscator 项目为例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> ~/llvm-ndk28</span><br><span class="line">git <span class="built_in">clone</span> https://github.com/lich4/llvm-pass-hikari.git ollvm-pass</span><br></pre></td></tr></table></figure>
+<h3 id="4-其它问题"><a href="#4-其它问题" class="headerlink" title="4.其它问题"></a>4.其它问题</h3><p>根据我同事反馈，版本不一致也没有问题，各编各的。要混淆的部分用21，其它的用自带的19也行。</p>
+<hr>
+<h2 id="🛠️-第二步：修补-LLVM-19-适配性问题"><a href="#🛠️-第二步：修补-LLVM-19-适配性问题" class="headerlink" title="🛠️ 第二步：修补 LLVM 19 适配性问题"></a>🛠️ 第二步：修补 LLVM 19 适配性问题</h2><p>LLVM 19 中废弃了部分隐式转换。直接编译 <code>ollvm-pass</code> 插件会遇到迭代器类型不匹配的编译错误。</p>
+<p>需要编辑 <strong><code>~/llvm-ndk28/ollvm-pass/obfuscator/Substitution.cpp</code></strong> 文件，进行如下修改：</p>
+<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">// 找到 BinaryOperator::CreateNeg 的调用位置</span><br><span class="line"><span class="deletion">- op = BinaryOperator::CreateNeg(bo-&gt;getOperand(1), &quot;&quot;, bo);</span></span><br><span class="line"><span class="addition">+ op = BinaryOperator::CreateNeg(bo-&gt;getOperand(1), &quot;&quot;, bo-&gt;getIterator());</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>原理</strong>：LLVM 19 中，<code>BinaryOperator::CreateNeg</code> 的第三个参数表示指令插入位置，它现在要求传入 <code>BasicBlock::iterator</code>，而不能再直接传入 <code>Instruction* bo</code> 指针。这篇文章是先总结的，但我后来发现调用的地方挺多，<strong>直接在.h上加了个函数</strong>，不然一处一处修改太费劲了。</p>
+</blockquote>
+<hr>
+<h2 id="🛠️-第三步：构建-Clang-与-LLVM-核心"><a href="#🛠️-第三步：构建-Clang-与-LLVM-核心" class="headerlink" title="🛠️ 第三步：构建 Clang 与 LLVM 核心"></a>🛠️ 第三步：构建 Clang 与 LLVM 核心</h2><p>我们在一处 CMake 目录中同时配置并编译 Clang 编译器与开发环境，避免重复工作。</p>
+<blockquote>
+<p>[!WARNING]<br><strong>警告</strong>：为了同时兼容 <code>arm64-v8a</code> 与 <code>armeabi-v7a</code>，<code>-DLLVM_TARGETS_TO_BUILD</code> 参数中必须包含 <code>ARM</code>。</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> ~/llvm-ndk28</span><br><span class="line"></span><br><span class="line"><span class="comment"># 导出工具链环境变量 (此处使用 Android SDK 附带的 CMake 与 Ninja 即可)</span></span><br><span class="line"><span class="built_in">export</span> NDK=<span class="string">&quot;<span class="variable">$HOME</span>/Library/Android/sdk/ndk/28.2.13676358&quot;</span></span><br><span class="line"><span class="built_in">export</span> CMAKE=<span class="string">&quot;<span class="variable">$HOME</span>/Library/Android/sdk/cmake/4.0.2/bin/cmake&quot;</span></span><br><span class="line"><span class="built_in">export</span> NINJA=<span class="string">&quot;<span class="variable">$HOME</span>/Library/Android/sdk/cmake/4.0.2/bin/ninja&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 配置 CMake 选项</span></span><br><span class="line"><span class="string">&quot;<span class="variable">$CMAKE</span>&quot;</span> \</span><br><span class="line">  -S llvm-project/llvm \</span><br><span class="line">  -B clang-build \</span><br><span class="line">  -G Ninja \</span><br><span class="line">  -DCMAKE_BUILD_TYPE=Release \</span><br><span class="line">  -DCMAKE_OSX_ARCHITECTURES=arm64 \</span><br><span class="line">  -DLLVM_TARGETS_TO_BUILD=<span class="string">&quot;AArch64;ARM;X86&quot;</span> \</span><br><span class="line">  -DLLVM_ENABLE_PROJECTS=<span class="string">&quot;clang;lld&quot;</span> \</span><br><span class="line">  -DLLVM_BUILD_TOOLS=ON \</span><br><span class="line">  -DLLVM_BUILD_EXAMPLES=OFF \</span><br><span class="line">  -DLLVM_INCLUDE_TESTS=OFF \</span><br><span class="line">  -DLLVM_INCLUDE_BENCHMARKS=OFF \</span><br><span class="line">  -DLLVM_INCLUDE_DOCS=OFF</span><br><span class="line"></span><br><span class="line"><span class="comment"># 编译 Clang 与 LLD 链接器</span></span><br><span class="line"><span class="string">&quot;<span class="variable">$NINJA</span>&quot;</span> -C clang-build -j8</span><br><span class="line"></span><br><span class="line"><span class="comment"># 将全部编译产物（包含编译器和开发依赖的 LLVMConfig.cmake）安装至统一目录</span></span><br><span class="line"><span class="built_in">mkdir</span> -p ~/llvm-ndk28/llvm-install</span><br><span class="line"><span class="string">&quot;<span class="variable">$CMAKE</span>&quot;</span> \</span><br><span class="line">  --install clang-build \</span><br><span class="line">  --prefix ~/llvm-ndk28/llvm-install</span><br></pre></td></tr></table></figure>
+
+<p>安装完成后，在 <code>~/llvm-ndk28/llvm-install/bin/clang++</code> 可找到我们的自定义编译器；在 <code>~/llvm-ndk28/llvm-install/lib/cmake/llvm/LLVMConfig.cmake</code> 获得了编译插件所依赖的导出配置文件。</p>
+<hr>
+<h2 id="🛠️-第四步：构建-OLLVM-混淆插件"><a href="#🛠️-第四步：构建-OLLVM-混淆插件" class="headerlink" title="🛠️ 第四步：构建 OLLVM 混淆插件"></a>🛠️ 第四步：构建 OLLVM 混淆插件</h2><p>现在，我们可以利用刚刚编译出的 LLVM 配置，直接编译出对应的混淆动态库：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> ~/llvm-ndk28/ollvm-pass</span><br><span class="line"></span><br><span class="line"><span class="string">&quot;<span class="variable">$CMAKE</span>&quot;</span> \</span><br><span class="line">  -S obfuscator \</span><br><span class="line">  -B obfuscator-build \</span><br><span class="line">  -G Ninja \</span><br><span class="line">  -DCMAKE_BUILD_TYPE=Release \</span><br><span class="line">  -DLLVM_DIR=<span class="string">&quot;<span class="variable">$HOME</span>/llvm-ndk28/llvm-install/lib/cmake/llvm&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 编译混淆 Pass 插件</span></span><br><span class="line"><span class="string">&quot;<span class="variable">$NINJA</span>&quot;</span> -C obfuscator-build -j8</span><br></pre></td></tr></table></figure>
+<p>编译成功后，即可在 <code>obfuscator-build</code> 目录下收获最终的混淆插件：**<code>Obfuscator.dylib</code>**。</p>
+<hr>
+<h2 id="⚡-第五步：本地交叉编译测试"><a href="#⚡-第五步：本地交叉编译测试" class="headerlink" title="⚡ 第五步：本地交叉编译测试"></a>⚡ 第五步：本地交叉编译测试</h2><p>测试我们编译出来的工具链是否能够正确地对 Android 目标代码执行混淆：</p>
+<ol>
+<li><p><strong>准备测试环境变量</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> CLANG=<span class="string">&quot;<span class="variable">$HOME</span>/llvm-ndk28/llvm-install/bin/clang++&quot;</span></span><br><span class="line"><span class="comment"># 注意：现代 NDK 的真实 sysroot 路径位于以下位置</span></span><br><span class="line"><span class="built_in">export</span> SYSROOT=<span class="string">&quot;<span class="variable">$HOME</span>/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot&quot;</span></span><br><span class="line"><span class="built_in">export</span> PASS=<span class="string">&quot;<span class="variable">$HOME</span>/llvm-ndk28/ollvm-pass/obfuscator-build/Obfuscator.dylib&quot;</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>编写简单 C 文件并测试编译</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> ~/llvm-ndk28/ollvm-pass/obfuscator/test</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用新版 -fpass-plugin 载入插件，并开启 -O2 触发优化流水线</span></span><br><span class="line"><span class="string">&quot;<span class="variable">$CLANG</span>&quot;</span> \</span><br><span class="line">    --target=aarch64-linux-android24 \</span><br><span class="line">    --sysroot=<span class="string">&quot;<span class="variable">$SYSROOT</span>&quot;</span> \</span><br><span class="line">    -O2 \</span><br><span class="line">    -fpass-plugin=<span class="string">&quot;<span class="variable">$PASS</span>&quot;</span> \</span><br><span class="line">    -S -emit-llvm \</span><br><span class="line">    test.c \</span><br><span class="line">    -o /tmp/ollvm-test.ll</span><br></pre></td></tr></table></figure>
+<p>如果终端输出了形如 <code>&gt;&gt;&gt;&gt; run fla on ...</code> 等控制流平坦化混淆成功执行的日志，则表明您的自定义 NPM 混淆链已完全打通！</p>
+</li>
+</ol>
+<hr>
+<h1 id="🎯-Android"><a href="#🎯-Android" class="headerlink" title="🎯 Android"></a>🎯 Android</h1><ol>
+<li><p><strong>gradle</strong></p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">android &#123;</span><br><span class="line">    defaultConfig &#123;</span><br><span class="line">        externalNativeBuild &#123;</span><br><span class="line">            cmake &#123;</span><br><span class="line">                <span class="comment">// 1. 强制指定你自己的 clang 和 clang++</span></span><br><span class="line">                arguments( <span class="string">&quot;-DCMAKE_TOOLCHAIN_FILE=/Users/xxx/llvm-ndk28/hikari-toolchain.cmake&quot;</span>, </span><br><span class="line">                <span class="string">&quot;-DCMAKE_C_COMPILER=/Users/xxx/llvm-ndk28/bin/hikari-clang&quot;</span>, </span><br><span class="line">                <span class="string">&quot;-DCMAKE_CXX_COMPILER=/Users/xxx/llvm-ndk28/bin/hikari-clang++&quot;</span> )</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 2. 注入你的 pass 插件路径 这里其实和wrapper中的配置应该是重复了，我也不试了</span></span><br><span class="line">                cppFlags <span class="string">&quot;-fpass-plugin=/Users/xxx/llvm-ndk28/ollvm-pass/hikari-build/Hikari.dylib&quot;</span></span><br><span class="line">                cFlags <span class="string">&quot;-fpass-plugin=/Users/xxx/llvm-ndk28/ollvm-pass/hikari-build/Hikari.dylib&quot;</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>hikari-clang++</strong><br>hikari-clang也要做个wrapper，就是写个shell包一下</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">set</span> -e</span><br><span class="line"></span><br><span class="line">ROOT=/Users/xxx/llvm-ndk28</span><br><span class="line"></span><br><span class="line">HIKARI=<span class="variable">$ROOT</span>/ollvm-pass/hikari-build/Hikari.dylib</span><br><span class="line">CLANG=<span class="variable">$ROOT</span>/clang-build/bin/clang++</span><br><span class="line"></span><br><span class="line"><span class="built_in">ln</span> -sf <span class="variable">$ROOT</span>/policy.json <span class="string">&quot;<span class="subst">$(pwd)</span>/policy.json&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">exec</span> <span class="variable">$CLANG</span> \</span><br><span class="line">    -fpass-plugin=<span class="variable">$HIKARI</span> \</span><br><span class="line">    <span class="string">&quot;<span class="variable">$@</span>&quot;</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>hikari-toolchain.cmake，也可放入项目目录</strong> </p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span>(CMAKE_SYSTEM_NAME Android)</span><br><span class="line"></span><br><span class="line"><span class="keyword">set</span>(CMAKE_ANDROID_NDK</span><br><span class="line">    /Users/xxx/Library/Android/sdk/ndk/<span class="number">28.2</span>.<span class="number">13676358</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">set</span>(CMAKE_ANDROID_ARCH_ABI arm64-v8a)</span><br><span class="line"></span><br><span class="line"><span class="keyword">set</span>(CMAKE_ANDROID_API <span class="number">26</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">include</span>(</span><br><span class="line">    <span class="variable">$&#123;CMAKE_ANDROID_NDK&#125;</span>/build/cmake/android.toolchain.cmake</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">set</span>(CMAKE_C_COMPILER</span><br><span class="line">    /Users/xxx/llvm-ndk28/bin/hikari-clang</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">set</span>(CMAKE_CXX_COMPILER</span><br><span class="line">    /Users/xxx/llvm-ndk28/bin/hikari-clang++</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>填坑：</strong><br>要在policy.json中，顶级节点配置src_root，.&#x2F;gradlew 命令构建不混淆，光这个调试了我3个小时，能编译能构建，就是混淆不够，最后多种尝试，找到了src_root配置。<br>enable-indibran改为了false，否则构建失败，也不折腾了，放弃一项吧。</p>
+</li>
+</ol>
+<hr>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>亲妈都不认识了，自己读肯定是没办法读了，但是AI配合ghidra的mcp，还是能梳理，尽管不能还原，但逻辑上还能猜到，AI还是强。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android/" rel="tag"># Android</a>
+              <a href="/tags/NDK/" rel="tag"># NDK</a>
+              <a href="/tags/LLVM/" rel="tag"># LLVM</a>
+              <a href="/tags/OLLVM/" rel="tag"># OLLVM</a>
+              <a href="/tags/Security/" rel="tag"># Security</a>
+              <a href="/tags/Cocos/" rel="tag"># Cocos</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/03/06/cocos2d-issue-fix/" rel="prev" title="Android 15/16 Cocos2d-x V8 Crash 问题分析与 GLThread 复用解决方案">
+                  <i class="fa fa-angle-left"></i> Android 15/16 Cocos2d-x V8 Crash 问题分析与 GLThread 复用解决方案
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/09/15/nx54-telnet-r013/" rel="next" title="说说NX54 新Telnet(无具体方案)">
+                  说说NX54 新Telnet(无具体方案) <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">lefo</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>
