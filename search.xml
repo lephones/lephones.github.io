@@ -1,0 +1,2543 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>如何通过travis ci自动发布blog</title>
+    <url>/2015/04/10/how-to-deploy-blog-by-travis-ci/</url>
+    <content><![CDATA[背景
+过时，请使用github action
+
+用hexo搭建BLOG，悲催的就是每次换台电脑就得搭一次环境，之前在网上也看到过有自动发布的教程，一直没有搞。最近网上又翻了一下，发现用travis ci不需要拥有自己的主机（有提供服务的平台），相对来说比较节省折腾，整理一下发出来。
+要求
+github pages，用于搭建BLOG，不介绍。
+travis ci，自己百度一下补脑，可以理解为就是一个node.js的虚拟机环境。https://travis-ci.org/提供了travis-ci的服务，可以指定构建github上的代码。
+本地有hexo环境
+linux或者MAC工作环境
+
+
+
+用法：
+申请travis ci账户，将你的blog的repo绑定到travis-ci上。
+在你的github pages的项目（也就是username.github.io），建一个分支，用于存放你写的文章的md文件，假设分支叫blog
+
+将blog分支pull下来，参考下面的列表，将hexo环境下的这些文件夹，文件放到blog分支里
+hexo	|-scaffolds	|-source	|-themes	|-CNAME	|-_config.yml	|-package.json
+
+要使用travis，还需要一个travis的脚本配置文件，就是告诉travis当构建的时候，执行这个脚本。在分支的根目录新建一个文本文件，重命名为.travis.yml，在里面加入下面的代码，注意：将第3行的blog改成你的分支的名字。
+branches:  only:  - bloglanguage: node_jsnode_js:- &#x27;0.10&#x27;- before_install:install:- npm install hexo-cli -g- npm install hexo --save- npm install hexo-deployer-git --save- npm install hexo-generator-archive --save- npm install hexo-generator-category --save- npm install hexo-generator-feed --save- npm install hexo-generator-index --save- npm install hexo-generator-sitemap --save- npm install hexo-generator-tag --save- npm install hexo-renderer-ejs --save- npm install hexo-renderer-marked --save- npm install hexo-renderer-stylus --savescript:- hexo clean- hexo g- hexo d
+
+已经完成了大半了，现在已经可以构建出html了，但是，还不能把生成的静态页面上传到github，要上传到github。
+将生成的这些先push到github上
+$ ssh-keygen -t rsa -C &quot;your_email@example.com&quot;
+
+在linux环境下，生成github要用的SSHKey，参考https://help.github.com/。记得要在项目的的Settings里加入你的key。
+正确生成后你会得到两个文件，一个叫ssh_key，一个叫ssh_key.pub。
+安装travis,需要ruby，gem环境，命令：
+apt-get install ruby-devgem install travistravis login --auto
+使用你的github账户登录
+假设刚刚生成的sshkey的名字叫 ssh_key。下面的代码自动会生成ssh_key.enc文件，在你的.travis.yml添加一段代码
+$ travis encrypt-file ssh_key --add -r username/reponame
+
+有可能添加不上，去掉--add参数，执行后，手动添加，代码如下：
+before_install:- openssl aes-256-cbc -K $encrypted_xxxxxxxx_key -iv $encrypted_xxxxxxxx_iv -in .travis/ssh_key.enc -out ~/.ssh/id_rsa -d
+
+新建.travis文件夹，将刚刚的ssh_key.enc放在该文件夹下，再在该文件夹下新建文件ssh_config。
+Host github.com  User git  StrictHostKeyChecking no  IdentityFile ~/.ssh/id_rsa  IdentitiesOnly yes
+
+如果之前是自动添加的语句，需要将里面的文件目录修改成与上面描述的目录一致。
+在.travis.yml的before_install区域里加入下面的代码
+- chmod 600 ~/.ssh/id_rsa- eval $(ssh-agent)- ssh-add ~/.ssh/id_rsa- cp .travis/ssh_config ~/.ssh/config- git config --global user.name &#x27;username&#x27;- git config --global user.email &#x27;email&#x27;
+push到github，travis就会自动构建，并生成到master下面。成品可参考前一篇BLOG
+注意
+最新版本的hexo，是3.x，如果你用的是2.x，需要从github上clone对应的版本使用，不能直接npm install。否则，你的_config.yml可能不适用。
+
+]]></content>
+      <categories>
+        <category>个人随笔</category>
+      </categories>
+      <tags>
+        <tag>travis</tag>
+        <tag>hexo</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>android开发中如何调试webview中的网页</title>
+    <url>/2015/11/19/remote-debugging/</url>
+    <content><![CDATA[在浏览器中，如果我们想要看到一个网页的代码，只要按f12就可以轻松进行调试，但是在手机中，直接在手机浏览器上调试是肯定不行的。
+为什么要在手机中调试网页普通的网页，我们在chrome中就能模拟手机环境。但是在android的webview中，有些是需要和native代码进行交互的，比如说注入的js，有时候我们还会用些模板来动态生成html，所以只有在手机上真正展示出来的效果才是最终的网页代码，必须在手机上调试。
+
+
+解决办法google就为我们提供了调试手机中网页代码的方法，此方法只在4.0以上的手机有效。
+
+最新的chrome浏览器
+adb连接手机需要的usb驱动
+4.4系统以上的手机
+
+首先，你的电脑能连上你手机的开发者模式，在chrome中输入chrome:&#x2F;&#x2F;inspect，如果你的连接没问题，就能在下面发现你的手机弄号。
+在你的程序中加一句
+if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.KITKAT) &#123;    WebView.setWebContentsDebuggingEnabled(true);&#125;
+
+通常，只要在代码中加入如下代码，就可以在测试和生产环境中不用修改了
+if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.KITKAT) &#123;    if (0 != (getApplicationInfo().flags &amp;= ApplicationInfo.FLAG_DEBUGGABLE))    &#123; WebView.setWebContentsDebuggingEnabled(true); &#125;&#125;
+
+现在跑起来你的程序APP到webview，在chrome中，就会看到你的设备下面有你的网页，点击inspect就能在chrome中像普通网页一样debug了。
+参考：https://developers.google.com/web/tools/chrome-devtools/debug/remote-debugging/webviews
+备注：如果你只想调试网页，在手机上下载chrome for android，只要4.0以上的机子就行了。
+]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>如何使用网页调起APP</title>
+    <url>/2015/10/10/web-to-app/</url>
+    <content><![CDATA[前言为了推广自己的APP，增加用户黏性，会在浏览器中加入调用自己APP的链接，如果用户没有安装APP，则去下载。淘宝，支付宝，百度手机助手，都有这个功能。简单介绍一下方法
+拦截http链接不要用该方法，兼容性差，国内浏览器都不允许跳转
+&lt;activity android:name=”.MyActivity”&gt;  &lt;intent-filter&gt;    &lt;action android:name=”android.intent.action.VIEW” /&gt;    &lt;category android:name=”android.intent.category.DEFAULT” /&gt;    &lt;category android:name=”android.intent.category.BROWSABLE” /&gt;    &lt;!-- 关键所在，匹配相应域名和 url 模式 --&gt;    &lt;data android:scheme=”http” android:host=”www.xxx.com” android:pathPattern=”/xx/.*” /&gt;  &lt;/intent-filter&gt;&lt;/activity&gt;
+其原理就是，对指定的http链接进行拦截，从而达到跳转目的。这种方式还有一点恶心的地方就是会弹出一个弹窗让你选择是用浏览器还是APP打开该连接，如果你选择浏览器并勾选不再询问，如果下次你的URL没有改变，那你就悲剧了。。。
+
+
+使用本地http服务http://127.0.0.1:8804/xxx
+原理:我们都知道127.0.0.1访问的是本机地址，只要我们的应用在本地搭建一个简单http服务器，在网页中用ajax偷偷发一个请求，访问这个地址，APP就能收到消息并处理。目前好多手机助手，应用市场都使用该方法，貌似是一个很好的解决方案，但同样该方法也有弊端：首先，各家应用端口不能冲突，否则就乱套了；其次，你的程序必须能一直在后台启动，不能死掉，否则你的http服务就挂了，我们都知道市面上的手机助手都有守(liu)护(mang)进程，杀不死；另外，该方法因为后台服务需要一直启动，会比较耗电。
+找开源项目 NanoHTTPD
+自定义scheme与拦截http链接类似,需要修改scheme为自己的scheme
+&lt;activity android:name=”.MyActivity”&gt;  &lt;intent-filter&gt;    &lt;action android:name=”android.intent.action.VIEW” /&gt;    &lt;category android:name=”android.intent.category.DEFAULT” /&gt;    &lt;category android:name=”android.intent.category.BROWSABLE” /&gt;    &lt;!-- 关键所在，匹配相应域名和 url 模式 --&gt;    &lt;data android:scheme=”yourscheme” android:host=”yourhost” /&gt;  &lt;/intent-filter&gt;&lt;/activity&gt;
+然后你的链接格式就是yourscheme://yourhost/xxx这样的格式。
+该方法最大的问题就是，如果应用没有安装，怎么办？点击链接就会404
+对于应用没有安装的问题，也有解决办法，就是在网页嵌入一个&lt;iframe&gt;标签来打开这个连接。这需要编写JS脚本，具体操作如下 :
+
+使用JS代码为网页创建一个&lt;iframe src=&quot;yourscheme://yourhost/xxx&quot; style=&quot;disable:none&quot;/&gt;
+在后面加入一句setTimeout方法，超时时间设置为1000，去打开下载地址
+该方法同样适合IOS
+
+**注意:**在新的chrome浏览器(chrome 25以后)中，已经不支持用自定义scheme，但是chrome引进一种叫Chrome Intent，该方式在清单文件中和自定义scheme类似
+intent:   //scan/   #Intent;       package=com.google.zxing.client.android;       scheme=zxing;    end; 
+
+&lt;intent-filter&gt;  &lt;action android:name=&quot;android.intent.action.VIEW&quot;/&gt;  &lt;category android:name=&quot;android.intent.category.DEFAULT&quot;/&gt;  &lt;category android:name=&quot;android.intent.category.BROWSABLE&quot;/&gt;  &lt;data android:scheme=&quot;zxing&quot; android:host=&quot;scan&quot; android:path=&quot;/&quot;/&gt;&lt;/intent-filter&gt;
+
+我们可以在JS代码中判断到底应该生成哪种链接。可以参考阿里系的软件，淘宝，支付宝。在电脑的chrome中打开debug模式，可以模拟各种设备来访问m.taobao.com 和m.alipay.com
+简单看了一下淘宝和支付宝网页的源码，感觉复杂点是从UserAgent中来判断系统、浏览器版本、是否支持Chrome Intent等（好像淘宝还对samsung做了特殊处理）
+弊端：在第三方软件的webview中会不支持，比如 微信
+总结网上好多人推崇第二种方式，但我觉得第二种方式虽然适配简单，但是让你的程序一直在后台运行，也是个技术活。况且，如果在我的手机上一直在后台运行，还杀不死，总有种被强奸的感觉，还TMD耗电！所以还是推崇第三种方式。
+]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>网页调用APP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>动态加载总结篇</title>
+    <url>/2016/03/19/apk-dynamic-load/</url>
+    <content><![CDATA[动态加载是早几年前的神秘话题，这几年随着技术的开放，动态加载也用的越来越多，做了一些收录，把我之前写的那些渣渣文章做个弥补，再补上另一篇渣渣。
+这篇文章没有实质性内容，开源可参考的框架很多，算是做了一点点收录。反正也好久没写博客了，顺带随便写点啥。
+常用的动态加载的方法
+代理方式，声明一个空壳activity，空壳activity中包含一个proxy activity对象，回调着proxy activity的生命周期。
+
+参考google的multidex的方案，反射BaseDexClassLoader拿到dexElements，将自己的dex文件添加到这个列表里。此方法有个问题就是CLASS_ISPREVERIFIED。
+
+这个方法是我从支付宝中反编译中看的，反射mPackageInfo对象，这个对象是一个LoadedApk，再用反射替换掉这个对象的mClassLoader字段为自己的PathClassLoader，具体介绍请看探究支付宝android客户端的动态加载
+
+初始化的代码要写在Application类的attachBaseContext方法中，不要写在onCreate里，ContentProvider:onCreate()调用优先于Application:onCreate()，所以我关于支付宝的那篇文章，介绍是有点错误的。
+
+
+
+部分框架介绍：
+DynamicLoadApk
+  采用代理的方式，在清单文件里注册了一个空壳avtivity，处理插件中，调用插件时，其实是start了空壳avtivity，插件中所有activity都需要继承proxy avtivity，插件中的activity其实就是一个普通的类。
+  对安卓系统没有侵入性，各android版本均适用。
+  完全实现插件化，不用在清单文件中注册各组件
+  不能用this关键字，因为插件中的activity，本身不是一个系统加载过去的Context，当你要用this时，必须使用proxy avtivity的对象，也就是项目中的that。
+  对项目改动有些大，所有的activity需要继承自proxy avtivity。
+
+DroidPlugin
+  奇虎360的框架，360手机助手在用。
+  每个插件都是独立的，插件之间完全隔离。
+  资源id不存在冲突
+  四大组件不需要在清单文件中注册，等于调起一个未安装的APK，非常适合全家桶啊。
+  不能使用自定义资源的通知
+
+DynamicAPK
+  携程的框架，宿主和项目是浑然一体的。
+  实现资源共享，代码共用。
+  资源id需要特殊处理
+  四大组件必须得在宿主的清单文件中注册。
+
+
+资源问题
+360的插件没有这个问题，它们插件之前不能共用资源
+
+插件和宿主的资源id会冲突，修改方法：不同插件用不同的资源package，即修改资源生成的id。默认都是以0x00开头，可以改为0xA1 0xA2开头，这需要修改aapt的源码，可参考携程的插件化，里面有aapt的代码。
+  关于怎么搭建aapt的编译环境，可参考我前同事写的一篇BLOG Build aapt for windows，这货的这篇博客居然英文，十万头羊驼。。
+
+也可以自已写ids，只要保证id没有一样的，不冲突就行。
+
+
+附，阿里的开源动态修复框架：都针对art和dex做了特殊处理dexposed(art慎用)AndFix
+]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>动态加载</tag>
+        <tag>插件化</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>编译Android源码，使用hide api和internal api</title>
+    <url>/2016/07/26/compile-android-source/</url>
+    <content><![CDATA[前言因为项目需要，有部分代码调用了Hide api，需要没有被阉割的android.jar。对于5.0以前的系统，这个jar可以从手机的framework.apk中提取，利用dex2jar变成jar，再覆盖SDK中的jar包中相同类名（sdk中有些类不是framework下的，framework只是一个模块，需要覆盖合并）。从5.0以上开始后，这个方法就不行了，必须自己生成jar包来使用。
+官方说明https://source.android.com/source/index.htmlhttps://mirrors.tuna.tsinghua.edu.cn/help/AOSP/
+
+
+环境搭建# fetch sourcesudo yum install gitsudo yum install wget# to compilesudo yum install java-1.7.0-openjdksudo yum install java-1.7.0-openjdk-develsudo yum install glibc.i686sudo yum install libstdc++.i686sudo yum install bisonsudo yum install zipsudo yum install unzip
+
+编译时候，如果提示找不到某个.so库，可以使用yum whatprovides 这个命令来搜索缺少的软件如我的就缺少 ld-linux.so.2(因为我没有按上面的包来安装，都是编译时候缺少什么装什么软件)
+yum whatprovides ld-linux.so.2
+
+安装某个软件提示protected multilib version    yum –setopt&#x3D;protected_multilib&#x3D;false
+libz.so.1 zlib-1.2.7-13.el7.i686
+过程下载repo
+mkdir ~/binPATH=~/bin:$PATHcurl https://storage.googleapis.com/git-repo-downloads/repo &gt; ~/bin/repochmod a+x ~/bin/repo
+
+创建工作目录
+mkdir WORKING_DIRECTORYcd WORKING_DIRECTORY
+
+初始化仓库，这里需要连接google，我走了代理，没有修改REPO，不清楚修改repo行不行
+repo init -u https://mirrors.tuna.tsinghua.edu.cn/git/AOSP/platform/manifest## 如果提示无法连接到 gerrit.googlesource.com，可以编辑 ~/bin/repo，把 REPO_URL 一行替换成下面的：REPO_URL = &#x27;https://mirrors.tuna.tsinghua.edu.cn/git/git-repo&#x27;
+
+下载，同步源码
+repo init -u https://mirrors.tuna.tsinghua.edu.cn/git/AOSP/platform/manifest -b android-6.0.1_r1repo sync
+
+设置代理，我没有使用清华的repo_url，因为公司的电脑默认可以翻墙（虚机不允许），就直接改了个代理搞定了
+export HTTP_PROXY=http://your proxy ip:8888export HTTPS_PROXY=http://your proxy ip:8888#取消代理export -n HTTP_PROXY
+
+
+编译：
+. build/envsetup.shlunch aosp_arm-engmake -j16
+
+编译SDK(编译sdk的时候用，这里不用执行，只是介绍一下，有上面的命令就够了)：
+lunch sdk_sdk-engmake sdk
+
+使用hide api和internal api之前我想一步到位直接编译出android.jar，将源码中带有@hide标记的代码进行处理，使其在make sdk的时候，不要删除这些代码。修改方法 ：去掉代码中的@hide比较不现实，太多了。经整理发现，进行hide api处理，其实是在生成api doc的时候，关键的代码在.&#x2F;external&#x2F;doclava&#x2F;目录下。我们修改Stub类，可以达到目的。
+后来发现，在编译android.jar的时候，是有一个类的映射，有一个文件保存需要将哪些类打入到android.jar。上面的方法只处理了android.jar中的hide api，而还有internal的代码还是没能打入jar。
+于是，只好使用make -j32命令，直接都编译了一圈，然后标准sdk中的jar进行合并，生成了包含internal的jar包.
+framework目录：
+out/target/common/obj/JAVA_LIBRARIES/framework_intermediate
+SDK的android.jar目录：
+out/target/common/obj/JAVA_LIBRARIES/android_stubs_current_intermediates
+
+相关阅读
+记一次编译安卓模拟器镜像
+
+]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>source</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Android沉浸式状态栏的实现</title>
+    <url>/2016/09/05/translucent-status-bar/</url>
+    <content><![CDATA[需求从API 19开始，也就是android 4.4 kitcat，android开始支持沉浸式状态栏。可以使状态栏看起来和我们的程序浑然一体，不再像之前那样突兀。几个月前，刚好做了个这方面的需求，记录一下踩了的坑。
+一共两种类型的沉浸式，一种是将view直接伸到statusbar里去，另一种是直接给statusbar设置一个背景色。其中，有些需要将伸到statusbar里的页面，顶部还有一个类似titlebar的view，有交互，必须保证操作区域没有进入到状态栏中。设置背景色的需求则比较简单，直接换个纯色的背景色。
+实现一顿的搜索前辈们的各种技术文章之后发现，一切效果都是：不理想。可以参考知乎上的一个问答Android 5.0 如何实现将布局的内容延伸到状态栏，网上也找了一些开源类，大多修改状态栏颜色的和布局伸入状态栏的是分开的，没有在一起介绍的。而且发现有些方法中介绍的fitsSystemWindows属性的办法，对我来说简直就是噩梦，布局太复杂，试了好多遍都没成功。
+
+
+修改状态栏颜色的方法4.4的版本和5.x的版本，实现方式还有点区别。4.4是没有提供直接改状态栏的办法的，如果要修改状态栏颜色，就需要将状态栏直接隐藏，再在根布局上增加一个statusbar等高的view。
+而在5.x的系统上，有一个方法叫，setStatusBarColor，可以直接修改状态栏的颜色。
+4.4隐藏状态栏的代码如下，
+Window window =  mActivity.getWindow();window.addFlags(Window.FLAG_TRANSLUCENT_STATUS);
+
+设置颜色比较简单，在4.4的系统，调用addFlags(Window.FLAG_TRANSLUCENT_STATUS)，然后在根布局add一个状态栏高度的view；在5.x以上的系统，调用setStatusBarColor，就OK了。
+将布局延伸到状态栏将布局延伸到状态栏，需要做的就是隐藏掉状态栏，最初我也是按照搜索到的资料介绍，在5.x的系统上使用以下代码：
+window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);window.addFlags(Window.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);window.setStatusBarColor(Color.TRANSPARENT);
+结果，测试发现在华为EMUI 3.x的5.x系统上，沉浸式状态栏的效果失效了。于是在5.0的系统上，改成了在调用setStatusBarColor之前，调用addFlags(Window.FLAG_TRANSLUCENT_STATUS)，没有使用上面的代码。
+window.addFlags(Window.FLAG_TRANSLUCENT_STATUS);window.setStatusBarColor(Color.TRANSPARENT);
+
+实践发现addFlag(FLAG_TRANSLUCENT_STATUS)就能让状态栏隐藏，在4.4中，有一层由深变浅的渐变遮罩（这个貌似没办法），不会覆盖整个状态栏；在5.x的手机上，会有一个半透明的黑色遮罩，这个是覆盖的整个状态栏位置的。
+为了解决5.0的黑色遮罩的问题，就需要调用window.setStatusBarColor(Color.TRANSPARENT)，将状态栏完全设置成全透明的。
+布局复杂但是，在隐藏掉以后，实际上，时间、wifi、通知等这些都会存在，顶部的titlebar就需要向下移动statusbar的高度，否则，时间，信号，wifi这些会覆盖在titlebar上面。
+解决的办法就是，需要将titlebar的位置，向下移动一个statusbar高度。由于这种类型的页面比较少，所以直接在有titlebar的布局中，include增加了一个0dp高度的view，而在需要将其显示时，初始化时修改view的高度。
+为了修改颜色和布局伸入状态栏可以统一处理，statusbar就完全隐藏掉，再增加一个statusbar高度的自定义背景色的view。
+代码因为项目sdk版本的原因，我直接把Window类一些字段复制出来了。调用方式：
+StatusBarManager statusBarManager = new StatusBarManager(activity);//这里如果要移动titlebar，则在布局中指定为include的自定义statusbar的view//如果不指定，则调用setStatusBarView();会自动加一个viewstatusBarManager.setStatusBarView(view);
+另外，有些布局，在伸入到状态栏以后，给用户展示的区域就会变小，这个没办法，需要手动调整，只要调用statusBarManager.getStatusBarHeight()，此方法（注意这里不是静态方法，静态方法有参数，是获取系统状态栏的高度的）会返回view的高度，如果没有就是0，所以调用时不用做是否api 19+的版本判断。
+public class StatusBarManager &#123;    private static final int BUILD_VERSION_KITKAT = 19;    private static final int BUILD_VERSION_LOLLIPOP = 21;    //WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS    public static final int FLAG_TRANSLUCENT_STATUS = 0x04000000;    //WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS    public static final int FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS = 0x80000000;    private Activity mActivity;    private View statusBarView;    private int statusBarHeight;    public StatusBarManager(Activity activity) &#123;        this.mActivity = activity;        statusBarHeight = getStatusBarHeight(activity);    &#125;    public void setStatusBarView(View statusBarView) &#123;        this.statusBarView = statusBarView;        setTransparent();    &#125;    public void setStatusBarView() &#123;        setTransparent();    &#125;    public int getStatusBarHeight() &#123;        return statusBarHeight;    &#125;    /**     * 设置状态栏全透明     *     */    private void setTransparent() &#123;        if (Build.VERSION.SDK_INT &lt; BUILD_VERSION_KITKAT) &#123;            return;        &#125;        if(statusBarHeight &lt;= 0)&#123;            return;        &#125;        transparentStatusBar();        showStatusBarView();    &#125;    @TargetApi(19)    private void showStatusBarView() &#123;        int color = mActivity.getResources().getColor(R.color.main_color);        if(statusBarView == null)&#123;            statusBarView = new View(mActivity);            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,                    getStatusBarHeight(mActivity));            statusBarView.setLayoutParams(params);            statusBarView.setBackgroundColor(color);            ViewGroup decorView = (ViewGroup) mActivity.getWindow().getDecorView();            FrameLayout content = (FrameLayout) decorView.findViewById(android.R.id.content);            FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) content.getChildAt(0).getLayoutParams();            layoutParams.setMargins(0,statusBarHeight,0,0);            decorView.addView(statusBarView);        &#125;else&#123;            ViewGroup.LayoutParams layoutParams = statusBarView.getLayoutParams();            layoutParams.height = getStatusBarHeight(mActivity);            statusBarView.setLayoutParams(layoutParams);            statusBarView.setBackgroundColor(color);        &#125;    &#125;    //参考上面注释掉的代码 因为需要用隐藏API 调用方式进行改成反射    private void transparentStatusBar()&#123;        Window window =  mActivity.getWindow();        if (Build.VERSION.SDK_INT &gt;= BUILD_VERSION_LOLLIPOP) &#123;            //不add此条flag 会导致在EMUI3.1(华为)上失效，add这个flag 会导致在其它机型上面添加一个半透明黑条            window.addFlags(FLAG_TRANSLUCENT_STATUS);            //下面的代码段是不加上面的flag时，要显示纯色的状态栏时需要加的代码 不用了/*            window.clearFlags(FLAG_TRANSLUCENT_STATUS);            window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);            window.addFlags(FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);*/			//因为需要用隐藏API，没有重新编译5.x版本的android.jar，使用的还是18的api，这里用的反射            try &#123;                Class[] argsClass=new Class[]&#123;int.class&#125;;                Method setStatusBarColorMethod = Window.class.getMethod(&quot;setStatusBarColor&quot;,argsClass);                setStatusBarColorMethod.invoke(window, Color.TRANSPARENT);            &#125; catch (Exception e) &#123;                e.printStackTrace();            &#125;        &#125;else&#123;            window.addFlags(FLAG_TRANSLUCENT_STATUS);        &#125;    &#125;    /**     * 获取状态栏高度     *     * @param context context     * @return 状态栏高度     */    private static int getStatusBarHeight(Context context) &#123;        if (Build.VERSION.SDK_INT &lt; BUILD_VERSION_KITKAT) &#123;            return 0;        &#125;        // 获得状态栏高度        int resourceId = context.getResources().getIdentifier(&quot;status_bar_height&quot;, &quot;dimen&quot;, &quot;android&quot;);        return context.getResources().getDimensionPixelSize(resourceId);    &#125;    public void setStatusbarVisibility(int visibility)&#123;        if(statusBarView != null) &#123;            this.statusBarView.setVisibility(visibility);        &#125;    &#125;    public void setColor(int color)&#123;        if(statusBarView != null)&#123;            this.statusBarView.setBackgroundColor(color);        &#125;    &#125;&#125;
+]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>状态栏</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>应用市场的尔虞我诈（突破华为安装时来源检测）</title>
+    <url>/2017/02/23/market-install-intercept/</url>
+    <content><![CDATA[前言去年年底的时候，产品妹子拿着一部华为手机来找我们组，这部手机在安装应用的时候，会显示安装来源，同时，对包进行了扫描检测。但是有一个奇怪的现象是，同一款应用，安装过程不同。
+
+从我们市场安装，则显示出市场名字，并提示建议从官方市场安装，用户必须勾选允许才能安装，不然只能取消或去华为商店下载。
+从豌豆荚中安装，显示的是未知来源，没有提示从官方市场安装。
+从360手机助手、应用宝安装显示出市场名字，提示通过安全检测。
+
+这个安全引导在一定程度上能将我们的流量直接导入到官方市场下载。应用市场就是靠下载、安装的流量转化来赚钱的，而在安装的时候，ROM方就设置一些门槛，将量转化到自己的市场里。而且从上面的结果猜测，360和应用宝明显是走了公关渠道，而豌豆荚则是使用了黑科技。
+
+
+研究黑科技初步猜测是安装的时候，豌豆荚传递了某个参数，导致不能获取到来源的包名。因为安卓可以拦截安装的action，在安装前对包进行处理。配置如下intent-filter
+&lt;intent-filter&gt;	&lt;action android:name=&quot;android.intent.action.VIEW&quot;/&gt;	&lt;category android:name=&quot;android.intent.category.DEFAULT&quot;/&gt;	&lt;data android:scheme=&quot;file&quot;/&gt;	&lt;data android:mimeType=&quot;application/vnd.android.package-archive&quot;/&gt;&lt;/intent-filter&gt;
+
+安装的时候，会提示使用系统安装器，还是用你的程序。debug后发现intent的extra传了一个叫caller_package的参数。发现豌豆荚是传递了com.google.launcher。这个包是没有在手机上安装的（其实市场上也没有这个），所以显示未知来源。
+于是在我们调用安装时加入了上面的参数。后来发现上面的这套方法，貌似只对应用有用，毕竟商业化的主要靠游戏。游戏安装暂时无解，放弃了。
+附上对比图：
+新黑科技上周五，产品妹子又来找我说，360手机助手在安装游戏的时候，有一个允许拦截网络的弹窗提示，只要取消了这个弹窗，一样会提示未经过官方市场检测提示，并推荐从官方市场安装。而如果在弹窗中点了允许，在安装的时候，就能绕过去。
+这个弹窗就是VPN权限，之前并没有了解过VpnService，找了找资料。http://blog.csdn.net/jsqfengbao/article/details/52462125
+简单说一下，Android中的Vpn框架并不是能直接让你连接另一个网络，只是将手机的流量都截获过来，具体用来做什么，框架中并没有实现。不过，这里只需要的是拦截网络，在无网的状态下，来源检测默认是通过。开启VpnService以后，状态栏会有一个钥匙的标识。
+360手助和应用宝都有这个功能，在调用安装的时候，先启动VpnService，断掉了华为安装器的网络，导致在检测的时候，是无网的状态。
+关于VpnService怎么使用，上面附上的文章有demo，这里只说一下如何断掉指定APP的网络。不推荐去分析网络包，虽然兼容性好，但太复杂，工程量太大。在VpnService.Builder中，有一个方法叫addAllowedApplication，将包名传递过去，就会让这个包的流量走你的VpnService，其它就不用处理了，反正是只要断开它的网。特别注意的是这个方法只在API 21以上的版本有。
+效果图：
+后续昨天，给产品妹子发了个停安装器网络的demo，妹子和我说，她今天又试了一下，发现360手机助手在安装游戏的时候，弹窗点了取消，又能通过检测正常安装了。。。
+猜测上周五，要么是停掉了允许通过的接口，要么就是有什么协议，某些时候可以转换转换量，哈哈，Interesting…
+不管怎么样，黑科技还是好的。
+附关于OPPO修改安装来源，又封装一下Intent
+Intent actIntent = new Intent(&quot;oppo.intent.action.INSTALL_PACKAGE&quot;);Intent intent = new Intent(Intent.ACTION_VIEW);intent.putString(&quot;oppo_extra_pkg_name&quot;,packageName);//intent.setDataAndType//intent.setFlagactIntent.putExtra(&quot;android.intent.extra.INTENT&quot;, intent);
+
+
+写在最后慢慢的也有一些人问我vpn怎么实现，有一些伸手党，当前华为上失效了，也有来探讨说有没有什么新方法。目前还没有，从EMUI的现象上看，是在startActivity的时候，通过ActivityManagerService里面纠正了caller_package传的值，估计是华为已经发现了该方法。
+VPN也失效了，华为在检测应用时，如果发现网络失败，就会立即清空所有的VPN服务，导致VPN当时就失效了，具体就不说了。
+无解了
+]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Notification通知栏的那些事</title>
+    <url>/2017/03/04/notification-tips/</url>
+    <content><![CDATA[前言在安卓开发中，一定会使用Notification。而notification也随着Android版本的升级，一直在变化。这篇blog简单记录一下在Notification开发时，我所碰上的问题，以及需要注意的地方。
+碰上的问题RemoteView的文字颜色Android的ROM太多了，通知栏的颜色、样式都不尽相同。有的是白的，有的是黑的，这就让我们在自定义RemoteView的时候，不能直去设置文字的颜色，比如设置了白色，在白底的通知栏就没办法显示出文字。
+怎么办？
+
+
+&#x2F;res&#x2F;values&#x2F;styles.xml
+&lt;style name=&quot;NotificationText&quot;&gt;    &lt;item name=&quot;android:textColor&quot;&gt;?android:attr/textColorPrimary&lt;/item&gt;&lt;/style&gt;&lt;style name=&quot;NotificationTitle&quot;&gt;    &lt;item name=&quot;android:textColor&quot;&gt;?android:attr/textColorPrimary&lt;/item&gt;&lt;/style&gt;
+
+因为在安卓2.3以上的版本，系统提供了一个默认通知栏的文本颜色值，所以直接拿来用就好&#x2F;res&#x2F;values-v9&#x2F;styles.xml
+&lt;style name=&quot;NotificationText&quot; parent=&quot;android:TextAppearance.StatusBar.EventContent&quot; /&gt;&lt;style name=&quot;NotificationTitle&quot; parent=&quot;android:TextAppearance.StatusBar.EventContent.Title&quot; /&gt;
+
+本以为这样就OK了，这块代码一直没有动，直到前几天，测试发现在华为P9上，7.0系统，别人家的通知栏是白色底的，而我家的通知栏是黑色的。。而且有一个诡异的现象就是，在7.0系统展开后一滑动，有一定几率变成白色底。
+于是查啊查，终于发现，原来是gradle里面的targetSdkVersion，因为之前一直都是18，改成21以后就成了白色的了。
+白色的倒是变了，但是之前黑色底的文字是白色的，现在成了白色底，却还是白色的文字。不墨迹，直接翻开Notification的源码，找到了默认的layout，终于发现，原来在5.0系统上，默认通知栏文本颜色值又重新定义了。我们需要在v21再加入以下代码
+在EMUI和MIUI上，测试没有通过，发现还是用的v9的值，看来还是需要在代码里判断view的颜色值
+&#x2F;res&#x2F;values-v21&#x2F;styles.xml
+&lt;style name=&quot;NotificationText&quot; parent=&quot;android:TextAppearance.Material.Notification&quot; /&gt;&lt;style name=&quot;NotificationTitle&quot; parent=&quot;android:TextAppearance.Material.Notification.Title&quot; /&gt;
+
+怎么使用我就不细说了，在layout的textview使用style属性应该都会。
+在EMUI和MIUI上，测试没有通过，发现还是用的v9的值，看来还是需要在代码里判断view的颜色值
+点了通知栏不跳转有一次测试，发现在4.4的手机上，明明配置了正确的PendingIntent，然而，不管怎么点，都不能跳转到Activity，非常郁闷。最后，终于找到了资料。原来，是因为在创建PendingIntent的时候，我们使用了FLAG_UPDATE_CURRENT，在4.4的系统上，用FLAG_UPDATE_CURRENT的时候，Activity必须得是exported&#x3D;true的才可以。
+解决办法：改为FLAG_CANCEL_CURRENT 或者，在清单文件将落地Activity改为exported&#x3D;true。
+根布局我提一个建议就是，根布局使用LinearLayout，为什么呢？因为在有的coolpad的手机上，弹出一个通知后，会在你的通知布局上加一个View，然后让用户选择是否允许弹出，如果我们的布局是RelativeLayout或者FrameLayout，那它加上的两个按钮就会把咱们的控件覆盖掉。
+7.0的新特性7.0的系统上，又有了一些新功能，附上google官方的博客介绍文章。https://android-developers.googleblog.com/2016/06/notifications-in-android-n.html
+]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>是否允许创建快捷方式的权限检测</title>
+    <url>/2017/05/19/shortcut-permission/</url>
+    <content><![CDATA[前言部分手机的权限管理里，会有一个创建快捷方式权限。近期，产品妹子发现360手机助手可以检测到权限并弹出引导提示，符合的机型有，小米，VIVO，华为。于是我们也得加啊。。。
+调研MIUI:小米手机root方便，root后，直接看到了权限管理的配置的值，小米上，通过AppOpsManager的checkOpNoThrow()可以检测到是否有快捷方式权限。至于op的值是多少，我就不写了，自己查一查。
+vivo找到了vivo的launcher的所有快捷方式所在的ContentProvider，content://com.bbk.launcher2.settings/favorites遍历了一圈发现了一个字段叫shortcutPermission，修改了权限后，这个值会有变化。
+有趣的是，初始化假如是禁止的情况，它的值是1，但是只要编辑过，就会变化成16（允许），17（禁止），18（询问，部分手机有这个选项）。
+
+
+EMUI最坑的是EMUI，用尽各种招数，都没有搞到到底是如何检测的权限。因为发现，在权限为询问的时候，创建快捷方式时，360助手会弹出两次系统询问的弹窗，而只在第一次点禁止时，APP才弹出提示。如果第一次点了允许，第二次不管点了禁止还是允许，都会记为已经创建过。
+起先，怀疑是监听了快捷方式创建的广播，后来发现，如果是监听的快捷方式的广播，点禁止后，不能知道是点了禁止，需要用handler调用sendMessageDelayed()，而在receiver收到广播后，再removeMessage。这种方法导致的结果就是delay的时间不可控，另外，其实也不需要弹出两次权限询问的弹窗。
+思考后，打算从sendBroadcast()方法入手，看看sendBroadcast到底做了什么操作，想到了用traceview，果然有如下发现。
+
+图片中，可以看出它调用了一个HwSystemManager.canSendBroadcast(Context context,Intent intent)
+最终定位到com.huawei.hsm.permission.PermissionManager.canSendBroadcast(Context context,Intent intent)
+利用反射，发现该方法返回了boolean类型，允许就是可以true，禁止就是false。而且，如果是询问，该方法会弹出权限询问弹窗，阻塞你的APP的主线程，用户点了禁止或者允许，再接着往下执行，相当好用。代码我就不上了，该写的点都写了，实在需要的可以走点 关于 找到我。
+发现这个方法可以绕过，直接用binder去sendBroadcast就成功了，真嗨啊。
+OPPOoppo是另一个哥们自己找到的方法，我这里就直接贴出来，感谢大哥。反馈说android 10上也可以使用。具体返回的内容，还请自己测试一下哦。
+public static int b(Context context, String pkg) &#123;        ContentResolver contentResolver = context.getContentResolver();        if (contentResolver == null) return 2;        try &#123;            Uri parse = Uri.parse(&quot;content:/settings/secure/launcher_shortcut_permission_settings&quot;);            Cursor query = contentResolver.query(parse, null, null, null, null);            if (query == null) return 2;            while (query.moveToNext()) &#123;                String string = query.getString(query.getColumnIndex(&quot;value&quot;));                if (!TextUtils.isEmpty(string)) &#123;                    if (string.contains(pkg + &quot;, 1&quot;)) &#123;                        return 1;                    &#125;                    if (string.contains(pkg + &quot;, 0&quot;)) &#123;                        return 0;                    &#125;                &#125;            &#125;            query.close();            return 2;        &#125; catch (Throwable th) &#123;            th.printStackTrace();            return 2;        &#125;    &#125;
+
+]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Mac系统的TM快照占了空间导致iTunes不能备份手机</title>
+    <url>/2018/10/13/apple-itunes-volume/</url>
+    <content><![CDATA[Mac系统的TM快照占了空间导致iTunes不能备份手机国庆的时候，我的手机被我女票一脚踢掉了2300块，屏幕黑了一个角，iPhone X, OLED屏幕。
+本来约到了今天天才吧维修，3点多的时候，打算给手机备个份，就接上线开工了。结果提示空间不足。
+我电脑是256GB的MAC，剩余还有170GB，手机也是256GB，使用了有106GB
+电脑上打开关于本机，显示剩余170GB，但是用自带的磁盘工具，就显示剩余20GB
+在网上查了查资料，都是说time machine的快照占了空间，就把备份关了，空间还是没有释放。
+搞不定，打支持电话，结果客服姐姐给我远程指导了一番没有成功，然后让我等一下查一查，过一会一本正经的和我说说：备份不是只备份数据的，256GB的电脑是备不了256的手机的，建议您换一个大容量的电脑。
+WTF？？？难道是因为我穷？
+挂了电话，自己继续研究，找到了命令行，在命令行下删除了。
+sudo tmutil listsnapshots &#x2F;sudo tmutil deletesnapshots
+继续备份，成功了。
+然后时间赶不上了，好不容易抢到的天才吧，又得推迟了，而且明天已经没有了，约了下周的。
+时间机器的本地快照：https://support.apple.com/zh-cn/HT204015
+苹果还号称这个有多屌，说什么用到磁盘的时候，自己就删除了。结果和自家的软件还起了冲突，我关了自动备份重启了5回，都没有删除掉我的快照腾出空间。
+另外，主要是因为穷。谁给我点钱我换个512GB的MAC，512应该够了吧。
+]]></content>
+      <categories>
+        <category>apple</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>ListView实现仿知乎广告Item</title>
+    <url>/2017/08/27/listview-hollow-item/</url>
+    <content><![CDATA[前言知乎APP有一个广告效果，是list在滑动的时候，在某一个item显示出一个远大于item的背景，给人一种item是空的感觉，网上已经有了demo，但我看了看全是拿RecyclerView写的，RecyclerView有一个好处就是，它滑动时的回调，可以准确的拿到dx dy。
+public void onScrolled(RecyclerView recyclerView, int dx, int dy)
+
+但是结合我们的项目，还是使用的之前的ListView，如果整个修改成RecyclerView，成本太高，于是就在ListView上尝试的写了一次，稍微记录一下实现方法。
+因为我们的Item里面，还有一个类似弹幕的东东，就没有像网上的demo一样直接画drawable，而是采用了LinearLayout来实现。
+原理ListView也有onScroll()方法，不它该方法的回调时给的参数是item的position
+onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount)
+
+
+
+实现整个item的布局比较简单，使用的是指定高度的FrameLayout，其内部再嵌套一个和ListView高度一样的LinearLayout（这里可以在adapter的getView中拿到ListView的高度），在onScroll方法中，对visibleItem进行遍历，凡是碰到是这种item的。
+拿到该类型的item的view后，获取top bottom，就是当前view相对于父控件的度坐标，相当于拿到了RecyclerView中onScroll()的dx，dy。
+根据top，bottom计算LinearLayout需要的偏移。因为在FrameLayout中，LinearLayout是在Item顶部对齐的，所以，这里需要调用LinearLayout的scrollTo(0,top)方法，将你的FrameLayout内部嵌套的LinearLayout滚动到top的位置。
+放点伪代码public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) &#123;    final int height = view.getHeight();    final int width = view.getWidth();    if (view instanceOf HollowView)&#123;	HollowView itemView = (HollowView) view.getChildAt(i - firstVisibleItem);	final int top = itemView.getTop();	int bottom = itemView.getBottom();	itemView.update(width,height, top, bottom);	&#125;&#125;
+
+其它我们还有其它一些动画，都是item里面的view需要跟着滑动来像弹幕一样移动，到达一定位置后，缩小，放大。
+只要在update里面，setX  setScaleX setScaleY，写具体的方法就OK。初中学的知识，y&#x3D;kx+bb是初始化时的偏移，k就是速度了。x变量就是top的值。
+]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>android 8.0 foregroud-service的坑</title>
+    <url>/2019/12/13/foregroud-service-oreo/</url>
+    <content><![CDATA[ForegroudService都知道8.0以后，不可以在后台调用startService()来启动一个服务，要想通过startService启动，必须activity在前台时才能使用。当然onResume和onPause状态下的activity都可以。但是，也有一种情况是例外。
+https://developer.android.com/about/versions/oreo/background#services
+这里在官方文档也有讲，就是： 进入后台时，在一个持续数分钟的时间窗内，应用仍可以创建和使用 Service。 也就是，当你的activity刚进入后台时，是可以调用startService的。
+如果不使用startService，就得使用startForegroundService，但是需要绑定一个通知，可以在调用时传入通知id，也可以在调用后，通过startForeground来绑定。
+然而，除了以上，还是有一些疏忽了的，需要注意的地方。
+
+
+使用了startForegroudService还是有错做了8.0兼容后，已经把所有的startService都改成了startForegroundService，但是后台还是得到了很多的错误，特别是在android 8.0 和8.1的机子上。
+android.app.RemoteServiceException: Context.startForegroundService() did not then call Service.startForeground()
+经过排查，测试，发现还有一些需要注意的点，这里大概列一下。
+可以不调用notify方法首先，要想启动一个前台服务，必须使用startForegroundService，只要调用了startForegroundService，必须调用startForeground为其设置一个notification。
+注意：这里的notification可以不调用notify方法，但是，在调用startForeground后，会自动调用这个notify方法将notification展示出来。
+stopSelf前要startForegroundgoogle文档显示，如果在5s内未调用startForeground，则系统将停止此Service并声明此应用为ANR。那么，5s内如果stopSelf()呢？？亲测，这样也不行，按常理分析，如果直接调用stopSelf可行，是有违ForegroudService的设计初衷的。所以，在stopSelf前，如果想一个startForegroundService调用后直接关闭，也是需要调用startForeground()的。
+stopForeground不要乱用stopForeground是将一个service从前台改为后台的，如果你中途调用了stopForeground，再次调用startForegroundService时，一但没有走到startForeground，（比如是在onCreate方法中，就不会走到）还是会报出Context.startForegroundService() did not then call Service.startForeground()的异常，所以，看清楚再使用它。
+]]></content>
+      <categories>
+        <category>android</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用jenkins为android工程打包，支持多包名，改资源（简单上手）</title>
+    <url>/2019/03/26/jenkins-android-1/</url>
+    <content><![CDATA[下载安装jenkins官网地址：https://jenkins.io/没什么好说的，网上教程一大堆，唯一要做的是要修改jenkins_home目录所在分区，因为将来所有的内容都要放在这里，如果分区太小，指不定哪天就满了，到时就打不了包了。
+实践中，发现&#x2F;home&#x2F;jenkins目录也要处理一下，我就碰上了&#x2F;home&#x2F;jenkins目录占满了根分区，打开发现都是gradle打包时生成的一些缓存，就将&#x2F;home&#x2F;jenkins使用ln命令做了个软连接到另一个分区目录下。
+
+
+新建jenkins项目
+选择新建任务,填一个名字，选择自由风格的项目，点下方OK进入配置页，源码管理里选择你们所用的源码管理工具，填入地址，用户名认证信息等。注意，这里可能没有git和svn，那么需要你去系统管理，管理插件模块，搜索git或者svn插件并安装。后续还有其它功能需要安装插件。
+构建步骤 选择 Execute shell，Command里填入./gradlew assembleRelease就好了。
+改渠道号、版本号打包我们搭建jenkins，肯定不只是简单的打个包。一般常见的需求有，打渠道包，改包名，改资源文件。
+参数化打包，打包时修改渠道号，版本号jenkins提供了一个功能叫参数化构建，打包时，可以手动配一些参数。在配置中勾选参数化构建过程，下面添加你需要的参数，支持布尔型，字符串型。这些添加的参数，在shell中可以直接使用${参数名}使用，比如我们可以填入渠道号，versionname，versioncode等，如果你想填APP的名称也可以。
+参数填了，如何在打包时配到gradle文件中呢？
+因为这里的脚本过于繁琐，请大家不要使用sed修改这种方案，直接去这里[使用jenkins为android工程打包，支持多包名，改资源（优化方案）
+使用sed命令开修改
+#echo get versioncodevc=$VERSION_CODE;sed -i &#x27;s/android:versionCode=\&quot;\([a-zA-Z0-9.]*\)\&quot;/android:versionCode=\&quot;&#x27;$vc&#x27;\&quot;/g&#x27;  AndroidManifest.xmlecho &quot;version code : $vc&quot;#echo get  versionnamevn=$VERSION_NAMEsed -i &#x27;s/android:versionName=\&quot;\([a-zA-Z0-9.]*\)\&quot;/android:versionName=\&quot;&#x27;$vn&#x27;\&quot;/g&#x27;  AndroidManifest.xmlecho &quot;version name : $vn&quot;./gradlew assembleRelease
+其中，VERSION_CODE和VERSION_NAME就是在jenkins中配置的参数，我这里是改的manifest文件，我们也可以用sed命令修改gradle文件。
+改包名通过sed命令修改gradle文件中的build applicationId packagename，首先在参数化构建中，添加一个名称为PACKAGE_NAME的变量，供打包的人填写包名。然后在构建shell前面加入下列shell脚本。
+toReplace=&#x27;applicationId \&quot;&#x27;$PACKAGE_NAME&#x27;\&quot;&#x27;echo $toReplacesed -i &#x27;s/applicationId \&quot;com.old.pkgname\&quot;/&#x27;&quot;$toReplace&quot;&#x27;/g&#x27; build.gradle
+
+
+修改构建后生成的名称通常jenkins打包完成后，左侧的构建历史，是一个数字序号，时间一长可能就忘了对应关系，所以一般情况需要将名称修改成可读的格式，那么如何在构建时，自动就修改好名称？
+使用插件Version Number，安装该插件后，去到项目配置页，在构建环境下，勾选Create a formatted version number，再在下面的	Build Display Name选项勾选Build Display Name
+在Environment Variable Name中可以将生成的名称赋值给一个变量名，在后续构建时的shell中可以使用，根据自己喜好起一个就行。
+在Version Number Format String中可以填写想要生成的名称格式，可以使用$&#123;变量名&#125;引用环境变量和参数名称，同时点右侧的问号可以看到系统提供的一部分时间相关的变量名。
+如：$&#123;VERSION_CODE&#125;_$&#123;VERSION_NAME&#125;_$&#123;BUILD_ID&#125;
+
+后续以上讲的就是基本打包流程，但是实际应用中，还存在一些问题，比如，改了包名后，一些第三方的client key也要修改。再加上产品的对资源、功能定制需求也越来越复杂，上面的方式是绝对难满足他们定制化的要求的。下篇见。。。
+下篇博客写在打包实际应用中，是如何通过jenkins改包名和改资源，以及解决一些随包名存在的问题和注意事项。
+写了一篇最新的介绍，打包脚本更简洁，大家可以结合着看[使用jenkins为android工程打包，支持多包名，改资源（优化方案）
+
+相关阅读
+使用jenkins为android工程打包，支持多包名，改资源（踩坑指南）
+使用jenkins为android工程打包，支持多包名，改资源（优化方案）
+jenkins中实用的插件
+
+]]></content>
+      <categories>
+        <category>android打包</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>jenkins</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用jenkins为android工程打包，支持多包名，改资源（踩坑指南）</title>
+    <url>/2019/03/29/jenkins-android-2/</url>
+    <content><![CDATA[需求上一篇文章主要写了打包刚开始的配置和参数化构建。这篇文章主要讲一讲在改包名、改资源的打包实践中，常会碰到的问题以及解决办法。如果看博客的人有更好的解决办法，也可以找我交流，关于页面有我联系方式。
+打包的主要需求如下：
+
+改包名
+可以替换icon，可以修改应用名，包括应用内部显示的名称（如版权信息）
+可以控制部分功能是否开启
+
+改包名分析我们知道，改包名只是修改applicationId，和代码中类的package无关，所以基本上代码和AndroidManifest.xml中组件的name，都是不需要改动的。但是还是会涉及到下面的这些问题：
+
+
+
+代码中使用”包名”写死的路径，比如/data/data/com.xx.xx/。
+AndroidManifest.xml中，ContentProvider会填一个authorities属性，换包名等于换应用authorities就得跟着变。部分action，部分activity的taskAffinity。
+第三方的client_key(支持多包名就没关系了，比如umeng push)。
+提供给外部调用的activity和service，偶尔会要求必须在包名路径下(刚好我碰上了这奇葩事)。
+
+具体解决办法：
+
+使用全局查找，找出包名的字符串，统一改为context.getPackageName()，没有context对象的地方，使用BuildConfig.APPLICATION_ID。
+当我们配了applicationId以后，就可以在AndroidMenifest.xml中使用&#123;$applicationId&#125;代替写死的包名。
+像applicationId一样，在gradle文件的defaultConfig中，把每个key都声明成常量调用。在做打包之前，我想的是给产品运营人员提供一个构建参数让他们填写，后来意识到，其实这些clientkey和包名是绑定的，于是在工程里新建了一个名包文件夹，里面保存了key&#x3D;value的格式，打包时，通过shell读取到环境变量，然后用shell修改gradle的配置。
+actiivity可以使用activity-alias标签&lt;activity-alias android:name=&quot;&#123;$applicationId&#125;.XActivity&quot; android:targetActivity=&quot;&quot;，至于service，就比较难搞，我这里的解决办法是，给当前包名写了个继承原包名Service的空子类，修改AndroidManifest.xml中的name使用$&#123;applicationId&#125;。然后代码中，给如果有startService的地方，就使用Class.forName(BuildConfig.APPLICATION_ID + &quot;.XService&quot;)反射。
+
+应用场景因为这里的脚本过于繁琐，从这里开始，请大家放弃看这一篇，直接去这里[使用jenkins为android工程打包，支持多包名，改资源（优化方案）
+部分shell脚本的源码，这里只是修改build.gradle的脚本，要打包还要再加入./gradlew assembleRelease等其它个性化脚本将完整的shell脚本保存成sh文件，放到工程目录下，在jenkins中执行该sh文件sh ./jenkinsbuild.sh
+field_name=(&#x27;BOOL_FIELD1&#x27; )value=($BOOL_FIELD1 )#注意 这里是用测试的值 注意value要和filed的name对应 在shell中全是字符串格式#value=(&#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27; &#x27;false&#x27;)for i in &quot;$&#123;!field_name[@]&#125;&quot;;do    echo $&#123;field_name[$i]&#125; $&#123;value[$i]&#125;    #只有当变量不为null的情况下，才去修改Build文件    if [ -n &quot;$&#123;value[$i]&#125;&quot; ];then        toReplace=&#x27;buildConfigField &quot;boolean&quot;, \&quot;&#x27;$&#123;field_name[$i]&#125;&#x27;\&quot;, &quot;&#x27;$&#123;value[$i]&#125;&#x27;&quot;&#x27;        echo $toReplace        sed -i &#x27;s/buildConfigField \&quot;boolean\&quot;, \&quot;&#x27;&quot;$&#123;field_name[$i]&#125;&quot;&#x27;\&quot;, \&quot;\([a-zA-Z]*\)\&quot;/&#x27;&quot;$toReplace&quot;&#x27;/g&#x27; build.gradle    fidonetoReplace=&#x27;applicationId \&quot;&#x27;$PACKAGE_NAME&#x27;\&quot;&#x27;echo $toReplacesed -i &#x27;s/applicationId \&quot;com.lefo.oldpkg\&quot;/&#x27;&quot;$toReplace&quot;&#x27;/g&#x27; build.gradle#字符串变量  操作方式是删除掉gradle文件中旧的  添加新的field_name=(&#x27;PT_CLIENT_ID&#x27; &#x27;PT_CLIENT_SECRET&#x27; &#x27;PT_QQ_ID&#x27; &#x27;PT_WX_RELEASE_ID&#x27; &#x27;BUGLY_ID&#x27; &#x27;APP_TYPE&#x27; &#x27;PT_SERVER_SECRET&#x27; &#x27;LICENSE_URL&#x27; &#x27;POLICY_URL&#x27;)value_name=(&#x27;client_id&#x27; &#x27;client_secret&#x27; &#x27;qq_id&#x27; &#x27;wx_id&#x27; &#x27;bugly_id&#x27; &#x27;app_type&#x27; &#x27;server_secret&#x27; &#x27;license&#x27; &#x27;policy&#x27;)for i in &quot;$&#123;!field_name[@]&#125;&quot;;do    echo $&#123;field_name[$i]&#125;    value=$&#123;value_name[$i]&#125;	toReplace=&#x27;buildConfigField \&quot;String\&quot;, \&quot;&#x27;$&#123;field_name[$i]&#125;&#x27;\&quot;, \&quot;\\\&quot;&#x27;$&#123;!value&#125;&#x27;\\\&quot;\&quot;&#x27;	echo $toReplace	sed -i &#x27;/buildConfigField \&quot;String\&quot;, \&quot;&#x27;$&#123;field_name[$i]&#125;&#x27;\&quot;, /d&#x27; build.gradle	sed -i &#x27;/defaultConfig/a buildConfigField \&quot;String\&quot;, \&quot;&#x27;$&#123;field_name[$i]&#125;&#x27;\&quot;, \&quot;\\\&quot;&#x27;$&#123;!value&#125;&#x27;\\\&quot;\&quot;&#x27; build.gradledone
+那么，脚本中，client_id这些，是如何一次性加入到环境变量中的？这里要用到另一款插件，Environment Injector Plugin。这款插件可以在执行时往执行环境中注入变量。关于变量的配置信息，我在工程目录下新建了一个文件夹保存的配置文件。就是key&#x3D;value的格式，就是你熟悉的java properties file。这里的PACKAGE_NAME，在jenkins参数化构建时，给产品提供的是一个选项列表，固定好包名列表给产品选择选，毕竟涉及到client_key的修改，不能随便填。
+改资源该怎么改产品居然想要修改APP名称，图标，部分页面的图片，这里要用到gradle配置中的productFlavors。工程中新建一个文件夹lefo，注意要名字对应，然后我们将要替换的资源，按原资源存放位置，放到package1目录下，打包时，不能再执行assembleRelease，这个时候就应该是./gradlew assembleLefoRelease
+productFlavors&#123;	lefo&#123;    	//产品说，可不可以做到应用显示的名字和内部的名字不一样  可以 给应用单独配一个名字 本来有个资源叫app_name    	manifestPlaceholders = [label:&quot;@string/app_label&quot;]    &#125;&#125;
+
+既然想这么定制，那就彻底交给产品，他们想放什么放什么。
+修改应用名称：直接使用jenkins中参数配置，通过sed命令修改strings.xml图标资源替换：最初想的是从某处下载一份资源，然后替换掉包中资源，产品那边和我们一样用的是svn，jenkins在构建的时候，SCM是在构建之前的，也就是说，在构建以前就要checkout代码。问题就来了，资源目录的URL可以做为一个参数传进来，但并不是每一次打包，都需要替换资源。如果URL没有传，那SCM就不能过，构建就会失败，根本走不到编译过程。这里同样要使用插件Environment Injector Plugin，它可以在SCM以前，使用脚本修改某个变量的值。
+注意下图中我使用的是groovy script，如果我没有记错的话，只有groovy script是可以在SCM之前执行的。如果没有填，脚本就给它一个内容为空的文件夹路径，SCM配置中，支持$&#123;RES_URL&#125;使用。为什么不给RES_URL配一个默认值呢？因为不填写更直观，产品修改的时候，也不用每次都删除旧的再复制上新的还得检查一遍。
+
+续产品经理用的很嗨，暂时没有续，为了不涉及隐私，整篇加上前一篇都是一些片段，想直接copy进去使用的可能要失望了。不过，拼凑一起还是可以的，实在不懂的来找我。
+写了一篇最新的介绍，打包脚本更简洁，大家可以结合着看[使用jenkins为android工程打包，支持多包名，改资源（优化方案）
+
+相关阅读
+使用jenkins为android工程打包，支持多包名，改资源（简单上手）
+jenkins中实用的插件
+
+]]></content>
+      <categories>
+        <category>android打包</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>jenkins</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>python入门：使用python刷自如的房子</title>
+    <url>/2019/07/31/python-ziroom/</url>
+    <content><![CDATA[错过房子自如在北京租房行业上占据着龙头地位，它们的房租也是一年比一年高，特别是新签约的房子，价格很是离谱。但偶尔也会有一两个换租的房子，性价比超级高。如果有自己比较中意的小区，想监控里面的房子，我就有一次看中一个房子，看到的时候，就已经晚了，等想签的时候，被别人抢先了。这个脚本，可以在某小区有新房源的时候，第一时间通知自己。
+
+
+环境
+python 2.x 语言及运行环境
+tesseract ocr 这是google的一款图片识别文字的软件，需要安装库，自行搜索python+tesseract
+支持smtp协议的邮箱，建议新注册一个。
+绑定微信的QQ的邮箱。
+
+安装python和tesseract就不讲了，主要说一下tesseract。其实没有这个也不重要，主要是自如的房子，价格是一张图片。然后用坐标截取相应的数字生成价格图，比如坐标是[8,9,2,1]，那价格就是1345元。其实只要发送房子id就行，去官网看一下，价格就有了。
+
+使用邮箱，主要是为了方便微信接收，微信可以绑定QQ邮箱。只要给QQ发送邮件，微信就可以收到信息。
+流程
+发送请求，搜索关键字 http://m.ziroom.com/v7/room/list.json?city_code=110000&amp;type=11&amp;keywords=   后面跟上要搜索的关键字。type&#x3D;11是一居室,具体参数，可以通过http://m.ziroom.com，上面选择搜索信息后，可以查看到具体的type。
+拿到列表，解析房源信息。
+拿到房子价格图片，识别出内容，根据坐标拼出房价及单元（日租和月租）
+检查数据库中是否保存过该房源（已经发送过）
+分页会再请求下一页。
+
+代码代码用定时任务跑在了我的服务器上，每隔一段时间跑一下。
+写python比较少，再加上后来改代码时，直接用ssh连接的服务器用vi改的，导致代码写的比较乱。
+我把信息保存到了ziroom.db里，是sqlite格式。价格为了不每次都请求，也缓存到了image文件夹下。
+# -*- coding: utf-8 -*-import sqlite3import urllibimport urllib2import osimport reimport sysimport jsonimport smtplibimport pytesseractimport timefrom email.mime.text import MIMETextfrom email.header import Headerfrom PIL import Image# 第三方 SMTP 服务mail_host=&quot;&quot;  #设置服务器mail_user=&quot;&quot;    #用户名mail_pass=&quot;&quot;   #口令 sender = &quot;&quot;		#发送邮箱 一般等同于用户名receivers = [&#x27;2323354557@qq.com&#x27;]  # 接收邮件，可设置为你的QQ邮箱或者其他邮箱BaseURL = &#x27;http://m.ziroom.com/v7/room/list.json?city_code=110000&amp;type=11&amp;keywords=&#x27;  #keywords = &#x27;%E9%BE%99%E5%8D%8E%E5%9B%AD&#x27;keywords = [&#x27;华清嘉园&#x27; , &#x27;展春园&#x27;]cur_page = 1room_string = &#x27;&#x27;def sendEmail(content,keyword):	message = MIMEText(content, &#x27;plain&#x27;, &#x27;utf-8&#x27;)	message[&#x27;From&#x27;] = &#x27;自如&lt;&#x27;+sender+&#x27;&gt;&#x27;	message[&#x27;To&#x27;] =  &#x27;lefo&lt;2323354557@qq.com&gt;&#x27;		subject = &#x27;有&#x27;+ keyword +&#x27;的新房子了&#x27;	message[&#x27;Subject&#x27;] = Header(subject, &#x27;utf-8&#x27;)			try:		smtpObj = smtplib.SMTP() 		smtpObj.connect(mail_host, 25)    # 25 为 SMTP 端口号		smtpObj.login(mail_user,mail_pass)  		smtpObj.sendmail(sender, receivers, message.as_string())		print(&quot;邮件发送成功&quot;)	except smtplib.SMTPException as e:		print(e);def getJson(URL,page,keyword):		global cur_page	global room_string	send_headers = &#123;    &#x27;Host&#x27;:&#x27;m.ziroom.com&#x27;,    &#x27;User-Agent&#x27;:&#x27;Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1&#x27;,    &#x27;Accept&#x27;:&#x27;application/json;version=6&#x27;,	&#125;  		url = URL +&#x27;&amp;page=&#x27; + page;	req = urllib2.Request(url,headers=send_headers)	content = urllib2.urlopen(req).read().decode(&#x27;utf-8&#x27;)	data = json.loads(content)	rooms = data[&#x27;data&#x27;][&#x27;rooms&#x27;];	print(URL)	print(content)		for room in rooms:		tags =&#x27;&#x27;		for tag in room[&#x27;tags&#x27;]:			tags +=(&#x27; &#x27; + (tag[&#x27;title&#x27;]))		#print (room[&#x27;id&#x27;] + room[&#x27;face&#x27;] + &#x27; &#x27; + room[&#x27;name&#x27;] + tags + room[&#x27;price&#x27;])		cursor = c.execute(&quot;SELECT * from ROOM WHERE ZID=&quot; + room[&#x27;id&#x27;])		result = cursor.fetchall()				if len(result) &lt;= 0:			pricedata = room[&#x27;price&#x27;]			priceurl = &#x27;http:&#x27; + pricedata[0]			print(priceurl)			path = &quot;image/&quot; + os.path.basename(pricedata[0])			if not os.path.exists(path):				res = urllib.urlopen(priceurl).read()				f = open(path,&quot;wb&quot;)				f.write(res)				f.close()			img = Image.open(path)			print(path)			imgprice = pytesseract.image_to_string(img,lang=&#x27;eng&#x27;,config=&#x27;-psm 7&#x27;)			print(imgprice)			price = &#x27;&#x27;			unit = room[&#x27;price_unit&#x27;]			if len(imgprice)&gt;0:				for index in pricedata[1]:					price =price + imgprice[index]			roomInfo = room[&#x27;id&#x27;] + &#x27; &#x27; +  room[&#x27;name&#x27;] + &#x27; &#x27; + price + unit			 			room_string = room_string + roomInfo + &#x27;\n&#x27;			sql = &#x27;INSERT INTO ROOM (ZID,HID,TITLE) VALUES (&quot;&#x27; + room[&#x27;id&#x27;] +&#x27;&quot;,&quot;&#x27;  + room[&#x27;house_id&#x27;]+&#x27;&quot;,&quot;&#x27; + room[&#x27;name&#x27;] +&#x27;&quot;)&#x27;			c.execute(sql )			conn.commit()		if len(rooms) &gt; 0:		cur_page += 1		getJson(BaseURL + urllib.quote(keyword),str(cur_page),keyword)	else:		if len(room_string) &gt; 0:			print(&#x27;send email \n&#x27; + room_string)			sendEmail(room_string,keyword)			room_string = &#x27;&#x27;					conn = sqlite3.connect(&#x27;ziroom.db&#x27;)		c = conn.cursor()c.execute(&#x27;&#x27;&#x27;CREATE TABLE IF NOT EXISTS ROOM       (ID INTEGER PRIMARY KEY AUTOINCREMENT     NOT NULL,	   ZID           TEXT     NOT NULL,       HID           TEXT     NOT NULL,       TITLE        CHAR(50));&#x27;&#x27;&#x27;)for keyword in keywords:	cur_page = 1	keywordsquote = urllib.quote(keyword)	getJson(BaseURL + keywordsquote,str(cur_page),keyword)
+
+自行优化说一下优化的事，自如的房子有各种状态，参数名叫status，后续，可以把代码加一个状态的判断。比如status &#x3D;&#x3D; ‘dzz’是待租中，还有退租配置中，最关键的是，有一个释放倒计时的状态。这样可以实现某个房子的要释放时，提前通知自己。
+]]></content>
+      <categories>
+        <category>python</category>
+      </categories>
+      <tags>
+        <tag>python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>升级targetSdkVersion为26以后</title>
+    <url>/2019/07/02/target-sdk-26/</url>
+    <content><![CDATA[前言google从下个月开始，所有在play上架的app都会要求升级的。为了与时俱进，我们的app也要升级到targetSdkVersion&#x3D;26了，虽然我们的APP是助手类，不可能上架google play。
+关于升级后8.0的各种介绍，参考这里https://developer.android.com/about/versions/oreo/
+8.0行为变更看这里https://developer.android.com/about/versions/oreo/android-8.0-changes
+基本上，看完上面链接里的内容以后，你就能针对你的代码做修改了。下面主要记录一下实际修改中的几处重点。
+
+
+后台限制官方介绍：https://developer.android.com/about/versions/oreo/background
+Service如果改成了targetSdkVersion&#x3D;26+，是不允许在后台启动service的。但是，要注意这里的后台两个字。google文档里已经讲的很清楚，当你的应用处于前台应用时，仍然可以使用startService。
+所以，首先要做的是，把之前在Application中startService的代码删除掉，挪到activity的onCreate方法中。或者，在Application中，调用registerActivityLifecycleCallbacks，在回调里startService。
+当然，如果你的程序在运行时，有一个常驻通知，那么你可以将你的service变成一个前台service。此时，不能使用startService来启动，要使用startForegroundService，调用该方法就没有必须前台应用的限制了，任何地方都可以。但是，在startForegroundService开启一个service后，必须在5s内，调用它的startForeground()方法，将某个通知和其绑定起来，否则也会出错。
+google也给了另外一种官方的后台任务实现方式，那就是使用JobService，关于用法网上一大堆，不再介绍，需要注意的是，这里要规范它的id。如果相同的id重复schedule，那么会先调用onStopJob再调用onStartJob。
+如果之前是IntentService，那可以直接用JobIntentService，使用起来更简单。
+JobIntentService
+附上官方demo官方DEMO:https://github.com/googlesamples/android-JobScheduler
+Receiver静态注册广播监听系统事件，失效了。关于广播的限制，官方文档里讲的也很清楚。我们要做的就是，把注册了一系列系统action的Receiver，再动态注册一次。比如常用的网络状态切换监听，之前只要写到manifest中就OK，现在必须手动调用一次register方法。还有我们项目中监听其它应用的安装卸载，一样需要动态注册。
+registerReceiver()的文档中明确写到，你的Receiver是注册到Application中，我就直接将receiver注册到了application上。
+
+Context-registered receivers receive broadcasts as long as their registering context is valid. For an example, if you register within an Activity context, you receive broadcasts as long as the activity is not destroyed. If you register with the Application context, you receive broadcasts as long as the app is running.
+
+NotificationNotification要求必须设置一个channel，否则是不予展示的。
+https://developer.android.com/training/notify-user/channels.html?hl=zh-cn
+官方DEMO：https://github.com/googlesamples/android-Notifications
+if (Build.VERSION.SDK_INT&gt;= Build.VERSION_CODES.O) &#123;    NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);    NotificationChannelGroup group = new NotificationChannelGroup(GROUP_ID, GROUP_NAME);    manager.createNotificationChannelGroup(group);    NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);    channel.setGroup(GROUP_ID);    // ...    manager.createNotificationChannel(channel);    notification = new Notification.Builder(getApplicationContext(), CHANNEL_ID)            // ...            .build();&#125; else &#123;    notification = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)            // ...            .build();&#125;
+
+
+
+其它影响的地方升级以后还是有不少影响需要注意：
+
+第三方SDK，像push sdk，大多使用了service，要在26以上支持，必须更新了。
+权限问题，比如设置屏幕亮度，悬浮窗等。
+API变更，比如getRunningService方法在api26以上就失效了。
+
+]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>垂直滚动的ViewPager存在滑动不灵敏的问题</title>
+    <url>/2019/06/02/vertical-viewpager/</url>
+    <content><![CDATA[垂直滚动的ViewPager凡是找到我这篇文章的，肯定都在网上看过这样一篇文章[几行代码实现ViewPager垂直滚动]，地址我就不上了，随便一搜，到处都是，原理也很简单，交换一下横竖坐标，再设置一个上下的Transformer。然而，事情并没有想像的那么简单。
+
+
+ViewPager滚动源码解析在我提交上面的交换xy坐标代码后，测试拿着手机过来找我了，出现的问题就是，必须慢慢的将当前页滑动过页面的一半，松手时，才能滚到上一页或者下一页。这就导致如果是大屏手机，用户会很难去到下一页。我本来是以为x y坐标的问题，跟踪源码后，发现并不是。
+在ViewPager中，滚动到上一页或者下一页的关键方法叫determineTargetPage，其中，如果是滚动到下一页，currentPage是当前页的position，如果是滚动到上一页，currentPage是上一页的position。
+
+第一个if的逻辑是，先计算滑动距离和滑动的速度，如果超过了mFlingDistance和mMininumVelocity，再根据速度的正负值来判断方向，如果velocity &gt; 0，则说明是[向右滑]的手势（先不考虑更换xy坐标），也就是滑动到上一页，返回currentPage。(currentPage是上一页的position)。如果velocity &lt; 0，那就是[向左滑]的手势（先不考虑更换xy坐标），则是去到下一页。(currentPage是当前页的position)
+else中的逻辑是，当用户慢慢拖动后松开手，也就是滚动速度和滚动距离的条件没有同时满足。此时通过计算出的truncator来计算目标页，可以理解为pageOffset是currentPage进了屏幕多少多少，而truncator就是剩下多少时滑动的一个比例。举个例子：
+假如我们向下滑，上一页只露出了40%，那么pageOffset就是0.6，此时，0.6+0.6取整就是1，targetPage &#x3D; currentPage + 1，而因为此时currentPage是上一页，所以又回滚回去。同理，假如我们向上滑，currentPage是当前页，也需要把pageOffSet滑动到0.6的位置，才能到下一页。
+修改速率不成功找到了原理，就要修改了，起初我想着是，修改mFlingDistance和mMininumVelocity这两个值就好，因为这俩变量本身不支持修改，就把ViewPager的源码拷贝了一份。满心欢喜的做了个测试，失败，失败的原因，也比较蹊跷。
+MotionEvent有一个方法，叫setLocation，交换xy坐标的方法，正是采用调用该方法实现的。但是在viewPager中，通过调用VelocityTracker的getXVelocity方法时，不论你如何执行setLocation，最终计算出的velocity永远都是指着真正在屏幕X方向上滑动的速度，也就是此时并没有把y轴的速度转到x上。这部分应该是跟native内部实现有关。
+去掉速度，只判断距离既然速度废了，那就不判断速率了，只判断距离。于是代码被我改成了这样子。
+private int determineTargetPage(int currentPage, float pageOffset, int velocity, int deltaX) &#123;       int targetPage;       if (Math.abs(deltaX) &gt; mFlingDistance) &#123;           targetPage = velocity &gt; 0 ? currentPage : currentPage + 1;       &#125; else &#123;           final float truncator = currentPage &gt;= mCurItem ? 0.9f : 0.1f;           targetPage = currentPage + (int) (pageOffset + truncator);       &#125;      if (mItems.size() &gt; 0) &#123;          final ItemInfo firstItem = mItems.get(0);          final ItemInfo lastItem = mItems.get(mItems.size() - 1);          // Only let the user target pages we have items for          targetPage = Math.max(firstItem.position, Math.min(targetPage, lastItem.position));      &#125;      return targetPage;  &#125;
+
+此时，只判断了mFlingDistance，为了保险起见，我又将else中的代码，计算truncator时，改成了0.8和0.2。也就是当上一页或者下一页露出10%以上时，则滚动到相应的页面。代码是周末前提交的，写这篇博客是在周末，暂没有产品和测试的体验结果。
+其它复制ViewPager.java的时候，PagerAdapter有一个方法是setViewPagerObserver，因为这个方法是不允许访问的，这里可以改成registerDataSetObserver和unregisterDataSetObserver
+google已经出了viewpager2了
+]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>从zip结构看APK采集时优化</title>
+    <url>/2019/07/08/zip-file-struct/</url>
+    <content><![CDATA[现有采集都知道APK就是一个zip包，目前，收集别人家的APK信息，原理都一样，一般都是先将APK文件下载，再提取AndroidManifest.xml，通过AXmlPrint2.jar打开，得到反编译后的xml，解析xml得到包信息。
+那么，一个游戏好几个GB，真正用到的却只有几KB信息。如果能跳过内容，结合断点下载，直接下载到AndroidManifest.xml，那就能省很多流量了。
+
+
+分析ZIP图文并茂的文章：https://blog.csdn.net/hp910315/article/details/77717746
+表格介绍的文章：https://blog.csdn.net/a200710716/article/details/51644421
+上面这两篇文章很详细的介绍了zip文件的结构，我再简单提一下，zip是先保存的文件，最后又将文件信息做了个目录放在最后。如下：
+[文件实体头+文件数据+数据描述符][..重复..]+核心目录+目录结束标识
+核心目录是关键内容，结构为重复n个[文件头]，也就是，所有在zip中重复的文件，都有会在核心目录区保存一些关键信息(文件信息，不含文件内容)。其中，包含了每个文件在zip中起始偏移、压缩后的大小，所以，只要我们拿到核心目录的内容，就可以定位到AndroidManifest.xml的位置。
+附上两张图：
+manifest文件实体头
+
+manifest核心目录
+
+关键头核心目录中，每个文件头的标记位开始都是4个字节0x02014b50，在文件中，高位是在后面存放的，所以，要找的4个字节是0x50，0x4b，0x01，0x02。找到以后，根据对应的偏移，来找到文件名、文件名长度、压缩后大小以及在文件中的位置。
+我只列举一下用到的位置
+
+
+
+offset
+大小(字节)
+代表意义
+
+
+
+0
+4
+0x02014b50
+
+
+20
+4
+压缩后文件大小
+
+
+28
+2
+文件名长度(n)
+
+
+42
+4
+文件保存的位置
+
+
+46
+文件名长度(n)
+文件名
+
+
+找到文件保存的位置和大小后，直接读取成字节数组，然后使用ZipInputStream解压。
+文件文件分为：文件头、文件数据、数据描述符
+文件头后面，就是文件内容了，但是，这些我们都不用关注，我们只需要拿到最开始0x04034b50所在的位置就行。因为ZipInputStream调用getNextEntry可以直接读取。
+实际中发现文件头中很多信息都没有，比如文件大小。另外，扩展内容一般情况也是空的，所以基本上文件名后面就是文件内容。
+
+
+
+offset
+大小
+意义
+
+
+
+0
+4
+0x04034b50
+
+
+26
+2
+文件名长度n
+
+
+28
+2
+扩展内容长度m
+
+
+30
+n
+文件名
+
+
+30+n
+m
+扩展内容
+
+
+30+n+m
+不固定
+文件内容
+
+
+思路
+找到核心目录开头
+找出AndroidManifest.xml文件信息
+找到在文件中对应的偏移
+解压出AndroidManifest.xml
+使用AXmlPrint2.jar转换xml
+
+比较难的是确认核心目录开头，我们可以先获取后1MB的内容，然后读取，如果没有匹配上manifest，则再向前取1MB的内容，再进行一次匹配。使用断点下载时同理。
+代码附上代码：这个代码是一边学习一边随手尝试写的，查找目录偏移，读取文件等有很多偷懒的写法，请自行优化。代码只是提供思路以及验证可行性，请不要在正式环境中使用。
+另外注意，read()过后，计算下一个offset的时候，要去掉本身的大小的。比如：得到压缩后文件大小，再去获取文件名长度时，是20偏移 + 4字节再到28偏移，所以是skipBytes(4)。
+import java.io.ByteArrayInputStream;import java.io.File;import java.io.FileOutputStream;import java.io.RandomAccessFile;import java.util.zip.ZipEntry;import java.util.zip.ZipInputStream;public class ManifestGetter&#123;    public static final int DEFAULT_SIZE = 1024 * 1024 *2;    public static void main(String... args) &#123;        byte[] signature = new byte[]&#123;0x50,0x4b,0x01,0x02&#125;;            String filename = &quot;./test.apk&quot;;        File file = new File( filename);        try &#123;            RandomAccessFile accessFile = new RandomAccessFile(file,&quot;r&quot;);            RandomAccessFile accessFile2 = new RandomAccessFile(file,&quot;r&quot;);            long offset = file.length() - DEFAULT_SIZE;                        accessFile.seek(offset);                        byte[] buffer = new byte[1024];            int len = 0;            while((len = accessFile.read(buffer) )&gt; 0)&#123;                            int index = 0;                for (; index &lt; len; index++) &#123;                                        boolean flag = true;                    for (byte signatureB : signature) &#123;                        byte b = 0;                        if (index &lt; buffer.length - 4)&#123;                            b = buffer[index++];                        &#125;else&#123;                            b = (byte)accessFile.read();                        &#125;                        if (signatureB != b)&#123;                            flag = false;                            break;                        &#125;                    &#125;										//匹配到了0x02014b50标记                    if (flag)&#123;                        long subOffset = 0;                        if (index &lt; buffer.length - 4)&#123;                           subOffset = accessFile.getFilePointer() - buffer.length + index -4;                        &#125;else&#123;                            subOffset = accessFile.getFilePointer();                        &#125;                                                //0x04034B50                        System.out.println(&quot;中心目录文件开始-----------&quot; + subOffset);                        System.out.println(&quot;offset =&quot; + subOffset);												//压缩后文件大小 4字节                        accessFile2.seek(subOffset + 20);                        int fileSize = 0;                        for (int i =0; i &lt; 4; i++) &#123;                            fileSize += (accessFile2.read()&lt;&lt; (8 *i));                        &#125;                                                    accessFile2.skipBytes(4);												//文件名大小 2字节                        int size_byte1 = accessFile2.read();                        int size_byte2 = accessFile2.read();                        int name_size = (size_byte2 &lt;&lt; 8 ) + size_byte1;                        System.out.println(&quot;name size = &quot; + name_size);                        accessFile2.skipBytes(12);                        long fileOffset = 0;                        for (int i =0; i &lt; 4; i++) &#123;                            fileOffset += (accessFile2.read()&lt;&lt; (8 *i));                        &#125;                        byte[] nameBuf = new byte[name_size];                        accessFile2.read(nameBuf);                        String nameString = new String(nameBuf);                        System.out.println(nameString + &quot; offset = &quot;+ Long.toHexString(fileOffset));                        if (nameString.contains(&quot;AndroidManifest.xml&quot;))&#123;                                                       // file header                            accessFile2.seek(fileOffset);                            FileOutputStream out = new FileOutputStream(&quot;./dest.xml&quot;);                            // 文件里还有一个小文件头，这里加了1024字节，实际情况很小                            byte[] buf = new byte[fileSize + 1024];                            accessFile2.read(buf);                            ByteArrayInputStream bInputStream = new ByteArrayInputStream(buf);                            ZipInputStream zin = new ZipInputStream(bInputStream);                            ZipEntry zipEntry = zin.getNextEntry();                            System.out.println(zipEntry.getName() + &quot;文件信息在目录里，这里的size = &quot; + zipEntry.getSize());                                                        byte[] readBuf = new byte[fileSize + 1024];                            int readLength = 0;                            while ((readLength = zin.read(readBuf)) &gt; 0) &#123;                                byte[] bytes = new byte[readLength];                                System.arraycopy(readBuf, 0, bytes, 0, readLength);                                out.write(bytes);                                                            &#125;                            accessFile.close();                            accessFile2.close();                            out.close();                            return;                        &#125;                        System.out.println(nameString);                                        &#125;                                   &#125;                            offset += len;            &#125;            accessFile.close();            accessFile2.close();        &#125; catch (Exception e) &#123;            e.printStackTrace();        &#125;      &#125;&#125;
+重点优化因为上面代码偷懒，并不是一个完整的zip处理方案，下面附一个标准的方法。
+流程优化加载一个zip的流程是先加载EOCD ending of central directory，再找到CD起始位置，再找里面文件的偏移。我上边的做法是错误的。EOCD保存有CD的起始偏移，CD保存着每个一个file headerEOCD偏移值为0x06054b50
+为什么 EOCD 记录在 ZIP 文件的最后 65535 字节内？EOCD 记录的最大偏移量字段限制为 16 位，最大值为 65535。这意味着 EOCD 记录的偏移量不能超过 65535 字节。如果 ZIP 文件的大小超过 65535 字节，EOCD 记录仍然必须在最后 65535 字节内找到。这个设计是为了确保即使是大文件，EOCD 记录也可以通过读取文件的最后 65535 字节来定位。
+EOCD结构
+
+
+offset
+大小
+意义
+
+
+
+0
+4
+0x06054b50
+
+
+4
+2
+当前分卷号
+
+
+6
+2
+central directory开始分卷号
+
+
+8
+2
+当前分卷记录的contral directory数量
+
+
+10
+2
+central directory记录的总数量
+
+
+12
+4
+contral directory的大小
+
+
+16
+4
+contral directory的偏移
+
+
+20
+2
+zip文件注释的长度
+
+
+22
+n
+zip文件注释
+
+
+四字节比较刚开始写的代码偷懒用string比较了，实际上应该拿int值比较，一次读取4个字节，使用位运算合成一个整数，以下是合成方法：
+private static int getInt(byte[] buffer, int offset) &#123;return (buffer[offset] &amp; 0xFF) |       ((buffer[offset + 1] &amp; 0xFF) &lt;&lt; 8) |       ((buffer[offset + 2] &amp; 0xFF) &lt;&lt; 16) |       ((buffer[offset + 3] &amp; 0xFF) &lt;&lt; 24);&#125;
+也可以使用nio中的ByteBuffer
+]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Git中rebase的常规使用</title>
+    <url>/2020/01/09/git-rebase/</url>
+    <content><![CDATA[git公司从svn版本管理切换成了git，Android Studio（Intellij IDEA）也可以较好的支持git，相当方便。git有一个特别强大的命令，那就是rebase，这篇blog就记一下git rebase的一些使用。
+官方文档https://git-scm.com/docs/git-rebase
+一个不错的操作模拟https://learngitbranching.js.org/
+
+
+git rebase的常用操作本文不另辟捷径，官方文档讲的很详细，就挑几个官方的例子翻译一下。
+案例1 ：      A---B---C topic     /D---E---F---G master
+
+git rebase mastergit rebase master topic
+
+上面两条命令，执行其中的一条就可以，执行以后。其实就是git rebase upstream branch
+              A&#x27;--B&#x27;--C&#x27; topic             /D---E---F---G master
+
+案例2：–onto的使用git rebase [-i | --interactive] [&lt;options&gt;] [--exec &lt;cmd&gt;]	[--onto &lt;newbase&gt; | --keep-base] [&lt;upstream&gt; [&lt;branch&gt;]]
+o---o---o---o---o  master     \      o---o---o---o---o  next                       \                        o---o---o  topic
+git rebase --onto master next topic
+执行的结果为
+o---o---o---o---o  master    |            \    |             o&#x27;--o&#x27;--o&#x27;  topic     \      o---o---o---o---o  next
+这里–onto的后面有三个参数（其实属于–onto的就一个）
+
+参数1：要跟随在哪个commit，可以是分支名，也可以是commit的 Revision Number
+参数2：after-this-commit 意思是，从这个commit之后的开始算，这个commit是不算的
+参数3：要操作的最后一个commit，这个本身是要算进去的。
+
+复制一段commits到另一个分支（as应该不支持）A---B---C---D---E  master     \      F---G---H---I---J---K---L---M  topic
+比如想把K L M的提交copy到master上，那么可以使用命令
+git checkout mastergit rebase --onto E J Mgit rebase HEAD master
+结果为
+A---B---C---D---E---K‘---L’---M‘  master     \      F---G---H---I---J---K---L---M  topic
+注意这里一定要git rebase HEAD master，因为执行了第二条rebase后，只是复制了一份commit过去，需要处理一下master和HEAD。
+案例3：合并多条commit为一条git rebase -i &lt;after-this-commit&gt;
+执行上述命令后，会让你配置每一项的处理方式
+pick ：不做任何修改；reword：只修改提交注释信息；edit：修改提交的文件，做增补提交；squash：将该条提交合并到上一条提交，提交注释也一并合并；fixup：将该条提交合并到上一条提交，废弃该条提交的注释；
+
+关于Android StudioAS内置的插件可以满足大部分功能，按command + 9可以唤出来log tab附上操作指南：https://www.jetbrains.com/help/idea/edit-project-history.html
+我试了试，最终在as里没有找到 –onto 复制一段commits的方式，因为第三个参数必须得选branch，在stackoverflow里，找到一处资料。对比可以看到，如果和上述一段commits，是缺少参数的，所以这里得用命令行了。实际中，也劝大家尽量不要用这种方式。
+
+The rebase dialog in IntelliJ 12.1 uses the most general version of the rebase command:
+git rebase [-i] [--onto newbase] [upstream] [branch]
+
+where IntelliJ’s “Onto” field corresponds to --onto newbase, IntelliJ’s “From” field corresponds to “upstream” and IntelliJ’s “Branch” field corresponds to “branch”.
+In above git rebase command all parameters are optional, while in IntelliJ they are not. This means that you have to take your git rebase command and express it using the general form shown above.
+Note that what you actually do with the arguments of the rebase command is define a range of commits that will be replayed in a new target location. Generally, the range is upstream..branch. If you are not familiar with commit ranges you should read up on them.
+Let’s look at your example and assume that you are on branch “branch”:
+git rebase -i HEAD~4
+
+Let’s first figure out which is the range. Since you have only one argument, HEAD~4, this corresponds to upstream, i.e. the range is HEAD~4..branch or in other words HEAD~4..HEAD on branch “branch”. The question is now which is your –onto target. If you avoid --onto, then git assumes that your upstream is also your --onto.
+This yields:
+git rebase -i --onto HEAD~4 HEAD~4 branch
+
+and now you can fill in IntelliJ’s rebase dialog using
+
+Onto: HEAD~4
+From: HEAD~4
+Branch: branch
+
+IntelliJ actually forces you to think first and identify your range and target, which looks more complicated, but which prevents you from doing a rebase without understanding what the result will be.
+https://stackoverflow.com/questions/14608812/how-to-do-interactive-rebase-with-intellij-idea
+
+注意AS中，也可以勾选-i参数
+如果是只有一条提交记录，通常用cherry-pick很方便，rebase可以用来处理多条commits的时候。当然，你也可以把commit先执行squash，再执行cherry-pick。
+]]></content>
+      <categories>
+        <category>git</category>
+      </categories>
+      <tags>
+        <tag>git</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用jenkins为android工程打包，支持多包名，改资源（优化方案）</title>
+    <url>/2020/09/04/jenkins-android-3/</url>
+    <content><![CDATA[需求没有需求，自己看了一眼自己之前写的打包脚本，简直无法看下去。而且，产品经理的定制化需求越来越多，用shell脚本的可读性也越来越差，再加上里面一堆的sed命令，惨不忍睹。
+改!!!
+分析gradle其实支持自定义参数，关于自定义参数的介绍，参考官方文档：https://docs.gradle.org/current/userguide/build_environment.html，简单说一下用到的：[Gradle properties](https://docs.gradle.org/current/userguide/build_environment.html#sec:gradle_configuration_properties)：
+
+
+有两种方式传给gradle，一种是-P。
+gradlew clean -Pname=zhangsan
+
+另一种是gradle.properties，我们可以在build.gradle文件所在的目录下创建一个gradle.properties文件，写上
+name=zhangsan
+
+通过这两种方式，在gradle脚本中就可以直接使用这个变量名。
+比如如下的gradle配置，其中包含了int型，String型，boolean型，基本能满足需求了。
+buildConfigField &quot;boolean&quot;, &quot;SHOW_INFO&quot;, &quot;$SHOW_INFO&quot;applicationId &quot;$PACKAGE_NAME&quot;versionCode Integer.valueOf(VERSION_CODE)versionName VERSION_NAMEbuildConfigField &quot;String&quot;, &quot;QQ_ID&quot;, &quot;\&quot;$qq_id\&quot;&quot;buildConfigField &quot;String&quot;, &quot;WX_RELEASE_ID&quot;, &quot;\&quot;$wx_id\&quot;&quot;
+
+对应的gradle.properties文件
+VERSION_NAME=1.2VERSION_CODE=1110PACKAGE_NAME=me.lefo.jenkinsSHOW_INFO=trueqq_id=1001wx_id=1002
+
+
+
+结合jenkins的参数化构建通常用jenkins在构建的时候，都会自定义一些参数，比如上文的VERSION_NAME，VERSION_CODE。当然，我们还有个奇葩的需求，改包名。
+jenkins在搭建的时候，构建那一步一定要选invoke gradle script，点开下面的高级选项，勾选Pass all job parameters as Project properties，勾选这一项会将jenkins参数化构建时的参数写到gradle中，还会替换掉gradle.properties中的默认值。其实就是通过-P把参数传到了gradle，-P传入的优先级高于properties文件。
+一定要保证参数名和gradle.properties文件中的名字一样！！！
+一定要保证参数名和gradle.properties文件中的名字一样！！！
+一定要保证参数名和gradle.properties文件中的名字一样！！！
+和包名绑定的配置我们有个改包名的需求，有些配置化的值，是要跟着包名变动的，比如第三方平台的id。怎么办呢？这里的做法是，不同包名，建立不同的properties文件，执行时，使用cp -f命令，替换掉gradle.properties文件。
+cp -f $PACKAGE_NAME.properties gradle.properties
+
+像一些构建时jenkins传入的参数，可以不在包名.properties里出现，但是，默认的gradle.properties文件必须有这些值，在as run的时候，还是得在gradle.properties中有个默认值的。但jenkins选了invoke gradle script，这些参数会通过-P传进去。
+manifest文件manifest文件中，也会配置一些值，可以通过placeHolder传进去。比如channel
+defaultConfig &#123;	manifestPlaceholders = [label:&quot;@string/app_name&quot;,                                channel:&quot;$CHANNEL&quot;] &#125;
+
+在manifest中可以通过${channel}来使用，manifest中的authorities也可以通过这种方式来处理。
+改应用名我们有两个需求，一个是改用户界面显示的应用名，另一个是改APP内部显示的应用名，这两个有可能不一样。这里当然是通过sed改的，貌似也没有别的办法，上一段中的label也是用于这个功能的。我们的做法是把包含应用名关键字的strings.xml单独提取到一个value资源文件，然后通过sed统一修改。
+sed -i &#x27;s/默认应用名/&#x27;&quot;$APP_NAME&quot;&#x27;/g&#x27; myflavor/res/values/stringfile.xml
+
+
+
+完成通过这波修改，之前的一坨sh文件中，就只剩下修改应用名的脚本了，其它的都通过gradle的环境变量来支持了。后续如果要加配置项，只需要在gradle.properties中加个默认项，如果是跟包名的，就放在包名.properties中，如果是jenkins配置的，就按对应的名称配在jenkins就OK。
+
+相关阅读
+使用jenkins为android工程打包，支持多包名，改资源（简单上手）
+使用jenkins为android工程打包，支持多包名，改资源（踩坑指南）
+jenkins中实用的插件
+
+]]></content>
+      <categories>
+        <category>android打包</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>jenkins</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>jenkins中实用的插件</title>
+    <url>/2020/02/15/jenkins-plugins/</url>
+    <content><![CDATA[记录最近疫情闹的有点凶，大家都是在家办公，刚好群里的一个妹子一边卖萌，一边问jenkins的搭建及使用，就用腾讯会议给辅导了一下。给她讲完后，翻了翻之前给公司搭建的环境，想记录一下之前使用过的Jenkins插件，供以后使用。
+暂时就这些，有好用的插件会不定时更新。
+自带插件安装的时候，会提示你要选哪些插件，建议默认，像git svn以及gradle，这些插件会在默认插件列表里就存在。
+Git Parameter可用于把git的tag branch当作构建参数传进来，方便使用branch构建。
+SVN Parameter同Git Parameter 一样是可以将tag branch当作构建参数传进来。
+
+
+Multiple SCMs plugin可以加多个源码的插件，比如我们项目就是资源单独有一个SVN，所以要把代码checkout以后，再checkout资源。
+Environment Injector Plugin可以在构建时注入一些环境变量，这款插件有一个好处就是，它支持Prepare an environment for the run，可以在SCM以前注入变量，比如我们有个资源的svn地址，需要在构建时传进来然后checkout。为了更直观，参数默认值就留了空。有了这个插件，写了groovy脚本，手动将空值改成了默认资源地址，SCM那里直接使用参数名就OK了。
+Version Number Plug-In用于自定义构建记录的名字的插件，使构建记录更直观，不再是#1 #2这种格式。
+Build Keeper Plugin可以按天数保留几天内的构建，没什么大用，如果硬盘紧张，推荐使用自带的Discard old builds
+Role-based Authorization Strategy按项目分权限，比如某个project不想让某人访问到，可以用这个插件。
+Copy Artifact可以将上游JOB构建后生成的Artifact，复制到下游的JOB来使用，比如上游的JOB生成的apk。
+Validating String Parameter Plugin用于参数校验的插件，像产品打包的时候versionCode总是喜欢空着，说多少次都不长心，还让开发看一下为什么打包失败，最后就使用了这个插件，输入时校验。
+
+相关阅读
+使用jenkins为android工程打包，支持多包名，改资源（简单上手）
+使用jenkins为android工程打包，支持多包名，改资源（优化方案）
+
+]]></content>
+      <categories>
+        <category>jenkins</category>
+      </categories>
+      <tags>
+        <tag>jenkins</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>android进程保活（掌握黑心科技）</title>
+    <url>/2020/08/24/keep-alive/</url>
+    <content><![CDATA[进程保活android这个生态真的是不好，从一开始，大家就想方设法在后台常驻，为了让自己app不被杀，绞尽脑汁想各种存活办法。目前，之前用的大部分保活方案，在手机上几乎都是失效的，尤其是一些国内厂家机型，提供一键清理功能，把你正的运行的APP，杀的渣也不剩。所以，目前还能正常使用的方法就只有一种，那就是两个进程互相监听。
+
+
+技术原理
+B发现A死了后，赶紧把A拉活，然后再把自己杀死，这样达到瞒天过海的效果。
+进程A使用flock锁定一个文件，此时B进程再flock就会就会挂起，除非A进程主动释放或者结束，B进程才会继续，也就是所谓的监听
+反射使用ActivityManagerService直接拉活组件
+
+启动子进程方案一：就是fork。fork会分离出一个子进程，在fork的地方开始执行接下来的工作，可以根据fork函数返回值来判断是主进程还是子进程。这里提到的另一个概念就是二次fork，关于二次fork和进程托孤，可以自行上网了解一下。
+方案二：使用app_process命令启动一个java进程。https://blog.csdn.net/u010651541/article/details/53163542
+app_process &lt;dir&gt; &lt;class name&gt; &lt;parameters&gt; --application --nice-name=nice_nameapp_process -Djava.class.path=Helloworld.dex  dir classname
+
+当然了，要想启动java进程，classpath得设置，如执行export CLASSPATH，也可以使用-D来指定路径。如果有so要调用，还要将共享库加到环境变量中。export LD_LIBRARY_PATH 或者export _LD_LIBRARY_PATH
+两个进程如何互相监听这里有一个相当巧妙的方式，使用linux提供的函数。
+int flock(int fd,LOCK_EX);
+具体用法请自行搜索，简单讲，A进程调用该函数后，此时B进程再调用，会造成B进程阻塞。而当A进程挂了后，B进程就会立马继续执行。
+如何拉活APP要获取ams的IBinder，然后调用transact来启动组件。这里给大家提供源代码的路径，这里需要用反射。
+mRemote = android.os.ServiceManager.getService(&quot;activity&quot;)mRemote.transact(code,data,null,FLAG_ONEWAY);
+
+这里有两部分需要处理，一个是code值，另一个就是data。关于code值，不同的安卓版本不一样，另外有的rom也会修改，翻看源码android.app.IActivityManager。关于data，也会根据不同的系统版本有不同的拼装方法。我这里以service为例。具体参数，也可以参考源码，下面的写法也是根据IActivityManager不同版本中的startService写的。
+mServiceData = Parcel.obtain();mServiceData.writeInterfaceToken(&quot;android.app.IActivityManager&quot;);mServiceData.writeStrongBinder(null);if (Build.VERSION.SDK_INT &gt;= 26) &#123;    mServiceData.writeInt(1);&#125;//这个是service的intentserviceIntent.writeToParcel(mServiceData, 0);mServiceData.writeString(null);if (Build.VERSION.SDK_INT &gt;= 26) &#123;    //fg service    mServiceData.writeInt(1);&#125;if (Build.VERSION.SDK_INT &gt;= 23) &#123;    String packageName = serviceIntent.getComponent().getPackageName();    mServiceData.writeString(packageName);&#125;mServiceData.writeInt(0);
+
+我声明一下，service保活在部分手机上可用。
+上代码-&gt;具体保活代码看这里
+20年最早做的时候是没找到这坨代码的，当时纯逆向+找资料总结的。前两天一搜，现在不知道谁上传了，就给看到的有缘人发出来，这套保活目前应该还能稍微撑一撑吧，就挺恶心的。
+]]></content>
+      <categories>
+        <category>android</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>OpenCV在Android NDK按需要的模块编译</title>
+    <url>/2020/05/02/opencv-android/</url>
+    <content><![CDATA[前言公司要做一个和图片有关的功能，一说图片处理，大家首先想到的就是强大的OpenCV。OpenCV很强大，官方也提供了android专用的sdk，直接将so和jar放入项目中就能使用。尽管官方推荐的也是这种方式，但有一个问题是，OpenCV的库很大，有10MB，很多公司整个APK都没有10MB，如果要把真个库都放到项目中，那还是挺大的。所以，这里就需要我们自己编译。中间折腾了好久，写个文章记录一下。
+准备下载OpenCV地址 https://opencv.org/releases/选择Android平台的包
+这里注意了，4.0的版本，要求api level是21以上，所以，如果你的APP是要在21以下使用，不要下载这个。
+3.x的版本不清楚，但我试了OpenCV 2.x的版本是api level 8以上。2.x的版本，需要自行google，官方应该已经不提供了。
+
+
+配置gradledefaultConfigandroid &#123;	ndkVersion &quot;16.1.4479499&quot;    defaultConfig &#123;        ndk &#123;            moduleName &quot;opencv-test&quot;            abiFilters &#x27;armeabi-v7a&#x27;,&#x27;x86&#x27;        &#125;    &#125;    externalNativeBuild &#123;        cmake &#123;            path &quot;src/main/jni/CMakeLists.txt&quot;            version &quot;3.10.2&quot;        &#125;    &#125;&#125;
+注意，上面的ndkVersion可以不填，我这里是为了使用OpenCV 2.X版本，应该是需要r16的版本编译，因为使用当前最新的版本编译时，有个库找不到。
+abi需要哪些请根据你自己的需要来填，有很多新入门的朋友抄的时候都不看内容，否则如果你其它so库在某平台缺失，可能会闪退。
+CMakeLists.txt注意对应的目录是你JNI代码的目录
+CMakeLists.txt在网上找的一个内容折腾了好久，终于算是弄明白了
+#你的opencv解压目录set(OpenCV_DIR /OpenCV-android-sdk/sdk/native/jni)#这里也可以在后面跟具体模块OpenCV REQUIRED core imgproc 注意，写上并不代表会编译到包内FIND_PACKAGE(OpenCV REQUIRED)if(OpenCV_FOUND)    include_directories($&#123;OpenCV_INCLUDE_DIRS&#125;)    message(STATUS &quot;OpenCV library status:&quot;)    message(STATUS &quot;    version: $&#123;OpenCV_VERSION&#125;&quot;)    message(STATUS &quot;    libraries: $&#123;OpenCV_LIBS&#125;&quot;)    message(STATUS &quot;    include path: $&#123;OpenCV_INCLUDE_DIRS&#125;&quot;)else(OpenCV_FOUND)    message(FATAL_ERROR &quot;OpenCV library not found&quot;)endif(OpenCV_FOUND)#你的库add_library( native_test        SHARED        native.cpp)#include为头文件所在的目录hppinclude_directories(/OpenCV-android-sdk/sdk/native/jni/include)#要链接的库target_link_libraries( native_test        $&#123;OpenCV_LIBS&#125;        log        jnigraphics)
+简单说一下上面的代码
+
+首先设置OpenCV_DIR环境变量，指定所在目录
+找出配置的所包含的库，也就是OpenCV的模块
+环境的打印，不用在意
+add_library是你的库的配置，可以参考ndk的官方文档
+include_directories是OpenCV的头文件目录
+target_link_libraries这里要用到jnigraphics，还有日志打印的log（常用），注意看OpenCV_LIBS就是FIND_PACKAGE的内容，在3中会打印出来。
+
+搭建完后你就可以在代码中编写你的jni代码了，这样写出来的库，只会包含你用到的模块，比如你只用到了core和imgproc，那你的库打出来就只有1.8mb，这比OpenCV官方的要小了好多。
+附写代码的时候，不要使用OpenCV的imread，这会导致有需要多导入模块，增加了包的体积。ndk中，有android&#x2F;bitmap.h，可以直接使用Bitmap对象来转Mat.
+]]></content>
+      <categories>
+        <category>android</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>opencv</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>python+selenium为你自动挂海淀驾校法陪课</title>
+    <url>/2020/05/18/python-selenium/</url>
+    <content><![CDATA[前言在北京摇号摇了18次了，下次开始就是四倍概率。然后，中签还是遥遥无期，隔壁坐的同事摇了两年就摇到了，万分羡慕。有时候晚上想去溜达一下，要去找gofun共享汽车还要走1公里多，还车还要走1公里。于是就有了想买一辆摩托车的想法。
+要买车，肯定得有驾照，挑选完以后，报了海淀驾校，小区门口就有驾校的班车，关键是便宜，只要1000块。在我家那18线城市的小地方也得800多。于是报名，开始上法陪课。但法陪课每一章节必须自已手动点开始，很是麻烦，于是就想写个程序代替自己手点。
+
+
+手机端法陪课可以在网页上上，也可以在APP上上，没自动播放，估计也是想让你好好学习，怕你偷懒吧。
+因为我是做安卓的，起先打算拿在手机上搞，发现手机上是个自定义控件，基本不能用辅助功能（类似微信抢红包插件的技术）下手。唯一可用的就是
+adb -s device_name shell input tap x y
+
+然后多久发一次命令又是个问题，于是就打算从网页上下手。
+网页端网页上看，播放视频是一个flash，想用javascript也就没办法搞了，只得用selenium。
+准备工作：
+
+Python：不解释
+selenium: pip3 install selenium安装
+Firefox：浏览器，本来我使用的是chrome，发现chrome对flash做了个优化，切后台后，flash不自动加载，换火狐就没问题了。
+geckodriver:火狐浏览器的驱动，供selenium调用
+
+放代码from selenium import webdriverfrom selenium.webdriver.common.action_chains import ActionChainsfrom selenium.webdriver import FirefoxOptionsfrom selenium.webdriver.support.wait import WebDriverWaitimport reimport timedef findTime(dr):    timeText = driver.find_element_by_class_name(&#x27;playing&#x27;).text    p1 = re.compile(r&#x27;[(](.*?)[)]&#x27;, re.S)    timeList = re.findall(p1, timeText)    if len(timeList) == 0:        return 0    else:        timearr = timeList[0].split(&#x27;:&#x27;)        return int(timearr[1]) * 60 + int(timearr[2])#flash的事件不能通过element触发 def click_locxy(dr, x, y, left_click=True):    &#x27;&#x27;&#x27;    dr:浏览器    x:页面x坐标    y:页面y坐标    left_click:True为鼠标左键点击，否则为右键点击    &#x27;&#x27;&#x27;    if left_click:        ActionChains(dr).move_by_offset(x, y).click().perform()    else:        ActionChains(dr).move_by_offset(x, y).context_click().perform()    ActionChains(dr).move_by_offset(-x, -y).perform()  # 将鼠标位置恢复到移动前opts = FirefoxOptions()#opts.add_argument(&quot;--headless&quot;)option_profile = webdriver.FirefoxProfile()option_profile.set_preference(&quot;plugin.state.flash&quot;,2)path = &quot;/Users/lefo/Documents/dev/chrome/geckodriver&quot;# 注意这个路径需要时可执行路径（chmod 777 dir or 755 dir）driver = webdriver.Firefox(executable_path=path,options=opts)driver.get(&#x27;http://www.xuechebu.com/sign.html&#x27;)def playing():    playing = WebDriverWait(driver,60,1).until(lambda x:x.find_element_by_class_name(&#x27;playing&#x27;)) #等一分钟，直到获取到正在播放的控件    text = playing.text    print(text)    time.sleep(3) #等三秒，有时候文字可能加载慢    nextTime = findTime(dr=driver) #文字中提取括号内的时间    playing.click() #这里貌似无所谓，不点击也可以    print(str(nextTime))  #下一次执行的时间    time.sleep(10) #这个10s主要是为了flash允许有时间点    click_locxy(driver,750,540,left_click=True) #根据坐标点上去    time.sleep(nextTime + 5)  #这个5s和上面10s同样的道理count = 0while(count &lt;= 99):  #99这个数值具体自己设    playing()    count = count +1driver.quit()
+
+说明首先，获取正在播放的超链接，上面文字的格式：第x章节(00:02:30)表示2分30秒长，计算成秒，然后间隔这个时间值再去下一个循环。因为播放完成后会自动跳到下一个章节，只是不会开始播放而已，所以，我们要做的就是，间隔一段时间，点一下播放。
+试过传入启动flash插件的参数，最后也失败了，所以启动后需要在一分钟内登录，然后去 附加组件 - 插件 将flash插件启用。再将页面上的flash点个允许。点完允许后，10s内会触发一次播放点击。如果你觉得1分钟的登录时间不够，那就改一下上面的时间，或者，加上登录的逻辑（其实我是有登录的，发文章的时候，删掉了）
+如果你是其它挂课的网页，道理也是相同的，如果用JS可以实现还是用js吧。因为这个网页有flash的特殊性，才用的selenium，我对python和selenium都不熟，里面的函数几乎一个都不知道，只能边学边搜边写。
+]]></content>
+      <categories>
+        <category>python</category>
+      </categories>
+      <tags>
+        <tag>python</tag>
+        <tag>selenium</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>C++学习笔记</title>
+    <url>/2021/08/13/cpp-note/</url>
+    <content><![CDATA[第2节防卫式声明，防止重复include引起的问题(guard)
+//complex.h#ifndef _COMPLEX_#def _COMPLEX_...#endif
+
+
+
+第3节inline 内联函数
+构造函数 
+public:    complex(double r = 0,double i = 0)        :re(r),im(i)        //上面的默认值是推荐用法    &#123;&#125;...complex c1(2,1)complex c2complex* c3 = new complex(4)
+
+第4节数据是private
+参数、返回值尽可能拿引用传递：除了返回值需要新创建对象的情况
+能加const的函数尽量加const
+type function () const &#123; return result&#125;
+
+
+
+
+
+第6节操作符重载
+complex::operator += (const complex&amp; r)&#123;	return &#125;
+
+//ostream不加const ostream&amp; operator &lt;&lt; (ostream&amp; os, const complex&amp; x)&#123;	return os &lt;&lt; &#x27;(&#x27; &lt;&lt; real(x) &lt;&lt; &#x27;,&#x27; &lt;&lt; imag(x) &lt;&lt; &#x27;)&#x27;;&#125;
+
+
+
+第7节class String&#123;	public:		String(const char* cstr = 0);		String(const String&amp; str);		String&amp; operator =(const String&amp; str);		~String()		char* get_c_str() const &#123;return mdata&#125;;	private:		char* m_data;&#125;
+
+拷贝构造(浅拷贝会内存溢出)
+inline String::String(const String&amp; str)&#123;	m_data = new char[ strlen(str.m_data) + 1];	strcpy(m_data,str.m_data);&#125;
+
+拷贝赋值
+inline String::operator = (const string&amp; str)&#123;	//不使用这个自我赋值判断，会刹掉自己	if(this == &amp;str)		retrun *this  delete[] m_data;	m_data = new char[ strlen(str.m_data) + 1];	strcpy(m_data,str.m_data)	return *this;&#125;
+
+第8节new :先分配内存，再调用ctor
+delete:先调用析构函数，再释放内存
+array new 要搭配 array delete使用
+第15 16 17 18节转换函数 ，构造方法也可以当转换函数转，比如4转为4&#x2F;1
+explicit :加在构造方法前面，表示必须得显示调用
+class Fraction&#123;public:  Fraction(int num,int den=1)   : m_numberator(m), m_denominato &#123;&#125;  operator double() const&#123;    return (double)(a/b)  &#125;...Fraction f(3,5)double d=4+5
+
+Fraction operator+(const Fraction&amp; f)&#123;	return Fraction(...);&#125;
+
+pointer like classes 智能指针
+template&lt;class T&gt;class shared_ptr&#123;public:	T&amp; operator*() const	&#123; return *px; &#125;	T* operator-&gt;() const	&#123; return px; &#125;		shared_ptr(T* P) :px(p)&#123;&#125;private:	T* px;	long* pn;&#125;
+
+Function-like classes
+template &lt;class T&gt;struct identity&#123;	const T&amp;	operator()(const T&amp; x) const &#123;return x;&#125;&#125;
+
+第19 - 25节namespace  可以代码放一个文件进行，然后用namespace分割
+类模板、函数模板、成员模板，函数模板使用时无需指定类型
+template &lt;class T1,class T2&gt;struct pair&#123;	T1 first;	T2 second;	pair():first(T1()),second(T2);	pair(const T1&amp; a,const T2&amp; b):	   first(a),second(b)&#123;&#125;		template &lt;class U1,class U2&gt;	pair(const pair&lt;U1,U2&gt;&amp; p):	   first(p.first),second(p.second)&#123;&#125;&#125;
+
+模板特化，可以理解为限定类的模板特殊设计
+template &lt;&gt;struct hash&lt;char&gt;&#123;	size_t operator()(char x) const&#123;		return x;	&#125;&#125;
+
+模板模板参数
+template&lt;typename T,          template &lt;typename T&gt;&gt;              class Container              &gt;class XCLs&#123;private:     Container&lt;T&gt;c;public:  ...&#125;template&lt;typename T&gt;using Lst = list&lt;T, allocator&lt;T&gt;&gt;;//XCLs&lt;string, list&gt; mylst1; 错的XCLs&lt;string,Lst&gt; mylst2;
+
+模板偏特化
+template&lt;class T,class Alloc=...&gt;class vector&lt;bool,Alloc&gt;&#123;...&#125;template &lt;typename T&gt;//指针class C&lt;T*&gt;&#123;&#125;
+
+
+
+第27节auto 关键字 必须得让编译器能推出你的变量是什么
+list&lt;string&gt; c;...list&lt;string&gt;::iterator ite;ite = find(c.begin(),c.end,target);auto ite = find(c.begin(),c.end,target);
+
+for (auto eleme : vec)&#123;&#125;for (auto&amp; eleme : vec)&#123;&#125;
+
+第28节int x = 0;int* p = &amp;x;int&amp; r = x;	//r代表x 现在r, x 都是0int x2 = 5;//等于把5赋值给xr = x2;	//r 不能重新代表其它物体，现在r x都是5int&amp; r2 = r;	//r2 x 都是5
+
+double image(const double&amp; im)&#123;...&#125;double image(const double im)&#123;...&#125;//不能共存 Ambiguity
+
+const属于签名的一部分，有const和没有const可以并存
+第30-31节vptr和vtbl
+先通过指针 找到函数表再找到第n个 再调用
+(*(p-&gt;vptr)[n])(p);
+(* p-&gt;vptr[n] )(p);
+编译器三个条件就会动态绑定
+1.指针调用 2.向上转型 3.虚函数
+(*(this -&gt; vptr)[n])(this);
+第33-38节当成员函数的const和 non-const版本同时存在，const object只会调用const版本，non-const object只会调用non-const版本
+new 和 delete可以重载
+inline void* operator new(size_t size)&#123; return myAlloc(size);&#125;inline void operator delete(void* ptr)&#123; myfree(ptr);&#125;
+
+可以对成员的new &#x2F;delete 做重载，写到类里
+如果想使用globals
+Foo* pf = ::new Foo;::delete pf//将使用全局的new 和delete
+
+数组在内存中的size是countsize + unit * count 
+我们可以重载class member operator new()，写多个版本，每个声明必须有独特的参数列，且第一个必须是size_t，其余参数是new指定的placement arguments为初值。小括号内的便是placement arguments
+Foo* pf = new(300,&#x27;c&#x27;) Foo;
+
+可以重载class member operator delete()，写出多个版本，调不到，大师说老版本的能调到，在new异常的时候
+operator new()在标准库的用处，多分配一些内存
+]]></content>
+      <categories>
+        <category>c++</category>
+      </categories>
+      <tags>
+        <tag>c++</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>记一次编译安卓模拟器镜像</title>
+    <url>/2021/08/11/make-image/</url>
+    <content><![CDATA[背景想要编译一个自己的framework，用来在系统api中插入自己的代码，监听一下应用的行为，比如获取imei，获取网络。最直接的想法就是，修改安卓源码，直接编译出一个系统镜像，给模拟器使用。
+准备：
+
+因为之前编译过android.jar，所以源码环境还有，直接开工，或者看以前编译的文章有讲。
+
+修改代码，比如找到TelephonyManager.java，在getDeviceId()中插入自己的代码。
+
+
+
+
+编译source ./build/envsetup.shlunch sdk_phone_x86-userdebugmake update-apimake -j16 sdk sdk_repo
+
+注意：下面的部分是官方写的，如何编译一个sdk给别人也能用。但我没有成功，make sdk_repo的时候，失败了
+在host/linux-x86/sdk/sdk_phone_x86下找到两个文件
+
+sdk-repo-linux-system-images-eng.[username].zip
+repo-sys-img.xml
+
+将这两个文件放到你服务器可访问的位置，记下url。再将xml中的&lt;sdk:url&gt;替换成zip的url。
+在SDK Manager中，点击  SDK Update Sites   添加你的xml的url。
+我的操作：直接将zip下载下来解压，替换原来sdk对应的system-image，如/sdk/system-images/android-23/default/x86
+说明如果没有修改代码，是不需要make update-api的，但是有代码修改后，make过程中，会提示你使用make update-api。我在make sdk的过程中，还提示要make update-support-api(不大记得是update-support-api还是support-update-api)，有需要系统会提示的，根据系统提示操作。
+运行
+缺少kernel-ranchu，复制一个解决
+开机黑屏，AVD Manager下，点击编辑，Emulated Performance - Graphics:改为SoftWare（尚不清楚其它解决方案）。关于这个黑屏，尝试好多次，启动后也有日志提示EGL_emulation: tid 1232: eglCreateImageKHR(1206): error 0x300c E/GLConsumer: error creating EGLImage: 0x300c，我一直以为是镜像的问题，试了几个版本，一直不行，最后几经搜索才找到改Graphics的方案，很是郁闷。
+
+记录
+error: ro.build.fingerprint cannot exceed 91 bytes:
+error: ro.build.fingerprint cannot exceed 91 bytes:
+
+编辑build/tools/post_process_props.py。更改行，如下所示：
+PROP_NAME_MAX = 31# PROP_VALUE_MAX = 91PROP_VALUE_MAX = 128
+
+编辑bionic/libc/include/sys/system_properties.h。更改行，如下所示：
+#define PROP_NAME_MAX   32// #define PROP_VALUE_MAX  92#define PROP_VALUE_MAX  128
+
+make clobbermake sdk sdk_repo
+
+
+
+jack服务错误，因为我是在6.0的源码上编译，还是使用的jack，报了两次服务没启动后，我就直接关了，修改为下面的SERVER&#x3D;false
+vi ~/.jack# Server settingsSERVER=falseSERVER_PORT_SERVICE=8072SERVER_PORT_ADMIN=8073SERVER_COUNT=1SERVER_NB_COMPILE=4SERVER_TIMEOUT=60SERVER_LOG=$&#123;SERVER_LOG:=$SERVER_DIR/jack-$SERVER_PORT_SERVICE.log&#125;JACK_VM_COMMAND=$&#123;JACK_VM_COMMAND:=java&#125;# Internal, do not touchSETTING_VERSION=2
+
+make sdk_repo错误，生成的xml中值校验不通过。
+Building SDK repository package system-images from android-sdk_eng.root_linux-x86.zip## Using xmlns:sdk=http://schemas.android.com/sdk/android/addon/2## Using root element sdk-addon## Add support/linux archive out/host/linux-x86/sdk/sdk_phone_x86//sdk-repo-linux-support-eng.root.zip## Validate XML against schema&lt;?xml version=&quot;1.0&quot;?&gt;&lt;sdk:sdk-addon xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xmlns:sdk=&quot;http://schemas.android.com/sdk/android/addon/2&quot;&gt;    &lt;sdk:extra&gt;        &lt;sdk:revision&gt;23.0.1&lt;/sdk:revision&gt;        &lt;sdk:vendor&gt;android&lt;/sdk:vendor&gt;        &lt;sdk:path&gt;support&lt;/sdk:path&gt;        &lt;sdk:archives&gt;            &lt;sdk:archive os=&quot;linux&quot;&gt;                &lt;sdk:size&gt;5504615&lt;/sdk:size&gt;                &lt;sdk:checksum type=&quot;sha1&quot;&gt;d7d984cfe9288f2cd32bb1601a138de32724faa2&lt;/sdk:checksum&gt;                &lt;sdk:url&gt;sdk-repo-linux-support-eng.root.zip&lt;/sdk:url&gt;            &lt;/sdk:archive&gt;        &lt;/sdk:archives&gt;    &lt;/sdk:extra&gt;&lt;/sdk:sdk-addon&gt;out/host/linux-x86/sdk/sdk_phone_x86/repo-extras.xml:6: element revision: Schemas validity error : Element &#x27;&#123;http://schemas.android.com/sdk/android/addon/2&#125;revision&#x27;: &#x27;23.0.1&#x27; is not a valid value of the atomic type &#x27;xs:positiveInteger&#x27;.out/host/linux-x86/sdk/sdk_phone_x86/repo-extras.xml fails to validatemake: *** [out/host/linux-x86/sdk/sdk_phone_x86/repo-extras.xml] 错误 3make: *** 正在删除文件“out/host/linux-x86/sdk/sdk_phone_x86/repo-extras.xml”
+
+应该是xml中revision不是整数的问题。这个我就很郁闷，明明xml是自己生成的，偏偏校验不通过，make文件在development/build/tools/mk_sdk_repo_xml.sh里，xsd的文件在prebuilts/devtools/repository找到了，后续我也没改，直接把zip拿来用了。有兴趣的可以自己试试。
+
+
+
+相关阅读
+编译Android源码，使用hide api和internal api
+
+]]></content>
+      <categories>
+        <category>android</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>第一次尝试frida</title>
+    <url>/2023/10/06/frida/</url>
+    <content><![CDATA[前言大概半个月前，群里的一个小伙伴问，谁能把某电商APP的订单列表导出到电脑，有个私活，报个价。其实我对这种稍微有点了解，无非是抓包，破解。但通常App的网络请求会有一套签名验证机制，所以要想模拟出整套请求流程，也算比较复杂。和群里的讨论后，觉得用hook做合适，但群里和我一样，都是安卓开发，没有逆向工程师，首先想到的是xposed。
+xposed太重我之前倒是写过xposed，xposed缺点有两个，第一就是环境复杂，你得安装xposed环境才可以，目前都是通过virtual xposed来使用。再就是插件一但有修改，就得重启手机。不过这也带来了一个有点就是持久化，只要装进去，就一直存在。那有没有更轻量级的工具可以达到这种效果，后来在网上找到了frida。(这也好几年了，我居然不知道)
+
+
+Frida官网https://github.com/frida/frida/releaseshttps://frida.re
+环境搭建Frida分为客户端(电脑) + 服务端(手机端)。
+pip3 install fridapip3 install frida-tools# 安装完成后运行，查看是否安装成功，有进程输出说明成功frida-ps -U
+
+下载服务端程序到手机(模拟器)，必须有root权限。下载时注意选择你对应平台的frida-server
+adb push frida-server /data/local/tmp/adb shellsuchmod 777 /data/local/tmp/frida-server/data/local/tmp/frida-server
+注入js，hook举一个hook okhttp的例子，okhttp的响应信息都打印出来。在电脑上新建一个test.js
+// test.js  hook okhttp 因为okhttp的response只能消费一次，为了不影响默认的程序，将buffer复制一份function get_http()&#123;    Java.perform(function ()&#123;        var RealCall = Java.use(&quot;okhttp3.RealCall&quot;);        var Buffer = Java.use(&quot;okio.Buffer&quot;);        var ResponseBody = Java.use(&quot;okhttp3.ResponseBody&quot;);        RealCall.getResponseWithInterceptorChain.overload().implementation = function () &#123;            var response =  this.getResponseWithInterceptorChain();            var responseBody = response.body();            var buffer = Buffer.$new();            responseBody.source().readAll(buffer);            var responseBodyString = buffer.readUtf8();            console.log(&quot;HTTP Request -&gt; &quot; + this.request().url().toString());            console.log(&quot;HTTP Response -&gt; &quot; + responseBodyString);            var builder = response.newBuilder();            var newResponse = builder.body(ResponseBody.create(responseBody.contentType(), responseBodyString)).build();            return newResponse;        &#125;    &#125;);&#125;
+启动服务端后，在客户端(电脑)上运行
+# U是USB F是当前app，这里用-n也不会重启(frida-ps查到的名字)，用-f 包名 会重启appfrida -UF test.js# 运行后，会进入frida，我们还需要输入具体js函数，比如get_http()get_http()
+关于frida的语法，简单介绍一个常用的，剩下的上官网查。var Class = Java.use(&quot;class name&quot;);Class.method.overload(&quot;param class name&quot;).implementation = function( param) &#123;    # param.xxxx    # console.log(&quot;&quot;);&#125;
+
+
+
+]]></content>
+      <categories>
+        <category>android</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>frida</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>重学安卓之kotlin协程</title>
+    <url>/2023/08/08/kotlin-coroutine/</url>
+    <content><![CDATA[导读因为2021年开始做C++，之前的项目还没来得及怎么用kotlin，就直接被爸爸宣布死刑了。所以目前找工作等于需要再学一次kotlin，特别是协程，之前几乎没有了解。买了本书，再加上网上的各种文章，整理一点笔记出来。如果有和我差不多的，可以看一看
+协程，协程可以理解为某种自由调度的任务，主要是对函数挂起，恢复。听起来像线程的唤醒，本质上和线程没什么关系。使用协程，我们可以以单线程的方式写多线程的代码，同时还能节省线程资源，并且能方便处理异常信息，返回结果等。我们给函数前面加一个suspend关键字，就变成一个挂起函数，可以在函数内操作协程的挂起和恢复。其中部分内容有重复，不必理会。主要参考资料&lt;深入理解Kotlin协程&gt;，算是一个简单的笔记整理。
+协程的API什么是挂起
+fun download(url: String) &#123;    // ...&#125;suspend fun bitmapSuspendable(url: String): Bitmap =     // 挂起协程 下载完成后，调用resume    suspendCoroutine&lt;Bitmap&gt; &#123; continuation -&gt;         thread &#123;            try &#123;                continuation.resume(download(url))            &#125; catch (e: Exception) &#123;                continuation.resumeWithException(e)            &#125;        &#125;    &#125;suspend fun main() &#123;    try &#123;        var bitmap = bitmapSuspendable(&quot;url1&quot;)    &#125; catch ( e: Exception) &#123;    &#125;&#125;
+上面的代码使用suspendCoroutine函数包装download，协程结束后，使用resume返回bitmap结果。当然，Kotlin 协程提供了更方便的库函数来处理挂起操作，不需要我们来实现。
+
+suspend关键字，被suspend关键字修饰的函数叫挂起函数。suspend函数只能被协程或者suspend函数调用。
+suspendCoroutine 用于挂起协程的函数，返回值类型作为挂起函数的返回值，也就是泛型参数T的实参Bitmap，这个函数除了确实返回值类型外，还能帮我们拿到一个Continuation实例，负责保存和恢复挂起状态。
+resume: 恢复协程 resumeWithException:将exception携带恢复协程
+resumeWith: 用于恢复协程执行，并提供一个 Result 对象作为协程的结果，该对象可以包含成功的返回值或异常。
+resumeWithException: 恢复一个协程，并传递一个异常。一般无需显式调用，因为协程库会自动处理协程的取消和异常传播。
+
+系统提供的函数suspend fun load(time: Int): String &#123;    delay(1000)    return &quot;result $time&quot;&#125;fun main = runBlocking &#123;    val load1 = async &#123; load(1) &#125;    val load2 = async &#123; load(2) &#125;    // 等待获取结果    load1.await()    load2.await()&#125;
+
+上述代码中，runBlocking用来创建一个阻塞的主协程，runBlocking中的代码会阻塞当前线程，直到所有协程都执行完成，这样可以不改变代码结构的情况下使用挂起函数。还有下面这些常用的函数。通常我们使用launch和withContext多一些，具体使用在后面有，这里就不放代码了。
+
+async 启动异步协程，可以通过调用await来等待获取异步结果
+launch: 启动一个新协程，新协程和当前协程并行运行。但是它不会等待新协程的完成，继续执行后续代码。该函数会返回一个Job对象，可以使用该对象来控制、取消、等待该协协程的执行。
+withContext: 用于在指定的上下文中执行协程代码块，并等待代码块执行完成。与 launch 不同，withContext 挂起当前协程。常用于在协程中切换到指定的调度器上执行代码。
+produce: 创建一个生产者协程，用于生成序列化的值。生产者协程可以使用 send 函数将值发送到管道中，并使用 receive 函数从管道中接收值。
+actor: 创建一个带有状态的协程，用于执行并发操作并保持状态。actor 协程可以接收并处理发送到它的消息，允许在协程之间共享和交换数据。
+supervisorScope: 创建一个作用域，其中的子协程的失败不会影响其他子协程。当一个子协程失败时，supervisorScope 中的其他子协程仍然可以继续执行。
+repeat: 创建一个协程，重复执行指定的代码块，类似于循环。可以使用 delay 函数来控制重复执行的间隔。
+select: 用于在多个挂起操作之间进行选择，类似于 select 语句。可以在一个 select 代码块中等待多个挂起函数的结果，当其中一个操作准备就绪时，select 将执行相应的代码块。
+
+协程怎么创建的val continuation = suspend &#123;    println(&quot;In Coroutine&quot;)    5&#125;.createCoroutine(object: Continuation&lt;Int&gt;) &#123;    override fun resumeWith(result: Result&lt;Int&gt;) &#123;        println(&quot;Coroutine End: $result&quot;)    &#125;&#125;
+查看createCoroutine声明
+fun &lt;T&gt; (suspend () -&gt; T).createCoroutine(    completion:Continuation&lt;T&gt;): Continuation&lt;Unit&gt;
+
+suspend () -&gt; T是被suspend修饰的挂起函数，可以称作是协程体。
+completion是协程完成后的回调
+返回值是一个Continuation，用于触发协程的启动，其实就是包了几层马甲的协程体
+
+作用域 scope，可以在协程体中直接调用作用域对象的函数。挂起函数加了RestrictsSuspension注解就不能调用
+fun &lt;R, T&gt; (suspend R.() -&gt; T).createCoroutine(    receiver R,    completion: Continuation&lt;T&gt;): Continuation&lt;Unit&gt;// 封装一个启动协程的函数fun &lt;R, T&gt; launchCoroutine(receiver: R, block: suspend R.() -&gt; T) &#123;    block.startCoroutine(receiver, object : Continuation&lt;T&gt;) &#123;        override fun resumeWith(result: Result&lt;Int&gt;) &#123;        println(&quot;Coroutine End: $result&quot;)        &#125;    &#125;&#125;// 启动带有Receiver的协程class ProducerScope&lt;T&gt; &#123;    suspend fun produce(value: T) &#123; ... &#125;&#125;fun callLaunchCoroutine() &#123;    launchCoroutine(ProducerScope&lt;Init&gt;()) &#123;        produce(1024)    &#125;&#125;
+挂起函数就是普通函数的参数中多了一个Continuation实例。任何一个挂起函数或者协程体都有一个Continuation实例，所以挂起函数一定要运行在挂起函数或者其它协程体中。 
+协程scope的概念CoroutineScope，CoroutineScope可以理解为协程的作用域，会跟踪它使用 launch 或 async 创建的所有协程。您可以随时调用 scope.cancel() 以取消正在进行的工作（即正在运行的协程）。在 Android 中，某些 KTX 库为某些生命周期类提供自己的 CoroutineScope。例如，ViewModel 有 viewModelScope，Lifecycle 有 lifecycleScope。不过，与调度程序不同，CoroutineScope 不运行协程。
+class ExampleClass &#123;    // Job and Dispatcher are combined into a CoroutineContext which    // will be discussed shortly    val scope = CoroutineScope(Job() + Dispatchers.Main)    fun exampleMethod() &#123;        // Starts a new coroutine within the scope        scope.launch &#123;            // New coroutine that can call suspend functions            fetchDocs()        &#125;    &#125;    fun cleanUp() &#123;        // Cancel the scope to cancel ongoing coroutines work        scope.cancel()    &#125;&#125;
+使用launch 或 async 创建的协程会返回一个Job。
+class ExampleClass &#123;    ...    fun exampleMethod() &#123;        // Handle to the coroutine, you can control its lifecycle        val job = scope.launch &#123;            // New coroutine        &#125;        if (...) &#123;            // Cancel the coroutine started above, this doesn&#x27;t affect the scope            // this coroutine was launched in            job.cancel()        &#125;    &#125;&#125;
+Job有一个函数叫join()，它会阻塞当前协程，直到目标协程执行完成为止。
+Android中的协程常用启动协程的方式
+launch 启动新协和而不将结果返回调用方。
+async 启动新协程，并允许使用一个名为await的挂起函数返回结果。
+withContext 挂起当前协程，本身就是一个挂起函数，作用等价于async{}.await()
+
+通常应该用launch，只有另一个协程内时，或在挂起函数内且正在执行并行分解时，才使用 async。在suspend函数启动的所有协程，都必须在函数返回结果前停止。可以使用await()&#x2F;awaitAll()保证协程在函数返回结果前完成。
+suspend fun fetchTwoDocs() =    coroutineScope &#123;        val deferredOne = async &#123; fetchDoc(1) &#125;        val deferredTwo = async &#123; fetchDoc(2) &#125;        deferredOne.await()        deferredTwo.await()    &#125;suspend fun fetchTwoDocs() =        // called on any Dispatcher (any thread, possibly Main)    coroutineScope &#123;        val deferreds = listOf(     // fetch two docs at the same time            async &#123; fetchDoc(1) &#125;,  // async returns a result for the first doc            async &#123; fetchDoc(2) &#125;   // async returns a result for the second doc        )        deferreds.awaitAll()        // use awaitAll to wait for both network requests    &#125;
+调度器
+Dispatchers.Default: 用于执行 CPU 密集型的计算任务，比如对数据进行处理、转换等。它使用共享的线程池，并且适用于不会阻塞线程的操作。
+Dispatchers.Main: 用于在主线程中执行操作，比如更新 UI、处理用户交互等。在 Android 中，它与主线程关联，因此适用于 UI 操作。
+Dispatchers.Unconfined: 不受限制的调度器，它会在协程恢复执行时，继续使用调用者线程。但是，一旦恢复执行的代码开始执行挂起操作，调度器会切换到其他线程。button.setOnclickListener &#123;    GlobalScope.launch(Dispatchers.Main) &#123;        // ..    &#125;&#125;
+另外还有一个MainScop()函数，注意要在关闭的时候调用cancel//activityprivate val mainScope by lazy &#123; MainScop() &#125;button.setOnClickListener &#123;    mainScope.launch &#123;        // ui线程    &#125;&#125;// onDestory 注意要调用cancelmainScope.cancel()
+
+
+lifecycleScope.launch {}
+viewModelScope.launch {}
+
+常见函数
+withTimeout(1000) : 超时取消
+
+实用技巧// suspend fun a() &#123;&#125;scope.launch(Dispatchers.IO) &#123;     //...    a()&#125;
+上方的代码存在的问题是，因为要想调用a()，每次必须显式在子线程中调用。可以将a改进，使用withContext封装
+// 这种方式可以确保a的调用者不用关注在哪个线程中执行supsend fun a() : Result &#123;    return withContext(Dispatchers.IO) &#123;        //...    &#125;&#125;
+改进后，要想调用a，必须使用协程。这种方式可以确保a的调用者不用关注在哪个线程中执行。
+Channel &amp; FlowChannel （热流）Channel相当于生产者消费者，先生产再消费，在协程中间建立一个缓存区。produce函数可以构建一个生产者协程，也可以在协程中只创建Channel。推荐用produce channel，不要用actor(obsolete)
+// 相关代码val channel = produce &#123;    //...    send(it)&#125;val channel = actor&lt;Int&gt; &#123;    //...    val element = receiver()&#125;channel.send()channel.receive()
+Channel的内部实现
+public fun &lt;E&gt; Channel(capacity: Int = RENDEZVOUS): Channel&lt;E&gt; =  when (capcity) &#123;    // 容量为1，send后，不调用receiver就一直挂起    RENDEZVOUS -&gt; RendezvousChannel()    // 容量无限    UNLIMITED -&gt; LinkedListChannel()    // 只保留最后一个    CONFLATED -&gt; ConflatedChannel()    // 指定大小    else -&gt; ArrayChannel(capacity)  &#125;
+Channel是需要关闭的，produce方法会在协程结束后自去关闭对应的_channel，所以不用担心。需要注意的是，一旦调用close，它的isClosoedForSend方法会立即返回true，但是因为里面还有元素，isClosedForReceiver要等全处理完才返回true
+BroadcastChannel 顾名思义，广播所以receiver都会收到。需要注意，必须有一个订阅者，不然数据会被丢弃。
+val broadcastChannel = BroadcastChannel&lt;Int&gt;(5)val receiverChannel = broadcastChannel.openSubscription()receiverChannle.receiver()receiverChannle.cancel()
+普通Channel也可以通过调用broadcast()函数来转换成broadcast
+Flow （冷流）flow 不消费不生产，不会立即执行flow的内容，会在collect的时候，才去执行。消费者协程cancel()后，flow会跟着结束(没有缓冲队列，区别channel)
+flow的末端函数都是suspend函数
+val flow = flow &#123;    val data = &quot;DATA&quot;    emit(data)&#125;launch &#123;    flow.collect &#123; data -&gt;        //...        cancel()    &#125;&#125;
+不同的消费者协程不共享flow，如下列代码，flow中的代码会被多次执行。(每个消费者拥有独立的生产者)
+repeat(2) &#123;ci -&gt;    launch &#123;        flow.collect &#123; data -&gt;            //...        &#125;    &#125;&#125;
+
+如果在不同线程操作，可以使用flow.flowOn(Dispatchers.Main)进行上下文切换。
+如果要在Flow完成时执行逻辑，可以使用onCompletion，相当于try catch的finally
+
+** 背压问题 ** 生产者生产太快，消费者跟不上。解决：
+
+调用flow.buffer() 加入缓存
+调用flow.conflate() 新数据替换旧数据
+调用使用flow.conllectLatest() 和 conllect的区别是，它不会直接使用新数据覆盖老数据，会依序处理，但如果前一个没处理完的话会被取消。
+
+channelFlowchannelFlow，使flow具体channel的特性val flow = channelFlow &#123;    withContext(Dispatcher.IO) &#123;        send(&quot;DATA&quot;)    &#125;&#125;
+callbackFlowval result = trySend(&quot;DATA&quot;)result.onSuccess &#123;&#125;.onFailure &#123;&#125;.onClosed &#123;&#125;协程cancel后，会调用awaitCloseawaitClose &#123;    //...&#125;launch &#123;    flow.collect &#123;        //...        cancel()    &#125;&#125;
+冷流&amp;热流
+
+
+项目
+冷流
+热流
+
+
+
+生产时间机
+一旦创建立即生产
+需要时生产
+
+
+多个消费者
+消费者按顺序获取
+每个消费者有独立的生产线路
+
+
+生命周期
+生产者消费者无关系
+生产者消费者生命周期一致
+
+
+SharedFlow &amp; StateFlow 热流flow.ShareIn()方法，传递3个参数：scope协程域flow.StateIn()
+flow &#123;...&#125;.stateIn(scope)//类似flow &#123;...&#125;.shareIn(scope,    stared = SharingStarted.Eagerly,    replay = 1)
+stateFlow要和repeatOnLifecycle一起使用防止热流在view的无效生命周期更新
+协程并发问题Mutex和线程锁类似，不过不会阻塞线程，只是挂起等待锁的释放
+var count = 0val mutex = mutex()List(1000) &#123;    GlobalScope.launch &#123;        mutext.withLock &#123;            count ++        &#125;    &#125;&#125;.joinAll()
+Semaphore信号量，信号量可以有多个，当参数为1时，效果等价于Mutex
+val semaphore = Semaphore(1)List(1000) &#123;    GlobalScopre.launch &#123;        semaphore.withPermit &#123;            count++        &#125;    &#125;&#125;.joinAll()
+注意要注意避免访问外部状态，只能基于参数做运算，再通过返回值提供结果。
+val count = 0val result = count + List(1000) &#123;    GlobalScope.async &#123;1&#125;&#125;.map &#123;    it.await()&#125;.sum()
+ GlobalScope.async 创建了一个由 1000 个协程组成的集合，每个协程都会返回整数值 1。然后通过 map 函数等待所有协程的执行结果，并将结果求和。最终的结果会赋值给变量 result。
+]]></content>
+      <categories>
+        <category>kotlin</category>
+      </categories>
+      <tags>
+        <tag>kotlin</tag>
+        <tag>重学android</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>如何构建一个pdfium.so</title>
+    <url>/2024/05/12/build-pdfium/</url>
+    <content><![CDATA[前言项目中接入了打开pdf文件的功能，使用的是https://github.com/barteksc/PdfiumAndroid/。现在想升级一下pdfium库，旧库具体原因就不解释了，毕竟这个项目最后一个commit在6年前，当然，平常用来接入打开pdf也是没问题的。
+开源库在google一通搜索，发现pdfium库包含两套，一套在aosp中，另一套在chromium中。
+
+https://android.googlesource.com/platform/external/pdfium/
+https://pdfium.googlesource.com/pdfium/两款代码应该差不多，aosp的构建使用Android.bp，版本要比pdfium版本的落后一些。再看PdfiumAndroid项目README，第一句就说Uses pdfium library from AOSP，使用的库应该也是aosp的库。
+
+构建aosp版准备
+ubuntu 可以使用virtual box去装个虚拟机
+200GB以上硬盘空间，清华会推荐你下载aosp-latest.tar再解压，光压缩包80G了，解压完我就把tar包删了
+
+获取aosp源码推荐使用清华镜像https://mirrors-i.tuna.tsinghua.edu.cn/help/AOSP/，可结合google的官方说明https://source.android.com/docs/setup?hl=zh-cn。具体指令就不介绍了，主要是repo sync费时，注意选好你想构建的build tag。
+
+
+Build使用aosp的编译比较简单，直接走aosp那一套就行，主要就是使用下列命令，不过也可以结合官方文档介绍，自行修改。
+cd aosp  # 进到aosp根目录. build/envsetup.sh     # 配置构建环境，这条命令会把一系列命令加到可执行环境中lunch armv8_eng         # 配置要&lt;product_name&gt;-&lt;build_variant&gt;，我这里要的是arm64的cd external/pdfium      # go to pdfium directorymma                     # build module and deps# out/target/product/armv8/obj/SHARED_LIBRARIES/libpdfium_intermediates/libpdfium.so
+
+构建chromium版本编好的库，直接拿来用pdfium-binaries这个项目是利用github action自动构建pdfium，其提供了所有版本的so，相当方便。另外想手动构建，有些要修改的内容，也可以参考这个项目中的patch。这个项目是我构建完以后才找到的，算是白忙活，不过也算是一点知识。
+说明一开始我在网上搜了很多资料，都是讲如何构建这个版本的，所以我在aosp代码同步的时候，好顺带搞了搞这个，和aosp的mm就可以构建，这个是相当头疼啊。
+
+官方文档简单。官方只介绍了如何Build，但是没告诉你如何build安卓用的库。
+网上内容复杂、老旧，对伸手党不友好。比如 install-build-deps-android.sh，我搜的所有资料，里面都有这条命令，但是，这个文件其实已经删除了。
+没有镜像。可能是我没找到，反正代码是我全程开科技同步的。
+
+准备
+ubuntu。不确定mac行不行，我mac上试了一下，install-build-deps.sh提示我没有lsb-release，我就直接换ubuntu了
+80GB硬盘。其实用不了，我虚拟机开了这么多。
+上网要有科技，所有代码都在googlesource，建议有较好的网络。
+
+构建git clone https://chromium.googlesource.com/chromium/tools/depot_tools.gitexport PATH=&quot;$PATH:/path/to/depot_tools&quot;# get codemkdir repocd repogclient config --unmanaged https://pdfium.googlesource.com/pdfium.gitecho &quot;target_os = [ &#x27;android&#x27; ]&quot; &gt;&gt; .gclientgclient syncgclient runhooks# setup buildcd pdfium./build/install-build-deps.sh --androidgn args out
+
+argstarget_os=&quot;android&quot;target_cpu=&quot;arm64&quot;use_goma = falsepdf_bundle_freetype=truepdf_is_standalone=trueis_component_build=falsepdf_enable_xfa=falsepdf_enable_v8=falsepdf_use_skia = falseuse_cxx11_on_android=falseis_debug=falseis_official_build=truechrome_pgo_phase = 0
+
+
+proxy[Boto]proxy &#x3D; example-hostproxy_port &#x3D; port number
+save as your_file.botoexport NO_AUTH_BOTO_CONFIG&#x3D;&#x2F;path&#x2F;your_file.boto
+config此节内容收集自互联网，有些内容并不适用，但第一条的FPDFSDK_EXPORTS是必须的。
+
+打开pdfium&#x2F;BUILD.gn 文件，找到 config(“pdfium_common_config”)，将以下配置：  config(&quot;pdfium_common_config&quot;) &#123;  cflags = [ ]  ldflags = []  include_dirs = [ &quot;.&quot; ]  defines = [    &quot;PNG_PREFIX&quot;,    &quot;PNG_USE_READ_MACROS&quot;,    **&quot;FPDFSDK_EXPORTS&quot;**  ]
+
+
+增加”-fvisibility&#x3D;default”到 cflags ，将符号的可见性设置为默认值。这意味着其他组件可以引用该符号，并且符号定义可以被另一个组件中的同名定义覆盖。
+增加”-DNOCJK”到 cflags ，这将停止将字体嵌入到.so文件中并减小其大小。
+增加“FPDFSDK_EXPORTS” 到 defines — 把符号表嵌入到共享库中。
+
+
+在component(“pdfium”)前追加以下配置 -L&#x2F;lib&#x2F;x86_64-linux-gnu&#x2F;libatomic貌似可以不加，因为之前是 -latomic，结果系统死活找不到  shared_library(&quot;pdfsdk&quot;) &#123;  deps = [&quot;:pdfium&quot;]  ldflags = [ &quot;-L/lib/x86_64-linux-gnu/libatomic&quot; ]  if (target_os == &quot;android&quot;) &#123;    configs -= [ &quot;//build/config/android:hide_all_but_jni_onload&quot; ]  &#125;&#125;component(&quot;pdfium&quot;) &#123;//…
+
+buildninja -C out pdfsdk
+
+备注
+指定commit同步代码：gclient sync –revision 837fe726e639f823a62ed4aa4abda45d40f3c803 
+同步代码时要加的参数，因为我们只想要代码 并不想要history  repo init –depth&#x3D;1 -u https://github.com/zawzaww/aosp-android.git-bandroid-8.1.0  repo sync  -f –force-sync –no-clone-bundle –no-tags -j$(nproc –all)
+gclient也可以加上-no-history节省同步时间
+
+参考pdfium-binarieshttps://i.lckiss.com/?p=5897https://github.com/bblanchon/pdfium-binaries/blob/master/patches/shared_library.patchhttps://groups.google.com/g/pdfium/c/-WdW5n0KZ-8
+]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>pdfium</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>重学安卓之Jetpack</title>
+    <url>/2024/01/30/jetpack/</url>
+    <content><![CDATA[导读jetpack当时还没来得及用，整个项目就被砍掉了，这两年一直没有接触，最近好多岗位都要求会jetpack，这两年逐渐用的人越来越多，重学Android赶紧简单了解一下，做了一点整理，都是皮毛，供自己查笔记用吧，如果有一些知识点需要增加备注，随时修改。
+Navigation 用于fragment切换优点
+可视化，可以as中可视化编辑
+通过destination和action完成页面的导航
+参数传递安全， safe args
+支持deeplink，支持创建PendingIntent
+/*** 返回一个 PendingIntent*/private PendingIntent getPendingIntent() &#123;    return Navigation.findNavController(requireActivity(), R.id.button)            .createDeepLink()            .setGraph(R.navigation.my_nav_graph)            .setDestination(R.id.detailFragment)            .createTaskStackBuilder()            .getPendingIntent(0, PendingIntent.FLAG_IMMUTABLE);&#125;
+
+主要组件
+Graph xml资源文件，包含所有页面和页面间的关系
+Controller 用于完成Graph中的页面切换
+NavHostFragment 特殊fragment容器
+提供了NavigationUi控制各种bar的改变
+
+操作步骤:
+新建Android Resource File中的Graph文件，Resource type为Navigation，会在navigation目录下生成一个xml
+将NavHostFragment添加到activity。&#96;&#96;，作为其它fragment的容器，defaultNaveHost&#x3D;true会自动处理返回键&lt;fragment     android:name=&quot;android.navigation. fragment .NavHostFragment&quot;    app:defaultNaveHost=&quot;true&quot;     app:navGraph=&quot;@navigation/my_graph&quot; /&gt;
+创建新的destination，其实就是将fragment添加到navigation，navigation会有一个startDesination
+建立action，在可视编辑里是将一个和另一个连起来，xml中为fragment含有一个action标签，指向另一个fragment。
+Navigation.findNavController(view).navigate(id)来完成导航
+
+safe args传递参数在fragment中添加参数
+// 添加插件apply plugin: &#x27;androidx.navigation.safeargs&#x27;&lt;fragment&gt;    &lt;action/&gt;    &lt;argument         android:name=&quot;name&quot;        app:argType=&quot;string&quot;        android:defaultValue=&#x27;&quot;lefo&quot;&#x27;/&gt;
+添加后，会生成对应的代码文件，就可以用Build创建对应的bundle了
+NavigationUiNavigationUI 提供了一些静态方法来处理 顶部应用栏 &#x2F; 抽屉式导航栏 &#x2F; 底部导航栏中 的界面导航, 统一管理 Fragment 页面切换相关的UI改变CollapsingToolbarlayout、Toolbar、ActionBar
+// 1. 获取 NavControllernavController = Navigation.findNavController(this, R.id.fragment)// 2. 创建 AppBarConfigurationappBarConfiguration = AppBarConfiguration.Builder(navController.graph).build();NavigationUI.setupActionBarWithNavController(this,navController,appBarConfiguration);
+
+LifeCycleLifecycleOwner和LifecycleObserver实现LifecyclerObserver接口，将要在具体生命周期执行的方法使用@OnLifecycleEvent注解
+@OnLifecycleEvent (Lifecycle.Event.ONRESUME) private void onResumeEvent () &#123;    Log.d (TAG, &quot;onResumeEvent() &quot;);&#125;// ...//在Activity中注册观察者getLifecycle().addObserver(myObserver);
+
+LifecycleService，使用方式等于Service
+ProcessLifecycleOwner 整个应用的生命周期 使用方法ProcessLifecycleOwner.get().getLifecycle()
+LifecycleRegistry类，管理mObserverMap维护state和event
+
+原理通过在Activity中绑定一个空的fragment来实现监听Activity生命周期。
+ViewModel使用ViewModelProvider创建一个ViewModel
+public constructor(    owner: ViewModelStoreOwner) : this(owner.viewModelStore, defaultFactory(owner), defaultCreationExtras(owner))
+
+通常使用ViewModelProvider
+class NoteViewModelFactory(private val repository: NoteRepository) : ViewModelProvider.Factory &#123;  	override fun &lt;T : ViewModel&gt; create(modelClass: Class&lt;T&gt;): T &#123;  		if (modelClass.isAssignableFrom(NoteViewModel::class.java)) &#123;  			@Suppress(&quot;UNCHECKED_CAST&quot;)  			return NoteViewModel(repository) as T  		&#125;  		throw IllegalArgumentException(&quot;Unknown ViewModel class&quot;)  	&#125;  &#125;val viewModel = ViewModelProvider(this, NoteViewModelFactory(repository))[NoteViewModel::class.java]
+基本原理如下
+
+ViewModelProvider接收参数ViewModelStoreOwner，参数的对象实现方法getViewModelStore
+ViewModelStore提供一个HashMap&lt;String,ViewModel&gt;
+
+为什么ViewModel在横竖屏切换时，不会被销毁，其实是因为ViewModel是保存在ViewModelStore中的，而在感知到Destory的生命周期时，会判断isChangingConfigurations，如果为否，才会进入getViewModelStore().clear();
+LiveDataLiveData的作用是ViewModel在数据发生变化时通知页面
+
+实际上就是一个观察者模式的数据容器，当数据改变时，通知UI刷新；
+能感知activity fragment组件生命周期，
+通常和viewModel一起使用，LiveData&lt;T&gt;作为ViewModel的一个成员变量
+liveData.observe()注册一个对数据的观察
+observeForever使用后一定要用removeObserver方法停止观察
+
+DataBinding基础用法
+DataBinding结合ViewModel是常用的做法
+向include的二级页面传递数据
+BaseObservable和ObservableField支持多个控件互相绑定数据&lt;!-- activity_main.xml --&gt;&lt;layout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;        xmlns:app=&quot;http://schemas.android.com/apk/res-auto&quot;        xmlns:tools=&quot;http://schemas.android.com/tools&quot;&gt;    &lt;data&gt;        &lt;variable            name=&quot;user&quot;            type=&quot;com.example.User&quot; /&gt;    &lt;/data&gt;    &lt;RelativeLayout        android:layout_width=&quot;match_parent&quot;        android:layout_height=&quot;match_parent&quot;        tools:context=&quot;.MainActivity&quot;&gt;        &lt;TextView            android:layout_width=&quot;wrap_content&quot;            android:layout_height=&quot;wrap_content&quot;            android:text=&quot;@&#123;user.name&#125;&quot; /&gt;        &lt;Button            android:layout_width=&quot;wrap_content&quot;            android:layout_height=&quot;wrap_content&quot;            android:text=&quot;Click&quot;            android:onClick=&quot;@&#123;() -&gt; user.onButtonClick()&#125;&quot; /&gt;    &lt;/RelativeLayout&gt;&lt;/layout&gt;
+class MainActivity : AppCompatActivity() &#123;    override fun onCreate(savedInstanceState: Bundle?) &#123;        super.onCreate(savedInstanceState)        // 使用 DataBindingUtil 设置布局文件和数据绑定        val binding: ActivityMainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main)        // 创建 User 对象        val user = User(&quot;John Doe&quot;)        // 将 User 对象绑定到布局中的 user 变量        binding.user = user        // 设置点击事件        binding.button.setOnClickListener &#123;            user.onButtonClick()        &#125;    &#125;&#125;
+&lt;include     layout=&quot;@layout/layout2&quot;    app:user=&quot;@&#123;user&#125;&quot;/&gt;&lt;!--在2级页面这么写--&gt;&lt;data&gt;    &lt;variable        name=&quot;user&quot;        type=&quot;com.example.User&quot; /&gt;
+
+自定义BindAdapter还可以增加一个参数作为旧值，但此时必须先写旧值
+object CustomBindingAdapters &#123;    @BindingAdapter(&quot;imageUrl&quot;)    @JvmStatic    fun loadImage(imageView: ImageView, url: String?) &#123;        // 使用 Glide 加载图片        Glide.with(imageView.context)            .load(url)            .into(imageView)    &#125;    @BindingAdapter(&quot;visibility&quot;)    @JvmStatic    fun setVisibility(view: View, isVisible: Boolean) &#123;        // 设置 View 的可见性        view.visibility = if (isVisible) View.VISIBLE else View.GONE    &#125;&#125;
+&lt;ImageView    android:id=&quot;@+id/imageView&quot;    android:layout_width=&quot;wrap_content&quot;    android:layout_height=&quot;wrap_content&quot;    app:imageUrl=&quot;@&#123;viewModel.imageUrl&#125;&quot; /&gt;&lt;View    android:id=&quot;@+id/customView&quot;    android:layout_width=&quot;match_parent&quot;    android:layout_height=&quot;wrap_content&quot;    app:visibility=&quot;@&#123;viewModel.isVisible&#125;&quot; /&gt;
+ViewBinding减少findviewbyid，简单举例一下
+// 使用 View Bindingval binding = ActivityMainBinding.inflate(layoutInflater)setContentView(binding.root)
+
+Room@Entity(tableName = &quot;user_table&quot;)data class User(    @PrimaryKey(autoGenerate = true)    val id: Long = 0,    val name: String,    val email: String)// Dao@Daointerface UserDao &#123;    @Query(&quot;SELECT * FROM user_table&quot;)    suspend fun getAllUsers(): List&lt;User&gt;    @Insert(onConflict = OnConflictStrategy.REPLACE)    suspend fun insertUser(user: User)&#125;// @Database(entities = [User::class], version = 1, exportSchema = false)abstract class AppDatabase : RoomDatabase() &#123;    abstract fun userDao(): UserDao&#125;
+数据库，使用起来和之前的注解框架差不多，可以配合LiveData和ViewModel实现数据的刷新。
+class UserRepository(private val userDao: UserDao) &#123;    suspend fun getUsersFromNetwork(): List&lt;User&gt; &#123;        // 从网络获取数据的逻辑        val networkData = // ...        // 将数据存储到数据库        userDao.insertUser(networkData)                return networkData    &#125;    suspend fun getAllUsers(): List&lt;User&gt; &#123;        // 从数据库获取数据的逻辑        return userDao.getAllUsers()    &#125;&#125;// ViewModel中使用Repositoryclass MyViewModel(private val userRepository: UserRepository) : ViewModel() &#123;    private val _users = MutableLiveData&lt;List&lt;User&gt;&gt;()    val users: LiveData&lt;List&lt;User&gt;&gt; get() = _users    fun fetchData() &#123;        viewModelScope.launch &#123;            // 从网络获取数据并更新数据库            userRepository.getUsersFromNetwork()            // 从数据库获取数据并更新 LiveData            _users.value = userRepository.getAllUsers()        &#125;    &#125;&#125;
+
+PagingPaging还是看官方文档更合适，网上搜的信息Paging2和Paging3内容混乱，这里我也不整理了，特别是使用RemoteMediator去同时接入 db + network 的方案。paging库3.0变化较大，放个官方链接官方DEMO
+
+PagingDataAdapter，首先RecyclerView的Adapter需要继承这个类，此外，您也可以使用随附的 AsyncPagingDataDiffer 组件构建自己的自定义适配器
+Pager 基于 PagingSource 对象和 PagingConfig 配置对象来构造在响应式流中公开的 PagingData 实例。
+PagingSource，数据载入，有一个load方法需要实现
+PagingData 用于存放分页数据快照的容器。它会查询 PagingSource 对象并存储结果。
+RemoteMediator 处理分层数据源。
+
+
+Paging 2 中的 PageKeyedDataSource、PositionalDataSource 和 ItemKeyedDataSource 都合并到了 Paging 3 中的 PagingSource API 中。所有旧版 API 类中的加载方法都合并到了 PagingSource 中的单个 load() 方法中。这样可以减少代码重复，因为在旧版 API 类的实现中，各种加载方法之间的很多逻辑通常是相同的。在 Paging 3 中，所有加载方法参数被一个 LoadParams 密封类替代，该类中包含了每个加载类型所对应的子类。如果需要区分 load() 方法中的加载类型，请检查传入了 LoadParams 的哪个子类：LoadParams.Refresh、LoadParams.Prepend 还是 LoadParams.Append。
+
+
+BoundaryCallback弃用了，使用RemoteMediator。在分页数据耗尽时，Paging 库会触发 RemoteMediator 以从网络源加载新数据。RemoteMediator 会将新数据存储在本地数据库中，因此无需在 ViewModel 中使用内存缓存。最后，PagingSource 会使自身失效，而 Pager 会创建一个新实例以从数据库中加载新数据。
+
+@OptIn(ExperimentalPagingApi::class)class ExampleRemoteMediator(  private val query: String,  private val database: RoomDb,  private val networkService: ExampleBackendService) : RemoteMediator&lt;Int, User&gt;() &#123;  val userDao = database.userDao()  override suspend fun load(    loadType: LoadType,    state: PagingState&lt;Int, User&gt;  ): MediatorResult &#123;    // ...  &#125;&#125;
+
+WorkManager最低兼容api 14，在api 23以上使用JobScheduler，在api 23以下使用AlarmManager
+
+创建Workerclass MyWorker(context: Context, workerParams: WorkerParameters) : Worker(context, workerParams) &#123;    override fun doWork(): Result &#123;        // 后台任务逻辑        Timber.d(&quot;Performing long running task in MyWorker&quot;)        // 返回任务执行结果        return Result.success()    &#125;&#125;
+设置约束条件import androidx.work.Constraintsimport androidx.work.NetworkTypeval constraints = Constraints.Builder()    .setRequiredNetworkType(NetworkType.CONNECTED)    .setRequiresCharging(true)    .build()
+创建请求// 一次性工作请求val oneTimeRequest = OneTimeWorkRequest.Builder(MyWorker::class.java)    .setConstraints(constraints)    .build()// 周期性工作请求val periodicRequest = PeriodicWorkRequest.Builder(MyWorker::class.java, 24, TimeUnit.HOURS)    .setConstraints(constraints)    .build()
+加入队列// 将一次性工作请求加入队列WorkManager.getInstance(context).enqueue(oneTimeRequest)// 将周期性工作请求加入队列WorkManager.getInstance(context).enqueue(periodicRequest)
+WorkManager还支持链式任务，观察任务状态，传递参数。
+
+
+链式: 在加入队列时使用beginWith(oneTimeRequest).then(periodicRequest)，还可以combine…then…
+观察任务状态: WorkManager.getWorkInfosXXX，可以通过tag,id,worker对象查看任务状态，还能获取对应的LiveData，通过LiveData就能在任务状态变化时收到通知
+传参: Data类
+
+Hilt// 在应用模块的 build.gradle 文件中implementation &quot;com.google.dagger:hilt-android:2.38.1&quot;kapt &quot;com.google.dagger:hilt-android-compiler:2.38.1&quot;// 如果使用了ViewModel，还需要添加以下依赖implementation &quot;androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha03&quot;kapt &quot;androidx.hilt:hilt-compiler:1.0.0-alpha03&quot;
+
+在 Application 类中启用 Hilt： 在你的 Application 类中使用 @HiltAndroidApp 注解启用 Hilt。@HiltAndroidAppclass MyApplication : Application()
+配置依赖注入： 使用 @Inject 注解标记需要注入的依赖，同时使用 @HiltViewModel 注解标记需要注入的 ViewModel。class MyRepository @Inject constructor() &#123;    // ...&#125;@HiltViewModelclass MyViewModel @Inject constructor(private val repository: MyRepository) : ViewModel() &#123;    // ...&#125;
+在 Activity 或 Fragment 中使用 Hilt 注入： 在需要注入依赖的 Activity 或 Fragment 中，使用 @AndroidEntryPoint 注解启用 Hilt，并使用 @Inject 注解标记需要注入的字段。@AndroidEntryPointclass MyActivity : AppCompatActivity() &#123;    @Inject    lateinit var viewModel: MyViewModel    // ...&#125;
+在 Module 中配置依赖： 如果需要自定义依赖注入的配置，可以创建一个 Dagger Module，并在其上使用 @InstallIn 注解指定作用范围。
+
+@Module@InstallIn(ApplicationComponent::class)object MyModule &#123;    @Provides    fun provideMyRepository(): MyRepository &#123;        return MyRepository()    &#125;&#125;
+
+DataStore
+用于存储较小的数据集，分为Preferences DataStore和Proto DataStore，可以代替SP，可以轻松迁移数据。
+官方介绍
+
+Preferences DataStore
+读取用flow
+写入用edit// 创建dataStore context.createDataStore// 使用委托创建dataStoreprivate const val USER_PREFERENCES_NAME = &quot;user_preferences&quot;private val Context.dataStore by preferencesDataStore(    name = USER_PREFERENCES_NAME,    produceMigrations = &#123; context -&gt;        // Since we&#x27;re migrating from SharedPreferences, add a migration based on the        // SharedPreferences name        listOf(SharedPreferencesMigration(context, USER_PREFERENCES_NAME))    &#125;)
+
+当 DataStore 从文件读取数据时，如果读取数据期间出现错误，系统会抛出 IOExceptions。我们可以通过以下方式处理这些事务：在 map() 之前使用 catch() Flow 运算符，并且在抛出的异常是 IOException 时发出 emptyPreferences()。如果出现其他类型的异常，最好重新抛出该异常。
+val userPreferencesFlow: Flow&lt;UserPreferences&gt; = dataStore.data    .catch &#123; exception -&gt;        // dataStore.data throws an IOException when an error is encountered when reading data        if (exception is IOException) &#123;            emit(emptyPreferences())        &#125; else &#123;            throw exception        &#125;    &#125;.map &#123; preferences -&gt;        // Get our show completed value, defaulting to false if not set:        val showCompleted = preferences[PreferencesKeys.SHOW_COMPLETED]?: false        UserPreferences(showCompleted)    &#125;suspend fun updateShowCompleted(showCompleted: Boolean) &#123;    dataStore.edit &#123; preferences -&gt;        preferences[PreferencesKeys.SHOW_COMPLETED] = showCompleted    &#125;&#125;// 可以使用扩展函数asLiveData转换flow为LiveDatauserPreferencesFlow.asLiveData().observe(viewLifecycleOwner,&#123; &#125;)
+
+Proto DataStore
+区别于之前的Preferences DataStore的读取方式.map{ preferences-&gt; { } }
+写入方式使用updateData(){ preferences-&gt; {…}}生成pb对象和类syntax = &quot;proto3&quot;;option java_package = &quot;com.codelab.android.datastore&quot;;option java_multiple_files = true;message UserPreferences &#123;  // filter for showing / hiding completed tasks  bool show_completed = 1;&#125;
+创建UserPreferencesSerializerobject UserPreferencesSerializer : Serializer&lt;UserPreferences&gt; &#123;    override val defaultValue: UserPreferences = UserPreferences.getDefaultInstance()    override suspend fun readFrom(input: InputStream): UserPreferences &#123;        try &#123;            return UserPreferences.parseFrom(input)        &#125; catch (exception: InvalidProtocolBufferException) &#123;            throw CorruptionException(&quot;Cannot read proto.&quot;, exception)        &#125;    &#125;    override suspend fun writeTo(t: UserPreferences, output: OutputStream) = t.writeTo(output)&#125;
+创建DataStoreprivate const val USER_PREFERENCES_NAME = &quot;user_preferences&quot;private const val DATA_STORE_FILE_NAME = &quot;user_prefs.pb&quot;private const val SORT_ORDER_KEY = &quot;sort_order&quot;private val Context.userPreferencesStore: DataStore&lt;UserPreferences&gt; by dataStore(    fileName = DATA_STORE_FILE_NAME,    serializer = UserPreferencesSerializer)
+读取数据private val TAG: String = &quot;UserPreferencesRepo&quot;val userPreferencesFlow: Flow&lt;UserPreferences&gt; = dataStore.data    .catch &#123; exception -&gt;        // dataStore.data throws an IOException when an error is encountered when reading data        if (exception is IOException) &#123;            Log.e(TAG, &quot;Error reading sort order preferences.&quot;, exception)            emit(UserPreferences.getDefaultInstance())        &#125; else &#123;            throw exception        &#125;    &#125;
+写入数据suspend fun updateShowCompleted(completed: Boolean) &#123;    dataStore.updateData &#123; preferences -&gt;        preferences.toBuilder().setShowCompleted(completed).build()    &#125;&#125;
+
+]]></content>
+      <categories>
+        <category>android</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>重学android</tag>
+        <tag>Jetpack</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>nx54的ipv6配置nas，内网穿透访问，nxginx、DDNS都在这里</title>
+    <url>/2024/11/18/nas-ipv6/</url>
+    <content><![CDATA[前言上一篇说到nx54路由器如何在官方防火墙上加一个自己主机允许访问的规则，在不关闭防火墙的情况下，还能走ipv6访问到内网设备，里面有提到ipv6地址变化的问题。这篇主要说说ipv6变化后如何通知你，通知路由器，以及一部分nginx配置心得。
+ip变化通知，同时更新路由防火墙规则
+注意以下所说的ip都是指ipv6，因为ipv4内网地址可以直接和mac地址绑定，不用通知你。
+
+
+我发现新固件在重启设备后，ip也不会变了，这算是一个好事吧，也不用经常更新ip地址。不过，以防正需用的时候ip地址变化。我使用的是python脚本，当检测到ip变化，就向我的邮箱发送一封email。(你也可以直接做DDNS，自己写api调用脚本或者ddns-go)。有几点要求：
+
+你的邮箱开通smtp，smtp是一个用于发邮件的，一般在邮箱的设置页。
+你的路由已经常开telnet，参考之前的文章，我因为找到了常开方式，直接常开了。# coding=utf-8import socket  import smtplib  import subprocess import os  import telnetlibimport timefrom email.mime.text import MIMEText  from email.mime.multipart import MIMEMultipart  # Telnet 连接信息HOST = &quot;192.168.124.1&quot; # 路由的ipPORT = 15000PASSWORD = &quot;password&quot;  # 替换为实际密码# 设置发件人和收件人信息  sender_email = &#x27;发件邮箱&#x27;password = &#x27;smtp password&#x27;  # 一般都有SMTP应用专用密码 # 设置SMTP服务器地址和端口  我使用的是126，qq和网易都支持SSL，能避免密码明文传输smtp_server = &#x27;smtp.126.com&#x27;  smtp_port = 465  # 通常是587用于TLS或465用于SSL  SMTP默认是25，但是25不加密，我们使用SSL，网易支持SSLreceiver_email = &#x27;接收ip的邮箱&#x27;  # 创建一个socket对象  主要是为了获取主机名，其实没什么用sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)  save_ip = &#x27;&#x27;def save_ip_string_to_file(ip_string, filename=&quot;ip_string.txt&quot;):      with open(filename, &quot;w&quot;) as file:          file.write(ip_string)    def check_ip_string_in_file(ip_string, filename=&quot;ip_string.txt&quot;):    if not os.path.exists(filename):        return False    else :          with open(filename, &quot;r&quot;) as file:              file_content = file.read()              return file_content == ip_string     def get_host_name():    # 获取主机名      host_name = socket.gethostname()      return host_name  def get_ipv6_addresses():      # 执行ip -6 addr命令获取IPv6地址信息      result = subprocess.run([&#x27;ip&#x27;, &#x27;-6&#x27;, &#x27;addr&#x27;], capture_output=True, text=True)      #result = subprocess.run([&#x27;ip&#x27;, &#x27;-6&#x27;, &#x27;addr&#x27;], stdout=subprocess.PIPE, stdin=subprocess.PIPE, universal_newlines=True)   #python 3.6    if result.returncode != 0:          print(&quot;Error executing ip command&quot;)          return []            # 解析输出以获取IPv6地址      lines = result.stdout.split(&#x27;\n&#x27;)      ipv6_addresses = []      for line in lines:          if &#x27;inet6&#x27; in line and &#x27;dynamic mngtmpaddr noprefixroute&#x27; in line and &#x27; deprecated &#x27; not in line:              # 查找inet6行中的IPv6地址              address = line.split(&#x27;inet6 &#x27;)[1].split(&#x27;/&#x27;)[0].strip()              if address != &#x27;::1&#x27;:  # 忽略本地回环地址                  ipv6_addresses.append(address)                 # if ipv6_addresses.count() &gt; 5 :               #     break;          return ipv6_addresses         def send_email(title, content) :    # 创建邮件对象      msg = MIMEMultipart()      msg[&#x27;From&#x27;] = sender_email      msg[&#x27;To&#x27;] = receiver_email      msg[&#x27;Subject&#x27;] = title        # 添加邮件正文      body = content    msg.attach(MIMEText(body, &#x27;plain&#x27;))          # 创建SMTP对象并发送邮件      with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:          #server.starttls()  # 启动TLS加密          server.login(sender_email, password)  # 登录邮箱          text = msg.as_string()  # 将邮件对象转换为字符串          server.sendmail(sender_email, receiver_email, text)  # 发送邮件          server.quit()  # 关闭连接      #    print(&quot;邮件发送成功！&quot;)def change_ip6tables(ip6_addr):    try:        # 连接到目标主机        tn = telnetlib.Telnet(HOST, 15000)        print(f&quot;Connected to &#123;HOST&#125;&quot;)        # 等待并输入密码        #tn.read_until(b&quot;Password: &quot;)        time.sleep(3)        tn.write(PASSWORD.encode(&#x27;ascii&#x27;) + b&quot;\n&quot;)        print(&quot;Password entered&quot;)        # 执行 debugshell 命令        tn.write(b&quot;debugshell\n&quot;)        print(&quot;Entered debugshell&quot;)        # 执行 ip6tables -F forwarding_rule 命令        time.sleep(2)        tn.write(b&quot;ip6tables -F forwarding_rule\n&quot;)        print(&quot;Flushed forwarding_rule&quot;)        # 执行 ip6tables -A forwarding_rule -d device_ipv6 -j ACCEPT 命令        time.sleep(2)        add_rule_command = f&quot;ip6tables -A forwarding_rule -d &#123;ip6_addr&#125; -j ACCEPT\n&quot;        tn.write(add_rule_command.encode(&#x27;ascii&#x27;))        print(f&quot;Added ACCEPT rule for &#123;ip6_addr&#125;&quot;)        # 读取命令输出        time.sleep(2)        output = tn.read_very_eager().decode(&#x27;ascii&#x27;)        #print(&quot;Command output:\n&quot;, output)        # 关闭连接        tn.write(b&quot;exit\n&quot;)        tn.close()        print(&quot;Connection closed&quot;)    except Exception as e:        print(f&quot;Error: &#123;e&#125;&quot;)def main():    host_name = get_host_name()    # 获取并打印IPv6地址      ipv6_addrs = get_ipv6_addresses()      result = &#x27;\n&#x27;.join(ipv6_addrs)    print(f&quot;IPv6地址: &#123;result&#125;&quot;)    if not check_ip_string_in_file(result) :        save_ip_string_to_file(result)        send_email(host_name + &#x27; ip &#x27;,result)        change_ip6tables(result)if __name__ == &quot;__main__&quot;:    main()
+简单说一下上面的逻辑，获取ip地址，当前目录会保存一个ip_string.txt，用来保存上一次获取的ip，如果不一致，就发送email，更新路由防火墙规则，同时保存新ip。获取ip其实是执行了一条 ip -6 addr 的指令，这条指令能获取多条ip，大部分是temp的，我过滤ip的条件有点冗余，可以根据自己要求配置。
+
+另外，我的脚本有一点点弊端，就是telnet联过路由后，后面是不用再输入密码的，但这里多输了一次，无伤大雅，毕竟你的密码不是一个可执行命令。
+使用crontab -e，将你的脚本添加到定时任务自动执行，关于定时任务的配置，就不讲了。
+nginx &amp; alist
+关于SSH访问及控制，参考之前的文章。
+
+因为我主要是为了方便存储文件，跑了个alist，其实alist也是够用的，不用再装nginx，但有nginx，配置可以更灵活。alist支持otp动态密码，配合前面的email接收邮件，足够使用了。不过http毕竟是明文传输，我为了安全起见，还是装了ssl证书。我看alist的配置有ssl证书，但最后还是采用了nginx的反向代理，根据server控制更方便,内网外网控制更灵活。
+如果你没有域名，搭建好后使用ip访问，也可以，但是let‘s encrypt的https就不能支持了，为了方便还是建议大家注册一个域名。
+自己建服务器主要涉及以下几个问题：
+
+你的服务不要搭建在常规端口上。(80 443 445端口封锁，这三个通常用于http https smb协议。)
+域名在国外服务商注册，且不要使用国内dns加速服务 (可能会有上报，当然流量追踪也可能被查。)
+添加ssl (http是明文传输，尽量使用https)
+
+综上所述，大概配置要做到如下几点：
+
+alist的address配置为127.0.0.1，这样公网ip访问不到你的主alist服务。本来想再加内网ip，我尝试了一下，alist不能指定多个address，所以用反向代理。
+nginx配置一个ssl server，server_name可以绑定你的域名，也可以写_。
+nginx配置一个http server，端口可以是80，server_name使用你192.168.124.x的ipv4地址，供你内网访问。
+以上两个nginx，全使用反向代理连接到alist，反向代理在alist的文档里有。
+
+做完以上操作，能达到的效果是：外网通过https走加密通道访问(注意端口)，内网可以直接通过192.168.124.x走http直接访问。
+ssl &amp; ddns没关系的两个内容为什么放一起写，因为ssl签发证书，只能通过dns认证，其它的方式要求80端口开放。
+ssl
+使用certbot，或者acme.sh申请证书，有效期90天。
+因为80被封，只能手动改dns认证。它会要求你加一条txt解析，续期值会不一样。
+如果你的域名服务商是cloudflare，有插件支持，没插件的服务商需要自己申请一下key，发请求。顺带说一下，godaddy的dns api大陆访问不了。
+如果你能做了dns自动认证，那就加到crontab -e上，定时自动续期，这里不要太频繁，因为有效期有90天，可以两个月续一次。
+
+如果你脚本搞不定，90天手动更新一次也是可以的。
+ddns如果你上面dns的一步搞定了，推荐你使用你的脚本，结合之前获取ip，自己做ddns。小白就使用ddns-go吧。
+
+相关阅读
+H3C NX54不关ipv6防火墙，允许外网访问内网
+H3C NX54路由器如何永久开telnet，永久关闭ipv6防火墙
+
+]]></content>
+      <categories>
+        <category>nx54</category>
+      </categories>
+      <tags>
+        <tag>nas</tag>
+        <tag>ipv6</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>H3C NX54不关ipv6防火墙，允许外网访问内网</title>
+    <url>/2024/11/10/nx54-ip6tables/</url>
+    <content><![CDATA[前言NX54终于更新固件了，新版本支持配置关闭ipv6防火墙，但是，防火墙关闭，相对而言风险也就上来了。其实最好的办法是，在防火墙上稍微开一个小口就行了，也就是，只允许目标地址是你指定IP的数据通过，今天就大概说说如何最小风险去处理这件事情。主要有以下两个操作：
+
+ip6tables限制指定目标ip转发
+关闭要访问的服务器的ssh访问，windows主机可忽略
+
+
+限制只有访问你主机才能通过ipv6防火墙nx54就是一个openwrt的魔改版本，所以防火墙是基于ip6tables的，简单说一下iptables，维护着一个规则链，所以要达到我们的预期，需要把允许的规则配置到前面。
+具体操作访问http:&#x2F;&#x2F;[ip]&#x2F;debug.asp，向下拉，找到telnet管理，勾选启动telnet，点旁边应用，在命令行执行如下命令
+telnet &lt;路由ip&gt; 15000# 输入密码&lt;your password&gt;# &lt;H3C_NX54&gt;后输入 debugshelldebugshell
+
+查看ip6tables的FORWARD配置，显示只有一项为delegate_forward，再看delegate_forward配置，包含5项，通过继续查看第一项forwarding_rule，发现这条配置其实是空的。
+ip6tables -L FORWARD -v -n --line-numbers# delegate_forwardip6tables -L delegate_forward -v -n --line-numbers# forwarding_rule# ACCEPT# zone_lan_forward# zone_wan_forward# rejectip6tables -L forwarding_rule -v -n --line-numbers# null
+
+简单说一下上面的意思，所有的转发流量，走delegate_forward，而delegate_forward分为了5步，如果前四步没有命中，那么会进入第5步的拒绝策略，也就是all reject。我们要做的就是在reject前，将自己的ipv6添加到ACCEPT的规则。看了一眼forwarding_rule，是个空的。所以有两个选择：delegate_forward下第1个位置插入自定义Chain，或者直接加到forwarding_rule。以直接加到forwarding_rule中为准：
+# 添加允许目标为[ip]的规则到 forwarding_ruleip6tables -A forwarding_rule -d device_ipv6 -j ACCEPT
+为什么要使用forwarding_rule，而不直接加在最外层呢？因为ip会变，我们说了是最小风险，所以当ip变更后，要删除旧的规则，这里如果有自定义Chain名称，可以很方便操作。因为forwarding_rule只包含你那一条，所以直接删除forwarding_rule里所有的配置项就可以了。
+ip6tables -F forwarding_rule
+
+如果你的forwarding_rule不为空(应该不会)，我们在添加规则的时候，也可以直接创建一个新Chain，加在delegate_forward下，forwarding_rule旁边就行了，总之就是一句话，让你的规则在reject前命中。
+# 最开始插入一条forwarding_rule_ip6ip6tables -I delegate_forward -j forwarding_rule_ip6# 或者使用 ip6tables -A forwarding_rule -j forwarding_rule_ip6# 将自己的ip添加到自定义规则中ip6tables -A forwarding_rule_ip6 -d device_ipv6 -j ACCEPT# 清空自定义规则ip6tables -F forwarding_rule_ip6
+
+主机直接关闭ssh密码访问我本来就是想做个文件服务器，linux系统，既然路由上iptables限制了受访IP，再在开发板上加一道安全机制，限制外网使用ipv6通过密码来的方式进行ssh访问，这样一来，必须有访问需求的机器的key手动添加到服务器上才行。
+# /etc/ssh/sshd_config# 针对所有 IPv6 地址的配置 添加到文件末尾Match Address ::/0    PasswordAuthentication no# sudo systemctl restart sshd
+至于如何生成key添加到服务器，这里就不说了。
+ip变更后做完以上配置，其实你的ipv6防火墙其实依然是开启状态，只不过加了一条目标ip的数据允许通过的规则。通过以上配置，已经可以达到理想的安全效果：只允许文件服务器被外网访问，外网不能通过ssh密码登录。但是nx54有一个问题，只要重新连接ipv6地址就会变化，所以需要将ip6tables命令加入定时任务中。我写过一个python脚本，通过定时触发，如果发现ip变动就给我email发一封邮件告诉我最新ip，在python中再添加如下加入清空自定义规则，加入允许访问IP规则。注意如果你自己新建了Chain，以你的名称为准。我是直接使用forwarding_rule。
+# 删除旧规则ip6tables -F forwarding_rule# 添加新的允许访问ipip6tables -A forwarding_rule -d device_ipv6 -j ACCEPT
+具体流程如下：
+
+使用python获取最新非temporary的ip6地址。这一步对系统有兼容性，可能各种方式不一样。
+对比上次获取的ipv6地址，比较是否一致，不一致说明有变化，需要更新，保存供下次比较。
+参考我前面的blog，永久开启telnet，这一步网上有和第2步结合的脚本，但是使用curl发送的请求，那url又臭又长，不如参考我的一步到位。
+使用python发送telnet，连接路由，输入密码，debugshell。
+ip6tables -F forwarding_rule
+ip6tables -A forwarding_rule -d your_device_ipv6 -j ACCEPT
+加入crontab -e，半小时执行一次
+
+和朋友交流后，朋友说可以不采用email形式，钉钉、飞书这类办公软件有webhook，也就是当你ip变动后，你使用curl发一个网络请求，飞书就会给你发送消息。因为我基本不用飞书钉钉，所以就算了吧。当然了，也可以直接绑定域名，我其实已经做了AAAA解析了，但是懒得弄DDNS了(有个开源的程序叫DDNS-GO)，因为我外网连接机器这个并不是一个刚需且密集的事件，所以，需要的时候改ip地址就行了。
+最后，非常感谢您的阅读。
+
+相关阅读
+H3C NX54路由器如何永久开telnet，永久关闭ipv6防火墙
+nx54的ipv6配置nas，内网穿透访问，nxginx、DDNS都在这里
+nx54你别升级了（R013 固件变更提醒）
+
+]]></content>
+      <categories>
+        <category>nx54</category>
+      </categories>
+      <tags>
+        <tag>h3c</tag>
+        <tag>nx54</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>H3C NX54路由器如何永久开telnet，永久关闭ipv6防火墙</title>
+    <url>/2024/02/20/nx54-telnet/</url>
+    <content><![CDATA[前言之前买了一台NX54路由器，结果这路由固件完全不给用户定制化的机会，研究如何保存ip6table的配置没有成功，但是成功保存了telnet开启配置，分享一下。这套固件的情况如下:
+
+默认开启ipv6防火墙，且关闭后，重启会失效，再次打开。
+可以通过telnet连接路由，telnet配置也不保存，停电或者重启后失效。
+根目录使用overlayfs做到了tmp下，是整个系统会恢复的主要原因。
+提供了&#x2F;mnt目录保存数据，&#x2F;mnt&#x2F;bak&#x2F;startup.bak就是所有配置项。
+
+关闭ipv6防火墙
+访问http:&#x2F;&#x2F;[ip]&#x2F;debug.asp
+向下拉，找到telnet管理，勾选启动telnet，点旁边应用
+在命令行执行如下命令，关闭ipv6防火墙telnet &lt;路由ip&gt; 15000# 输入密码&lt;your password&gt;# &lt;H3C_NX54&gt;后输入 debugshelldebugshellip6tables -D FORWARD -j ACCEPTip6tables -I FORWARD -j ACCEPT
+
+永久开telnet原理
+系统保存有一份配置文件，重启后会根据这份配置文件恢复配置。
+配置文件格式如下 &lt;md5&gt; /var/run/.tmpcfg&lt;版本&gt;&lt;具体配置...&gt;
+其中md5用于校验整个文件，就是从版本号开始，后续所有配置计算得到的。
+后续有个telnetenable&#x3D;的配置，但系统做了特殊设定，后台修改telnet并不会保存到配置中，导致telnet不能自动开，这里我们就需要手动修改配置文件。
+修改后，替换md5摘要，整个配置就是一个有效配置。
+
+流程简单如下，移除第一行 -&gt; 计算md5 -&gt; md5重新加到第一行。
+具体操作快速方法本方法只适合配置纯英文，不支持配置文件中有中文，如果失败，可以尝试下一节的手动处理方法。
+
+NX54开启telnet配置生成器(输入所有配置文件内容，网页会帮你修改)
+md5在线计算(注意本站会计算所有内容的md5，这里用不上，只做参考)我搭建了一个网页，只要把路由的配置复制过来，就会生成开telnet的新配置。网页纯静态，不会向外发送你的任何配置信息，纯javascript本地运行的，这里教如何用网页转化配置。配置信息里有宽带密码账号，如果实在不放心我，下一个大标题的环节是纯手动改。
+
+
+登录路由后台，设备管理 -&gt; 基本管理，备份，下载完成后，复制一份(防止万一需要初始化后恢复得再配置)。
+用文本编辑器打开下载的文件
+复制所有内容到 NX54开启telnet配置生成器 左侧，在右侧会生成一份新配置。
+点COPY，替换掉原配置文件内容，保存。
+路由后台，选择文件，恢复。
+等重启后，telnet就永久开了。接下来我们写一个shell，自动执行telnet并开ipv6，这些内容就自己找文心一言或者chatgpt生成吧。
+
+配置文件带中文或者格式错误的手动处理方法推荐，用上面的网页更快，但是配置中不得含有中文，否则生成的文件验证不通过。这里只是把流程纯手动，原理一样，但支持特殊符号、中文。文件md5计算
+
+登录路由后台，设备管理 -&gt; 基本管理，备份，下载完成后，复制一份备份(防止万一需要初始化后恢复得再配置)。
+打开如下 5f0521762cfa7553351d4173706b4c99  /var/run/.tmpcfgNX54/NX54V100D011....
+找到telnetenable=，将&#x3D;后面的内容改为enable，保存。 @telnet#    telnetenable=enable
+删除第一行，只保留第二行NX54/NX54V100D011开始及后面内容，保存文件。
+打开文件md5计算计算，你也可以验证一下修改前的md5。
+将生成的md5再次粘贴到第一行替换原md5(注意一定是小写) 新md5 /var/run/.tmpcfgNX54/NX54V100D011...@telnet#    telnetenable=enable...
+去路由后台，备份那里找从文件中恢复设置信息，选择文件，点恢复。
+
+注意
+最好不要直接全关ipv6防火墙，可以指定ip允许转发。
+nx54分配的ip6地址不固定，所以如果指定ip后，每次需要移除旧的规则
+通常我们都是让文件服务器或者NAS在外网访问，所以可以直接把命令写到nas上，一旦ip变动，则执行命令
+具体iptable指令怎么调整，还是边学指令边问chatgpt吧，我这里就不弄了，我也没NAS，有个旧的arm板子，没怎么搭，去年看了一下快买不起硬盘了，硬盘现在价格逆天了。
+全网首发，没找到怎么配置的方法，要转载请附上我的网址，给点流量。
+
+后记不能用中文是后来发现的，感谢新疆的大哥，提供了他的配置文件让我发现了问题。
+
+相关阅读
+H3C NX54不关ipv6防火墙，允许外网访问内网
+nx54的ipv6配置nas，内网穿透访问，nxginx、DDNS都在这里
+nx54你别升级了（R013 固件变更提醒）
+
+]]></content>
+      <categories>
+        <category>nx54</category>
+      </categories>
+      <tags>
+        <tag>h3c</tag>
+        <tag>nx54</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>GmSSL中的totp</title>
+    <url>/2024/12/31/sm3-totp/</url>
+    <content><![CDATA[背景越来越多的网站像Github一样开启了2次验证，给你生成一个6位的数字动态口令，这种就叫TOTP，通俗讲，就是基于时间的一次性动态口令。我在家里搭了个Alist文件服务器，也默认支持TOTP，不过我开了HTTPS，用的也不多，TOTP验证就关了。我为什么要看这个呢，上班的地方wifi使用了h3c e盾认证，里面使用了SM3计算口令，每次连wifi还得点开app，索性看看它是怎么计算的。
+
+TOTP介绍首先我们看一下Github二次验证，它会给我们一个二维码，让我们用Authenticator类似的软件扫一扫，然后就能添加。如果我们用别的软件扫，会得到一个如下的地址：(来源互联网的二维码)
+
+otpauth:&#x2F;&#x2F;totp&#x2F;GitHub:user?secret&#x3D;MMJCO5MSOUN57MGT&amp;issuer&#x3D;GitHub
+
+这里我们主要关注的是secret，128bit的key，其它参数都是用来在软件上显示的，其实你可以随意修改。软件会用secret + 时间值计算一个hash，并截取6位作为口令值。服务端校验时，通常会计算前一个或者后一个值，用来容错对比。
+
+TOTP生成：TOTP(K,T) &#x3D; Truncate(HMAC-HASH(K,T))，其中HASH&#x3D;SHA-1&#x2F;SHA-256&#x2F;SHA-512
+
+对上述参数做简单说明：
+
+K就是你的密钥，也就是secret
+T为时间因子，一般时间戳(秒) &#x2F; 步长。如30s一刷新，那就是当前时间戳(秒) &#x2F; 30。
+
+GmSSL
+otpauth:&#x2F;&#x2F;totp&#x2F;lefo:lefo?secret&#x3D;MMJCO5MSOUN57MGT&amp;algorithm&#x3D;sm3
+
+GmSSL中，SM3 SM4算法可以用来生成一次性口令，日常使用中，也是一个链接生成的二维码，与常规totp的二维码无异，只是后面会跟一个参数用来标记使用sm3&#x2F;sm4算法。但算法并不是替换就行，还多了两项参数。
+
+GMOTP生成：GMOTP(K,T|C|Q)&#x3D;Truncate(F(K,T|C|Q))，其中F&#x3D;SM3&#x2F;SM4
+
+其中，C为事件因子，8字节整数。Q为挑战因子，4字节整数。均可省略。将这些参数拼接起来，再调用SM3&#x2F;SM4算法。
+国标GmSSL TOTP全国标准信息公共服务平台有一项规范为《信息安全技术 动态口令密码应用技术规范》，内部介绍了SM3 SM4计算totp的方法，其中Truncate计算和常规totp计算也不一样。在常规totp中，是取最后4字节，但是在该规范中，32个字节分为8组，将所有4字节整数求和。
+
+
+
+参数
+规范中的扩展（推测）
+
+
+
+参数为 K 和 T
+参数为 K、T、C、Q
+
+
+使用标准哈希算法（SHA-1、SHA-256）
+使用国密算法
+
+
+Truncate 步骤使用偏移量截取 4 字节
+可能分组为 8 部分（S1-S8），通过计算决定截取部分
+
+
+
+GB&#x2F;T 38556-2020 信息安全技术 动态口令密码应用技术规范
+GmSSL-totp
+
+]]></content>
+      <categories>
+        <category>gmssl</category>
+      </categories>
+      <tags>
+        <tag>gmssl</tag>
+        <tag>sm3</tag>
+        <tag>totp</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>android 14安装CA证书</title>
+    <url>/2025/07/31/android-14-install-ca/</url>
+    <content><![CDATA[前言前两天给模拟器上安装CA证书，发现即使放入/system/etc/security/cacerts/，依然不能用Charles抓包，设置里查看，证书也没有生效，终于找到了一篇详细介绍原因的文章，记录一下，以后更好找。
+准备证书准备你的SSL证书，重命名。
+openssl x509 -inform PEM -subject_hash_old -in charles_ssl.pem | head -1#将证书命名为得到的的结果.0adb push xxxxxx.0 /sdcard/
+
+配置avd首先你得是可写入的模拟器，所以运行以下shell，注意替换你的Device
+emulator -avd Pixel_API_34 -writable-systemadb rootadb remount
+将下列脚本保存成sh文件
+# Create a separate temp directory, to hold the current certificates# Otherwise, when we add the mount we can&#x27;t read the current certs anymore.mkdir -p -m 700 /data/local/tmp/tmp-ca-copy# Copy out the existing certificatescp /apex/com.android.conscrypt/cacerts/* /data/local/tmp/tmp-ca-copy/# Create the in-memory mount on top of the system certs foldermount -t tmpfs tmpfs /system/etc/security/cacerts# Copy the existing certs back into the tmpfs, so we keep trusting themmv /data/local/tmp/tmp-ca-copy/* /system/etc/security/cacerts/# Copy our new cert in, so we trust that toomv $CERTIFICATE_PATH /system/etc/security/cacerts/# Update the perms &amp; selinux context labelschown root:root /system/etc/security/cacerts/*chmod 644 /system/etc/security/cacerts/*chcon u:object_r:system_file:s0 /system/etc/security/cacerts/*# Deal with the APEX overrides, which need injecting into each namespace:# First we get the Zygote process(es), which launch each appZYGOTE_PID=$(pidof zygote || true)ZYGOTE64_PID=$(pidof zygote64 || true)# N.b. some devices appear to have both!# Apps inherit the Zygote&#x27;s mounts at startup, so we inject here to ensure# all newly started apps will see these certs straight away:for Z_PID in &quot;$ZYGOTE_PID&quot; &quot;$ZYGOTE64_PID&quot;; do    if [ -n &quot;$Z_PID&quot; ]; then        nsenter --mount=/proc/$Z_PID/ns/mnt -- \            /bin/mount --bind /system/etc/security/cacerts /apex/com.android.conscrypt/cacerts    fidone# Then we inject the mount into all already running apps, so they# too see these CA certs immediately:# Get the PID of every process whose parent is one of the Zygotes:APP_PIDS=$(    echo &quot;$ZYGOTE_PID $ZYGOTE64_PID&quot; | \    xargs -n1 ps -o &#x27;PID&#x27; -P | \    grep -v PID)# Inject into the mount namespace of each of those apps:for PID in $APP_PIDS; do    nsenter --mount=/proc/$PID/ns/mnt -- \        /bin/mount --bind /system/etc/security/cacerts /apex/com.android.conscrypt/cacerts &amp;donewait # Launched in parallel - wait for completion hereecho &quot;System certificate injected&quot;
+
+将sh脚本推送到任意目录，然后配一个CERTIFICATE_PATH变量，然后执行sh
+adb push install-ca.sh /data/local/adb shellexport CERTIFICATE_PATH=/sdcard/xxxxxx.0chmod +x /data/local/install-ca.sh/data/local/install-ca.sh
+参考代码摘自这里
+]]></content>
+      <categories>
+        <category>android</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>遥遥领先的DNS配置</title>
+    <url>/2025/08/18/fk-hw-dns/</url>
+    <content><![CDATA[前言之前在家里的开发机上配了科技，但是媳妇的遥遥领先手机一直使用不了，大概排查了一下，应该是dns解析的问题，因为我把我路由fake ip的下一跳指到了内网一台设备上，但是我用工具查下一跳还是移动网关(10.41.x.x)。不能忍，开tcpdump查。
+
+流量直接在网关上开tcpdump
+tcpdump -i &lt;interface&gt; | grep &lt;local ip&gt;
+经过简单跟踪，发现该手机有一个ecs-49-4-x-x.compute.hwclouds-dns.com的请求，端口是5223，后面还有443的请求，盲猜应该是DNS和DoT的请求。开iptables封ip段。
+iptables -A FORWARD -d 49.4.0.0/16 -j DROP
+封了后成功了，结果刚刷了两个网页，又无效了，再查发现ip段换了。刚好ecs后面跟的就是ip。
+kill domain上mosdns直接封死域名
+tag: &quot;fck_hw&quot;type: &quot;sequence&quot;args:  # []rule  - matches:                # []string, 匹配条件。多个匹配条件为 AND 关系。    - qname domain:hwclouds-dns.com      # 封死当前及所有子域    exec: reject 3 
+搞定收摊
+总结如下：遥遥领先应该是做了某种服务，优先使用它的dns。大致如下：
+VPN &gt; HUAWEI DNS &gt; ROUTE DNS
+这也就是为什么用手机开启VPN服务可以，但是直接配网关就不行，这次封了它的dns域名，就默认走网络的配置了。忍不住想吐槽，你既然自己搞了DNS，还装模作样的在wifi里留什么dns地址，又骚又狗。之前在网上看说关闭安全dns，但我的手机本没有开，这套流程就是默认内置的。
+]]></content>
+      <categories>
+        <category>linux</category>
+      </categories>
+      <tags>
+        <tag>linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>nx54你别升级了</title>
+    <url>/2025/11/04/h3c-no-update/</url>
+    <content><![CDATA[前言前段时间，朋友微信上和我说，NX54升级固件了，升级后，debug模式进不了，telnet也打不开了。至此，我之前分享的ipv6纯定制的方案，失效了，只剩下一种方式：ipv6防火墙开关。当然，也是可以满足ipv6访问的，只不过不可以只开放指定的v6ip了。简单吐槽一下这次升级：
+
+不可降级。上了v13后，就算你保存了旧固件，也不可以降级。
+不可debug。加了密码被堵死了。
+telnet默认关闭。之前配置文件中关于telnet的设置，新版本上没有了。
+
+本篇不算什么黑科技，就是找一找升级的网络，然后停掉，算是一个小思路，但凡懂点网络知识的，应该都能明白。这次升级后，老版本且用且珍惜吧。
+
+
+如果你已经升级到V13，不用看了。
+如果你已经升级到V13，不用看了。
+如果你已经升级到V13，不用看了。
+停止升级我一般很少看版本，就没升级，就害怕背刺，一般先关注完升级内容，再点升级。这次有朋友提醒，更不敢升了。一直到现在，每次登录路由后台都小心翼翼，步步为营，生怕不小心点了那一步在线升级。它的首页默认还是进的mobile页，而一进去，就有一个很醒目的升级弹窗。只要一不小心点到升级，从此和路由器telnet无缘了。
+这不行啊！！！万一哪天手滑了就全完了。
+查源码，路由器的管理后台都保存在www目录，首页是mobile.asp，用vi查看，有一行var remote_version&#x3D;的代码，这就是从环境中取服务器版本的。首先想到的思路是这样：只要发现路由有过重启，则手动在var remote_version&#x3D;xxxx的下一行插入一行remote_version &#x3D; ‘0;NX54V100R012’。前面的0代表是否升级，后面不重要，就是版本标识。在其它几个有升级的asp文件里都改一下。
+这么一来，就算检测到升级，也不会有前端提示了。
+绝杀其实这个方案也没问题，但是因为好几个asp文件里都有var remote_version，就导致每个有升级提示的页面都要做处理，不合适，而且还要对人家的内容做修改，就想从根本上解决问题。既然路由器在我家，网也在我家的，h3c你就别联你的网了。
+前面堵了前端版本升级提示显示后，旁边会有一个版本检测的按钮，点击这个按钮，会发起一个轮询ajax请求，最后返回四个数字，然后就出升级提示。猜测大致流程如下：
+
+发起ajax
+路由器web服务向服务器请求升级内容
+请求完成后结果写入web服务
+刷新页面
+
+开tcpdump，明确找到了两条dns请求，www.h3c.com 和 magic.h3c.com，具体做了什么，不关心了，也因为做了https，盒子上做中间人比较复杂，可能不一定能行。经测试，主要还是magic.h3c.com。
+&#x2F;etc&#x2F;hosts添加 127.0.0.1 magic.h3c.com
+echo &quot;127.0.0.1 magic.h3c.com&quot; &gt;&gt; /etc/hosts
+
+如果不放心 还可以iptables封ip
+iptables -I OUTPUT -d 114.x.x.x -j DROPiptables -I OUTPUT -d 114.x.x.x -j DROP
+
+重启会恢复，至于什么时候运行这两条，我就不写了。
+
+相关阅读
+H3C NX54路由器如何永久开telnet，永久关闭ipv6防火墙
+H3C NX54不关ipv6防火墙，允许外网访问内网
+说说NX54 新Telnet(无具体方案)
+
+]]></content>
+      <categories>
+        <category>nx54</category>
+      </categories>
+      <tags>
+        <tag>h3c</tag>
+        <tag>nx54</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>mac mini配合linux当服务器使用</title>
+    <url>/2025/04/24/macmini/</url>
+    <content><![CDATA[前言我主业是安卓开发，但不务正业的我又在折腾别的了。
+之前写过一篇关于 NX54 如何配置 iptables 以开放指定 IP 的 IPv6 防火墙规则。最近又把手上的一块 14 年的废弃 ARM 开发板翻出来，挂了块硬盘，让我在任意设备上都能访问家里的网络。要说这块板子，官方系统只到ubuntu 2014，连python3都没法装，之前折腾过armbian，但kernel有问题，usb不工作。最近看论坛去年有人升级了内核了，赶紧换一下系统。
+过年期间家属送了一台 Mac mini（现在百亿补贴入手价 2899，血亏 600），于是我又折腾了一下，把整个网络重新整理了一遍。熬了几个夜晚和午休时间，总算弄好了，这里记录一下过程中遇到的问题和解决方案。
+之前我做了什么
+桥接路由，这样可以直接获取公网ipv6地址，供自己在外边连接。
+关防火墙。大多数路由器都有ipv6防火墙，像我的NX54就是基于ip6tables的配置，需要关掉。我是只关掉了我的linux的ip。我使用了脚本自动更新，脚本流程如下： linux定时任务 -&gt; python脚本 -&gt; 获取ipv6 -&gt; 发现变化 -&gt; 更新nx54防火墙 -&gt; 更新cloudflare dns AAAA(最早做了一版发email的，后来改ddns了)
+ 不得不说，cloudflare真的是互联网之光，域名便宜，免费加速，还提供Pages，Workers。
+linux关闭ssh密码访问，把常用的设备公钥加进去。
+经过上面的配置，外网只能通过IPV6访问到linux，利用SSH建立隧道，还能连接家里的电脑，方便又安全。
+
+Mac mini准备能源
+✅ 防止进入睡眠 
+✅ 唤醒以供网络访问
+❌ 如有可能，将硬盘置于睡眠状态 
+✅ 断电自动重启
+
+远程桌面设置 -&gt; 通用 -&gt; 共享 -&gt; 屏幕共享 &amp; 远程登录 &amp; 文件共享mac支持屏幕分享，但是是通过vnc:&#x2F;&#x2F;协议访问的，如果要通过ARD，那还需要花几百块买软件。平替方案：走ssh通道
+ssh -L 5900:192.168.x.x:5900 username@linux_ipv6
+command + spcae  屏幕分享  输入localhost就能连了，如此一来就是加密的。本来我是准备用wireguard去连接的，但一直没从10.0.0.0穿透到192.168.x.x，不好直接用ssh隧道更方便。
+打开自动登录设置 -&gt; 用户与群组 -&gt; 自动以此身份登录
+这一项非常关键，不然重启后就卡在登录界面，需要手动输入密码。
+服务开机启动适用一些需要开机启动的服务，和linux不一样，使用launchctl管理。注意脚本不要放在Documents，没权限访问，自己在~下新建一个
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;&lt;plist version=&quot;1.0&quot;&gt;  &lt;dict&gt;    &lt;!-- 唯一的标识符 --&gt;    &lt;key&gt;Label&lt;/key&gt;    &lt;string&gt;yourshell.startup&lt;/string&gt;    &lt;!-- 要执行的命令 --&gt;    &lt;key&gt;ProgramArguments&lt;/key&gt;    &lt;array&gt;      &lt;string&gt;/path/to/yourshell.sh&lt;/string&gt;    &lt;/array&gt;    &lt;!-- 在加载时自动启动 --&gt;    &lt;key&gt;RunAtLoad&lt;/key&gt;    &lt;true/&gt;    &lt;!-- 如果脚本停止，保持脚本运行 --&gt;    &lt;key&gt;KeepAlive&lt;/key&gt;    &lt;true/&gt;    &lt;!-- 丢弃标准输出 --&gt;    &lt;key&gt;StandardOutPath&lt;/key&gt;    &lt;string&gt;/Dev/null&lt;/string&gt;    &lt;!-- 丢弃标准错误输出 --&gt;    &lt;key&gt;StandardErrorPath&lt;/key&gt;    &lt;string&gt;/Dev/null&lt;/string&gt;  &lt;/dict&gt;&lt;/plist&gt;
+# 停止sudo launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/yourshell.startup.plist# 加载sudo launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/yourshell.startup.plist
+
+打通转发(linux -&gt; Mac mini🪜)配置我使用 Linux 网关配合 MosDNS 进行 DNS 分流：直连流量不处理，访问内部网站解析虚拟ip，然后通过 iptables 进行路由转发。由于 Mac 不支持 TPROXY，所以我在 Mac 上运行 SOCKS 代理，然后在 Linux 上使用 TPROXY 转发连接到 SOCKS。
+# 修改iptablesiptables -t mangle -N MYWAY 2&gt;/dev/nulliptables -t mangle -F MYWAYiptables -t mangle -A MYWAY -d 198.18.0.0/16 -p tcp -j TPROXY --on-port &lt;tproxy_port&gt; --tproxy-mark 1iptables -t mangle -A MYWAY -d 198.18.0.0/16 -p udp -j TPROXY --on-port &lt;tproxy_port&gt; --tproxy-mark 1iptables -t mangle -D PREROUTING -j MYWAY 2&gt;/dev/nulliptables -t mangle -A PREROUTING -j MYWAY# 开启NAT转发echo &quot;net.ipv4.ip_forward = 1&quot; | sudo tee -a /etc/sysctl.confecho &quot;net.ipv4.conf.all.route_localnet=1&quot; | sudo tee -a /etc/sysctl.confsysctl -p# nat转换 注意这里区分你的网络接口iptables -t nat -A POSTROUTING -o end0 -j MASQUERADE# 路由 注意这两条也要保存到rc.local，不然重启后就失效了。ip rule add fwmark 1 lookup 100ip route add local 0 0.0.0/0 dev lo table 100# 保存 iptables配置sudo iptables-save | sudo tee -a /etc/iptables/rules.v4sudo nano /etc/rc.local# 添加 iptables-restore &lt; /etc/iptables/rules.v4# 添加 ip rule add fwmark 1 lookup 100# 添加 ip route add local 0 0.0. 0/0 dev lo table 100# 保存# 确保有执行权限sudo chmod +x /etc/rc.local
+最终实现的效果如下：
+📱 手机（或其他设备）│├── 发起请求（例如：访问 https://www.example.com）│├── 📡 DNS 请求发送至 ➜ 192.168.x.115（网关设备上的 MosDNS）││   └─ MosDNS 分流：│       ├─ 直连域名 → 直连（返回真实 IP）│       └─ 内部域名 → 发给 113 上的 DNS服务││       └─ DNS服务 返回 fake-ip（如 198.18.0.x）│└── 手机收到 fake-ip（例如 198.18.0.33）后发起连接     ↓     发出 TCP 请求目标：198.18.0.33:443     ↓━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🛡️ 网关设备（115）iptables 检测│├── mangle 表匹配到 fake-ip 段（198.18.0.0/16）│├── TPROXY 重定向流量 → 本地转换服务│├── 路由策略：│   └─ fwmark=1 → local via lo（回送至本地转换服务│└── 本地转换服务 接收到TPROXY流量    ↓    转发至 代理服务（113）的 Socks 服务━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🧱 代理服务（113）处理流量│└── 访问目标网站（如 example.com），建立 TLS 连接    ↓    返回响应━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━⬆️ 回程流量返回手机，访问完成
+总结，其实就是将115上开启转发，fake-ip段标记1，进TPROXY，再走socks发到mac mini
+踩过的坑有些细节不说了，我还有份详细的笔记，但不方便暴露。这里走了点弯路，踩坑总结：
+
+tproxy to socks 本来尝试用工具redsocks，AI说不支持udp，放弃了。改用另一款，性能稍微差点，但支持的协议多，配置也简单。
+一定要配echo &quot;net.ipv4.conf.all.route_localnet=1&quot; | sudo tee -a /etc/sysctl.conf 这一项才允许路由lo，我本身对linux的网络熟练度低，就因为这个配置，搞了好久，AI也一直没讲，后面一点点查到的。
+起初直接使用 TUN 实现，毕竟是个虚拟网卡，招呼了所有流量，后来觉得不够优雅，最终改成 DNS分流 + TPROXY + SOCKS，感谢一位哥们跟我交流后确定了方向。
+为什么非要建在mac上，因为开发板性能太差，虽然还能撑，但能少安服务就少安吧，况且在新mac上加一个这个服务跑，完全不受影响。我在linux上面还有个Alist(板子原生支持SATA，就接了块电脑硬盘)。
+linux上有个systemd-resolved，记得disable，占了53端口。当然也可以不做，需要设备上指定DNS端口。
+
+居然是冰的Mac mini跑好几天了，摸一摸表面居然是冰的。家里养猫，PDD 26买了个3D打印的底座，不是15块那个，不是一个做工。
+后记
+我把科技的服务搭在了我的linux板子上，发现开网页变的很慢，curl差不多，猜测是机器太老，线程不够，放弃了，又转回来mac mini了。
+不想手改ip网关了，就在nx54路由器上配了个静态路由ip route add 198.18.0.0/16 via 192.168.x.115 dev br-lan
+115如果也想一样，需要标记一下OUTPUT链iptables -t mangle -A OUTPUT -d 198.18.0.0/16 -p tcp -j MARK --set-mark 1iptables -t mangle -A OUTPUT -d 198.18.0.0/16 -p udp -j MARK --set-mark 1
+
+
+相关阅读
+H3C NX54不关ipv6防火墙，允许外网访问内网
+nx54的ipv6配置nas，内网穿透访问，nxginx、DDNS都在这里
+
+]]></content>
+      <categories>
+        <category>linux</category>
+      </categories>
+      <tags>
+        <tag>linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>android打包固定id</title>
+    <url>/2025/10/24/public-ids/</url>
+    <content><![CDATA[前言6月份跳槽来了一家广告公司，整个业务逻辑就是流量玩法，上架市场，买量，赚广告费。因为gp上架越来越难，就衍生出一种玩法叫AB面。关于AB面，这里先不讲，主要说说B包的资源处理。这篇没技术，单纯自己记下来当笔记用。
+idid其实是个整数，应用内的id一般情况是0x7fxxxxxx，这个hex其实是package,type,value的结构。而代码中如果有R.id.xx，会在编译时直接替换成该整数。做AB面的包，B包都是通过动态加载的，这就导致这个整数，必须在使用时，和你的资源对应。10年有，有种粗暴的解决办法，就是构建一个自己的aapt，可以指定package，也就是前面的7f，然后再用添加Resources的方式，将资源添加到资源管理器中。这样就能一劳永逸。B包打包，使用0x7e的资源，A包不处理，这样AB的资源就不会冲突。
+android&#123;    aaptOptions &#123;        additionalParameters &quot;--package-id&quot;, &quot;0x7E&quot;, &quot;--allow-reserved-package-id&quot;    &#125;&#125;
+
+固定id上述方法是打包了两套resource，缺点就是需要将自己的Resources添加到系统Resources，如果资源少，又想尽量避免动态加载资源，直接指定需要指定的资源id就行。而aapt恰好就提供了一个参数--stable-ids。
+
+在A包中对应资源位置添加B包的资源，构建B包
+在build&#x2F;intermediates&#x2F;stable_resource_ids_file&#x2F;release&#x2F;processReleaseResources&#x2F;stableIds.txt，能找到B包的资源，复制你想要固定的id。
+将复制出来的内容，加到app&#x2F;public.txt
+gradle添加如下，然后build。android&#123;    aaptOptions &#123;        // 注意路径        File publicTxtFile = project.file(&#x27;public.txt&#x27;)        if (publicTxtFile.exists()) &#123;            project.logger.error &quot;$&#123;publicTxtFile&#125; exists, apply it.&quot;            //-stable-ids            aaptOptions.additionalParameters(&quot;--stable-ids&quot;, &quot;$&#123;publicTxtFile&#125;&quot;)        &#125; else &#123;            project.logger.error &quot;$&#123;publicTxtFile&#125; not exists&quot;        &#125;    &#125;&#125;
+构建完成不放心可以Analyze APK看一看
+
+其它方案
+自定义aapt、dex字节修改，市面上有一些开源工具。
+转换调用。11年的时候，做过一款sdk，当时采用的是提供了一个工具类，包含一堆getxxxID函数。然后，所有调用资源全使用get函数调用不打入jar包(可以理解为B包)，工具类提供给商户(A包)。
+
+]]></content>
+      <categories>
+        <category>android</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Android 15/16 Cocos2d-x V8 Crash 问题分析与 GLThread 复用解决方案</title>
+    <url>/2026/03/06/cocos2d-issue-fix/</url>
+    <content><![CDATA[背景修复v8::HandleScope::Initialize(v8::Isolate*)+144
+接上一篇文章。由于平时更新不算频繁，加上个人也有些懒，一直没有深入思考 Cocos2d-x 2.x 在 Android 15&#x2F;16 上的 V8 Crash 问题如何彻底修复。
+最近重新整理这个问题时，想到一个新的思路：如何可以通过复用同一个 GLThread 来避免问题？
+因为之前分析发现，Crash 的核心原因很可能来自 GLSurfaceView 在 View 重建时重新创建 GLThread。如果能够保证整个生命周期中始终使用 同一个 GLThread，也许就可以绕开这个问题。
+于是开始重新阅读 GLSurfaceView 的源码，并尝试寻找可行的干预点。
+
+
+
+源码分析在上一篇文章中已经提到，V8 Crash 的主要原因在于：
+
+Cocos2dxGLSurfaceView 在 View 被 remove 或 Activity 重建时
+GLSurfaceView 会 重新创建 GLThread
+导致 V8 所在线程状态异常
+
+Cocos2dxGLSurfaceView 继承自 GLSurfaceView，在查看 GLSurfaceView 源码后发现：
+GLThread 创建的入口主要有两处：
+
+setRenderer
+onAttachedToWindow
+
+setRenderer 比较简单，通常只会调用一次。
+而 onAttachedToWindow 则会在 View detach 后重新 attach 时触发，这也是 Activity 重建或 View 重新添加时的关键路径。
+只要能够干预这两个位置的 GLThread 创建逻辑，就有机会避免线程被重新创建。
+public void setRenderer(Renderer renderer) &#123;    checkRenderThreadState();    //...    mRenderer = renderer;    mGLThread = new GLThread(mThisWeakRef);    mGLThread.start();&#125;protected void onAttachedToWindow() &#123;        super.onAttachedToWindow();        if (LOG_ATTACH_DETACH) &#123;            Log.d(TAG, &quot;onAttachedToWindow reattach =&quot; + mDetached);        &#125;        if (mDetached &amp;&amp; (mRenderer != null)) &#123;            int renderMode = RENDERMODE_CONTINUOUSLY;            if (mGLThread != null) &#123;                renderMode = mGLThread.getRenderMode();            &#125;            mGLThread = new GLThread(mThisWeakRef);            if (renderMode != RENDERMODE_CONTINUOUSLY) &#123;                mGLThread.setRenderMode(renderMode);            &#125;            mGLThread.start();        &#125;        mDetached = false;    &#125;
+
+
+解决方案设计基于上述分析，最终形成了三个核心思路：
+1. 全局只使用一个 ViewMutableContextWrapper
+让整个游戏只使用 一个 Cocos2dxSurfaceView 单例。当 Activity 切换时，不重新创建 View，而是通过：MutableContextWrapper动态替换 View 所绑定的 Context。
+这样可以做到：
+
+View 不销毁
+GLThread 不重建
+渲染线程保持稳定
+
+
+2. 破坏 onAttachedToWindow 中的线程创建避免执行：
+glThread = new GLThread(mThisWeakRef);
+
+从而防止重新 attach 时创建新的渲染线程。
+
+3. 修改 onDetachedFromWindow原始实现中：
+mGLThread.requestExitAndWait();
+
+会直接退出渲染线程。
+在新的方案中，将其替换为：
+onPause()
+
+这样只暂停渲染，而不会销毁线程。
+
+简单测试Cocos2dxSurfaceView 和 Renderer 单例实现通过一个 Manager 管理全局唯一的 SurfaceView 与 Renderer。
+public class CocosSurfaceViewManager &#123;    private static final String TAG = &quot;CocosSurfaceViewManager&quot;;    private static CocosSurfaceViewManager instance = null;    private MutableContextWrapper mutableContextWrapper;    private CocosSurfaceViewManager() &#123;    &#125;    private Cocos2dxGLSurfaceView gameView;    private Cocos2dxRenderer renderer;    public static synchronized CocosSurfaceViewManager getInstance() &#123;        if (instance == null) &#123;            instance = new CocosSurfaceViewManager();        &#125;        return instance;    &#125;    public void setContext(Context context) &#123;        if (mutableContextWrapper == null) &#123;            mutableContextWrapper = new MutableContextWrapper(context);        &#125; else &#123;            mutableContextWrapper.setBaseContext(context);        &#125;    &#125;    public Cocos2dxGLSurfaceView getGameView() &#123;        if (gameView == null) &#123;            gameView = new Cocos2dxGLSurfaceView(mutableContextWrapper);            gameView.setPreserveEGLContextOnPause(true);            // Should set to transparent, or it will hide EditText            // https://stackoverflow.com/questions/2978290/androids-edittext-is-hidden-when-the-virtual-keyboard-is-shown-and-a-surfacevie            gameView.setBackgroundColor(Color.TRANSPARENT);            gameView.setEGLConfigChooser(5, 6, 5, 0, 16, 8);            // Switch to supported OpenGL (ARGB888) mode on emulator            if (isAndroidEmulator())                gameView.setEGLConfigChooser(8, 8, 8, 8, 16, 0);            renderer = new Cocos2dxRenderer();            gameView.setCocos2dxRenderer(renderer);        &#125;        return gameView;    &#125;    public Cocos2dxRenderer getRenderer() &#123;        return renderer;    &#125;    private static boolean isAndroidEmulator() &#123;        String model = Build.MODEL;        Log.d(TAG, &quot;model=&quot; + model);        String product = Build.PRODUCT;        Log.d(TAG, &quot;product=&quot; + product);        boolean isEmulator = false;        if (product != null) &#123;            isEmulator = product.equals(&quot;sdk&quot;) || product.contains(&quot;_sdk&quot;) || product.contains(&quot;sdk_&quot;);        &#125;        Log.d(TAG, &quot;isEmulator=&quot; + isEmulator);        return isEmulator;    &#125;&#125;
+
+
+修改 GLSurfaceView 生命周期逻辑最直接的方法是 复制一份 GLSurfaceView 源码，然后修改关键生命周期函数。
+protected void onAttachedToWindow() &#123;    super.onAttachedToWindow();    mDetached = false;&#125;@Overrideprotected void onDetachedFromWindow() &#123;    if (LOG_ATTACH_DETACH) &#123;        Log.d(TAG, &quot;onDetachedFromWindow&quot;);    &#125;    if (mGLThread != null) &#123;        mGLThread.onPause();//            mGLThread.requestExitAndWait();    &#125;    mDetached = true;    super.onDetachedFromWindow();&#125;
+
+完成这一套修改后，再调整 AppActivity 的 onCreateView。
+测试发现：removeView再addView，之前必现的 V8 Crash 不再出现
+不过这种方案侵入性较强，相当于直接替换 SDK 中的 GLSurfaceView 实现，经过版本对比，可能不用考虑兼容性，但难免有些让人不舒服，一旦是某个优化版或者未来有优化，就没办法兼容了。
+
+进一步优化为什么不直接使用继承？一开始想到的方案其实是：
+class BaseSurfaceView extends GLSurfaceView
+
+但很快遇到一个问题。
+GLSurfaceView 继承自 SurfaceView，如果直接 override：
+onAttachedToWindowonDetachedFromWindow
+
+并调用 super，实际调用的是：
+GLSurfaceView -&gt; SurfaceView
+
+而我们需要的是：
+跳过 GLSurfaceView 的实现，直接调用 SurfaceView 的版本。
+然而 Java 本身并不支持：super.super.onAttachedToWindow()
+经过多次尝试（甚至尝试过反射调用），最终发现 Java 层无法优雅实现这一点。AI一开始也在强调JAVA不支持，尝试问了一下JNI，终于给出了一个可行方案：env-&gt;CallNonvirtualVoidMethod，该函数可以直接调用父类实现。
+
+Cocos2dxGLSurfaceView 的变化最终方案：
+
+依然继承自 GLSurfaceView，其实直接让，在 Android 15 以上系统中绕过 GLSurfaceView 的线程创建逻辑
+在 Android 15 以上，使用自己的单例view，当activity被create时替换Context，destory时，记得removeView
+
+这里其实是为了方便和上一个方案切换测试，只需要改继承就行，如果不想加个类，直接修改Cocos2dxGLSurfaceView就行,只需要复制onAttachedToWindow，onDetachedFromWindow，修改对应的jni路径。
+public class Cocos2dxFixGLSurfaceView extends GLSurfaceView &#123;    public Cocos2dxFixGLSurfaceView(Context context) &#123;        super(context);    &#125;    public Cocos2dxFixGLSurfaceView(Context context, AttributeSet attrs) &#123;        super(context, attrs);    &#125;    @Override    protected void onAttachedToWindow() &#123;        if (Build.VERSION.SDK_INT &gt;= 35) &#123;            // 1. 获取 SurfaceView 类的该方法（假设你想跳过 GLSurfaceView 直接调 SurfaceView）            nativeSurfaceViewOnAttachedToWindow();        &#125; else &#123;            super.onAttachedToWindow();        &#125;    &#125;    @Override    protected void onDetachedFromWindow() &#123;        if (Build.VERSION.SDK_INT &gt;= 35) &#123;            // 1. 获取 SurfaceView 类的该方法（假设你想跳过 GLSurfaceView 直接调 SurfaceView）            nativeSurfaceViewonDetachedFromWindow();            onPause();        &#125; else &#123;            super.onDetachedFromWindow();        &#125;    &#125;    // 如果你是直接修改的CocosGLSurfaceView，注意替换JNI函数的路径    public native void nativeSurfaceViewOnAttachedToWindow();    public native void nativeSurfaceViewonDetachedFromWindow();&#125;
+
+
+JNI 调用 父类SurfaceView 的实现// cocos/platform/android/jni/JniImp.cpp// fix glthreadJNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxFixGLSurfaceView_nativeSurfaceViewonDetachedFromWindow(JNIEnv* env, jobject thiz) &#123;    jclass surfaceViewClass = env-&gt;FindClass(&quot;android/view/SurfaceView&quot;);    jmethodID methodID = env-&gt;GetMethodID(surfaceViewClass, &quot;onDetachedFromWindow&quot;, &quot;()V&quot;);    if (methodID != nullptr) &#123;        env-&gt;CallNonvirtualVoidMethod(thiz, surfaceViewClass, methodID);    &#125;    env-&gt;DeleteLocalRef(surfaceViewClass);&#125;JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxFixGLSurfaceView_nativeSurfaceViewOnAttachedToWindow(JNIEnv* env, jobject thiz) &#123;    jclass surfaceViewClass = env-&gt;FindClass(&quot;android/view/SurfaceView&quot;);    jmethodID methodID = env-&gt;GetMethodID(surfaceViewClass, &quot;onAttachedToWindow&quot;, &quot;()V&quot;);    if (methodID != nullptr) &#123;        env-&gt;CallNonvirtualVoidMethod(thiz, surfaceViewClass, methodID);    &#125;    env-&gt;DeleteLocalRef(surfaceViewClass);&#125;
+
+
+总结核心思路是：
+
+复用 GLThread，从而考虑使用同一个GLSurfaceView
+避免 GLSurfaceView 在 View 状态改变时重新创建线程
+加入版本控制，不破坏没问题的系统版本逻辑
+
+经过两天的调试与验证，最终形成了一套较为稳定且最小改动的解决方案：
+最终实现方式包括：
+
+全局只使用一个 GLSurfaceView
+通过 MutableContextWrapper 动态切换 Activity Context
+使用JNI调用super.super父类的函数，达到绕过线程创建逻辑
+通过 API Level 判断 控制影响范围：API 35 以上使用修复方案，这样既解决了 Android 新系统上的 V8 Crash，又避免影响旧设备的稳定性。
+
+相比最初直接复制 GLSurfaceView 的实现，这种 继承 + JNI 的方式更加工程化，也更易维护。
+另外，还有些其它地方的改动，像Activity中一些判断，setEGLConfigChooser只能调用一次，替换MutableContextWrapper，AppActivity(有个单独的glSurfaceView，实际没什么用)的onCreateView替换修改等，这些具体的代码我就不全放了，如果有需要交流，欢迎联系。
+// Cocos2dxActivitypublic void init() &#123;    // ...    // this.addSurfaceView();    Cocos2dxRenderer renderer = Build.VERSION.SDK_INT &gt;= 35 ? this.add35SurfaceView() : this.addSurfaceView();    //...&#125;private Cocos2dxRenderer add35SurfaceView() &#123;    this.mGLSurfaceView = onCreate35View();    mFrameLayout.addView(this.mGLSurfaceView);    return CocosSurfaceViewManager.getInstance().getRenderer();&#125;public Cocos2dxGLSurfaceView onCreate35View() &#123;    return CocosSurfaceViewManager.getInstance().getGameView();&#125;
+
+其实一开始，我通过反射修改mDetached和mGLThread做过简单验证，算是一个临时测试方案。可参考GLSurfaceView源码。
+
+onAttachedToWindow先反射替换mDetached = false，再调用super函数，此时if (mDetached &amp;&amp; (mRenderer !&#x3D; null))就进不了了
+onDetachedFromWindow先反射替换mGLThread = null，再调用super函数，完成后再把mGLThread换回。
+
+]]></content>
+      <categories>
+        <category>android</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>cocos</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Cocos2.x版本 HandleScope::Initialize(v8::Isolate*) 问题分析</title>
+    <url>/2026/01/17/cocos2d-issue/</url>
+    <content><![CDATA[问题背景公司使用 Cocos 2.4.15 开发游戏时，发现一个 crash 在 Android 15 以上的设备上非常频繁。起初以为是 16KB 的兼容性问题，但分析后发现包其实是兼容 16KB 的。  
+在 Cocos 社区中，也有相关讨论：v8::HandleScope::Initialize(v8::Isolate*)。官方曾提供过基于 Activity 在 onDestroy 时的修复方案，但我们发现还有其它触发场景。
+Crash 日志示例：
+(v8::HandleScope::Initialize(v8::Isolate*)+144) (BuildId: a222c0a549189d49b84a5433428e92f58cba47f0)(se::AutoHandleScope::AutoHandleScope()+36) (BuildId: a222c0a549189d49b84a5433428e92f58cba47f0)
+
+简单分析 crash 的代码片段如下：
+void ScriptEngine::cleanup()&#123;    SE_LOGD(&quot;ScriptEngine::cleanup&quot;);    if (!_isValid)        return;    SE_LOGD(&quot;ScriptEngine::cleanup begin ...\n&quot;);    _isInCleanup = true;    &#123;        AutoHandleScope hs;        // ...    &#125;&#125;
+
+问题就出在这一行：
+AutoHandleScope hs;
+
+查看 AutoHandleScope 构造函数可以发现，它会创建一个 _handleScope 并传入 v8::Isolate::GetCurrent()：
+public:    AutoHandleScope()      : _handleScope(v8::Isolate::GetCurrent())    &#123;    &#125;    ~AutoHandleScope()    &#123;    &#125;private:    v8::HandleScope _handleScope;
+
+如果 v8::Isolate::GetCurrent() 返回 nullptr，就会直接导致 crash。
+问题原因经过分析发现，当 GLSurfaceView 被回收后，Render 线程也会随之销毁。下次再创建新的 GLThread 时，由于 V8 的 Isolate 是线程独立的，第二次进入 ScriptEngine::init() -&gt; cleanup() -&gt; AutoHandleScope hs 时，v8::Isolate::GetCurrent() 就会返回 nullptr，从而触发 crash。
+修复方案尝试过的几种方法：
+
+**绕过 AutoHandleScope hs**：不可行，会破坏 V8 资源管理。  
+传入之前的 Isolate：也不可行，因为 Isolate 与线程绑定，线程已销毁。
+
+最终，官方提供的方案是：当 Activity 的 onDestroy 被调用时，直接结束进程（调用 Cocos2dxHelper.terminateProcess()）。考虑到该 bug 主要在 Android 15 和 16 上，我们加了版本判断：
+if (Build.VERSION.SDK_INT &gt;= 35) Cocos2dxHelper.terminateProcess();
+
+通过直接杀掉进程，可以彻底避免 crash。
+其他触发场景Activity onDestroy 的问题解决后，仍然存在另一个触发点：GLSurfaceView.onDetachFromWindow。也就是当调用 parent.removeView(glView) 再 parent.addView(glView) 时，同样可能触发 crash。  
+解决方法同样可以是直接在 onDetachFromWindow 时结束进程。对于大部分游戏来说，removeView 多发生在后台或者资源已回收的情况下，杀掉进程并重新启动并不会影响用户体验。  
+但在接入某些第三方 SDK 时，如果 SDK 在启动时将 root view 加入它们的容器中，就可能在启动时就被杀掉，这也是我们后来放弃在 2.x 版本接入该 SDK 的原因。Cocos 3.x 则没有这个问题。
+可能的优化方向可以尝试通过控制线程或 Render 的生命周期，复用之前的 Render 或线程，避免 Isolate 为空的情况。这个方向仍需要进一步实验。
+
+相关阅读
+Android 15&#x2F;16 Cocos2d-x V8 Crash 问题分析与 GLThread 复用解决方案（后续彻底修复方案）
+
+]]></content>
+      <categories>
+        <category>android</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>cocos</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>说说NX54 新Telnet(无具体方案)</title>
+    <url>/2026/09/15/nx54-telnet-r013/</url>
+    <content><![CDATA[前言距上一篇折腾 NX54 的文章差不多过去一年了。
+去年有同用 NX54 的朋友跟我倒苦水，说路由器升级到官方新版（R013）之后，原本用得好好的 Telnet 彻底打不开了。他之所以需要这个权限，其实和我一样，主要是因为官方固件自带的 IPv6 防火墙太死板，只能全开或者全关，没法给内网某台 NAS 或服务器单独放行端口，必须得靠脚本写自定义 ip6tables 规则。
+我立刻把自己的 NX54 固定在 R012，日常跑得挺稳，所以一直没升。但也好奇：官方发个大版本把调试口封死，甚至还加了防降级限制，底层到底改了些什么？
+
+
+新版固件到底改了哪儿？先说结论：底层的 Telnet 一点没变，官方只是在门外加了把锁。
+1. telnetd 基本没变telnetd是telnet服务端程序，启动方式几乎没变。
+只不过入口处的 debug.asp 页面改了。以前进调试页面点个开关就能启动，新版本里点开启需要输一个动态密码。这个密码是根据机器的硬件信息、用户信息算出来的，也就是“一机一密”。普通用户没密码，自然就打不开了。
+2. 之前写的开机固化为什么失效了？之前在H3C NX54路由器如何永久开telnet中提过，大家可以通过修改配置把 telnetenable=enable 固化下来，实现重启也能自动开 Telnet。
+新固件加了一道检测：开机读取配置时，系统会检查设备的一个出厂标识。只要这台路由器是正常出厂的量产机，不管你的配置表里有没有开 Telnet，telnetd的脚本都会强制跳过，直接不予启动。
+3. 防降级限制新固件在 Web 升级逻辑里写死了最低版本号。一旦升到了 R013 或 R014，想在 Web 页面直接刷回 R012 固件就会提示版本过低拒绝刷入，把降级的路给堵了。
+
+telnet依然是老味道从R012上梳理一下调用的链路，R013其实一样。
+Web 触发   │   ▼telnetd 守护进程   │ (-l /bin/login.sh)   ▼/bin/login.sh ──(直接跳过标准 Linux 登录)──► /bin/mwcli (Comware 命令行)                                               │                                               └─► 敲 debugshell ──► execvp(&quot;/bin/sh&quot;)                                                                      [拿到 Root Shell]
+
+
+新老版本的 telnet和mwcli 在这块逻辑上一模一样，官方根本没碰这部分内容。
+
+是怎么回事？官方突然花心思把 telnet 入口封死，现在看，猜核心原因就是因为被报了漏洞——2025 年 6 月收录的 CNVD-2025-13489。
+漏洞描述写得挺吓人：NX54 存在远程命令执行漏洞，而且评级是 “无需口令 &#x2F; 未授权”。但因为没有公布具体方式，也没办法验证。我不明白这个漏洞怎么产生的，我自己还是R012，尝试从开telnet请求到mwcli，除非之前登录过，一直没绕过鉴权，可能还是没找到对点，或者需要恢复出厂设置。漏洞是个高危，一但入库，厂家必须修改。但从固件的行为来看，怎么改，堵上telnet就行了。。
+
+总结
+客服一律不提供telnet密码，之前刚封死 telnet 的时候，我也跟着朋友骂厂家。现在看来，多少有点错怪他们。
+CNVD-2025-13489在我眼里，感觉更像是一个KPI漏洞，但因为它是个高危评级，厂家只能修复，所以才有了堵死telnet的操作。
+既然厂家做了这套规则，尊重规则。口令的具体算法，为了避嫌，不能在这里公开，但如果有朋友特别需要telnet，可以找我协助，一机一密只能自用。
+也希望厂家高抬贵手，好用的路由器不好碰，别再加堵了，给点DIY活路。
+
+
+相关阅读
+nx54你别升级了
+H3C NX54不关ipv6防火墙，允许外网访问内网
+
+]]></content>
+      <categories>
+        <category>nx54</category>
+      </categories>
+      <tags>
+        <tag>h3c</tag>
+        <tag>nx54</tag>
+        <tag>openwrt</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Android NDK 28 自定义 Clang &amp; OLLVM (New Pass Manager) 混淆编译实战指南</title>
+    <url>/2026/08/17/ollvm-ndk/</url>
+    <content><![CDATA[引言在移动端安全对抗中，对 C++ 核心逻辑（如 Cocos 游戏引擎逻辑、加解密算法）进行混淆是防逆向分析的重要一环。LLVM 混淆器（OLLVM &#x2F; Hikari &#x2F; Pluto）是最常用的方案。
+随着 Android NDK 28（搭载 LLVM 19）的发布，旧版的 Pass 管理器（Legacy Pass Manager）已被完全移除，取而代之的是 **New Pass Manager (NPM)**。这意味着以往传统的 -Xclang -load 注入方式已失效，我们必须为新版 NDK 构建自定义的 Clang 编译器并适配新版 Pass 插件。
+本文将详细介绍如何从源码一步步构建支持 NDK 28 的自定义 Clang 编译器和 Obfuscator.dylib 混淆插件，并规避交叉编译中的各种“大坑”（如编译时间过长、缺失 32 位目标后端等问题）。
+
+
+
+🚀 核心优化与避坑指南在动手之前，先总结在实际中碰上的关键痛点：
+
+适配 LLVM 19 接口变更：LLVM 19 对指令插入点 API 进行了调整，直接编译旧版 OLLVM 插件会报错。本文提供了核心补丁说明。
+clang++为什么要构建，因为google签名的和obfuscator.dylib在mac上会认证不通过，出现TEAM ID的问题。所以需要自己签clang或者自己构建一个。不想操作ndk的，索性就自己build了。
+
+
+🛠️ 第一步：环境配置与源码准备1. 定位 NDK 对应的 LLVM Commit为了使我们自己构建的编译器与官方 NDK 完美兼容，必须拉取与 NDK 28 版本完全一致的 LLVM 提交（Commit）。
+运行 NDK 内部的 clang++ 查看版本信息：
+export ANDROID_NDK_HOME=&quot;$HOME/Library/Android/sdk/ndk/28.2.13676358&quot;$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --version
+输出中会显示类似于 97a699bf4812a18fb657c2779f5296a4ab2694d2 的哈希值。
+2. 精准克隆 AOSP LLVM 源码由于 LLVM 仓库体积庞大，我们采用浅克隆（Shallow Clone）与延迟检出（Sparse Checkout）策略，仅拉取我们需要的那个 Commit：
+mkdir -p ~/llvm-ndk28cd ~/llvm-ndk28# 克隆元数据但不检出文件git clone \    --filter=blob:none \    --no-checkout \    https://android.googlesource.com/toolchain/llvm-project.git \    llvm-projectcd llvm-project# 获取并检出指定 Commitgit fetch --depth=1 origin 97a699bf4812a18fb657c2779f5296a4ab2694d2git checkout FETCH_HEAD
+
+3. 克隆混淆插件源码这里以 Hikari&#x2F;Obfuscator 项目为例：
+cd ~/llvm-ndk28git clone https://github.com/lich4/llvm-pass-hikari.git ollvm-pass
+4.其它问题根据我同事反馈，版本不一致也没有问题，各编各的。要混淆的部分用21，其它的用自带的19也行。
+
+🛠️ 第二步：修补 LLVM 19 适配性问题LLVM 19 中废弃了部分隐式转换。直接编译 ollvm-pass 插件会遇到迭代器类型不匹配的编译错误。
+需要编辑 ~/llvm-ndk28/ollvm-pass/obfuscator/Substitution.cpp 文件，进行如下修改：
+// 找到 BinaryOperator::CreateNeg 的调用位置- op = BinaryOperator::CreateNeg(bo-&gt;getOperand(1), &quot;&quot;, bo);+ op = BinaryOperator::CreateNeg(bo-&gt;getOperand(1), &quot;&quot;, bo-&gt;getIterator());
+
+原理：LLVM 19 中，BinaryOperator::CreateNeg 的第三个参数表示指令插入位置，它现在要求传入 BasicBlock::iterator，而不能再直接传入 Instruction* bo 指针。这篇文章是先总结的，但我后来发现调用的地方挺多，直接在.h上加了个函数，不然一处一处修改太费劲了。
+
+
+🛠️ 第三步：构建 Clang 与 LLVM 核心我们在一处 CMake 目录中同时配置并编译 Clang 编译器与开发环境，避免重复工作。
+
+[!WARNING]警告：为了同时兼容 arm64-v8a 与 armeabi-v7a，-DLLVM_TARGETS_TO_BUILD 参数中必须包含 ARM。
+
+cd ~/llvm-ndk28# 导出工具链环境变量 (此处使用 Android SDK 附带的 CMake 与 Ninja 即可)export NDK=&quot;$HOME/Library/Android/sdk/ndk/28.2.13676358&quot;export CMAKE=&quot;$HOME/Library/Android/sdk/cmake/4.0.2/bin/cmake&quot;export NINJA=&quot;$HOME/Library/Android/sdk/cmake/4.0.2/bin/ninja&quot;# 配置 CMake 选项&quot;$CMAKE&quot; \  -S llvm-project/llvm \  -B clang-build \  -G Ninja \  -DCMAKE_BUILD_TYPE=Release \  -DCMAKE_OSX_ARCHITECTURES=arm64 \  -DLLVM_TARGETS_TO_BUILD=&quot;AArch64;ARM;X86&quot; \  -DLLVM_ENABLE_PROJECTS=&quot;clang;lld&quot; \  -DLLVM_BUILD_TOOLS=ON \  -DLLVM_BUILD_EXAMPLES=OFF \  -DLLVM_INCLUDE_TESTS=OFF \  -DLLVM_INCLUDE_BENCHMARKS=OFF \  -DLLVM_INCLUDE_DOCS=OFF# 编译 Clang 与 LLD 链接器&quot;$NINJA&quot; -C clang-build -j8# 将全部编译产物（包含编译器和开发依赖的 LLVMConfig.cmake）安装至统一目录mkdir -p ~/llvm-ndk28/llvm-install&quot;$CMAKE&quot; \  --install clang-build \  --prefix ~/llvm-ndk28/llvm-install
+
+安装完成后，在 ~/llvm-ndk28/llvm-install/bin/clang++ 可找到我们的自定义编译器；在 ~/llvm-ndk28/llvm-install/lib/cmake/llvm/LLVMConfig.cmake 获得了编译插件所依赖的导出配置文件。
+
+🛠️ 第四步：构建 OLLVM 混淆插件现在，我们可以利用刚刚编译出的 LLVM 配置，直接编译出对应的混淆动态库：
+cd ~/llvm-ndk28/ollvm-pass&quot;$CMAKE&quot; \  -S obfuscator \  -B obfuscator-build \  -G Ninja \  -DCMAKE_BUILD_TYPE=Release \  -DLLVM_DIR=&quot;$HOME/llvm-ndk28/llvm-install/lib/cmake/llvm&quot;# 编译混淆 Pass 插件&quot;$NINJA&quot; -C obfuscator-build -j8
+编译成功后，即可在 obfuscator-build 目录下收获最终的混淆插件：**Obfuscator.dylib**。
+
+⚡ 第五步：本地交叉编译测试测试我们编译出来的工具链是否能够正确地对 Android 目标代码执行混淆：
+
+准备测试环境变量：
+export CLANG=&quot;$HOME/llvm-ndk28/llvm-install/bin/clang++&quot;# 注意：现代 NDK 的真实 sysroot 路径位于以下位置export SYSROOT=&quot;$HOME/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot&quot;export PASS=&quot;$HOME/llvm-ndk28/ollvm-pass/obfuscator-build/Obfuscator.dylib&quot;
+
+编写简单 C 文件并测试编译：
+cd ~/llvm-ndk28/ollvm-pass/obfuscator/test# 使用新版 -fpass-plugin 载入插件，并开启 -O2 触发优化流水线&quot;$CLANG&quot; \    --target=aarch64-linux-android24 \    --sysroot=&quot;$SYSROOT&quot; \    -O2 \    -fpass-plugin=&quot;$PASS&quot; \    -S -emit-llvm \    test.c \    -o /tmp/ollvm-test.ll
+如果终端输出了形如 &gt;&gt;&gt;&gt; run fla on ... 等控制流平坦化混淆成功执行的日志，则表明您的自定义 NPM 混淆链已完全打通！
+
+
+
+🎯 Android
+gradle
+android &#123;    defaultConfig &#123;        externalNativeBuild &#123;            cmake &#123;                // 1. 强制指定你自己的 clang 和 clang++                arguments( &quot;-DCMAKE_TOOLCHAIN_FILE=/Users/xxx/llvm-ndk28/hikari-toolchain.cmake&quot;,                 &quot;-DCMAKE_C_COMPILER=/Users/xxx/llvm-ndk28/bin/hikari-clang&quot;,                 &quot;-DCMAKE_CXX_COMPILER=/Users/xxx/llvm-ndk28/bin/hikari-clang++&quot; )                // 2. 注入你的 pass 插件路径 这里其实和wrapper中的配置应该是重复了，我也不试了                cppFlags &quot;-fpass-plugin=/Users/xxx/llvm-ndk28/ollvm-pass/hikari-build/Hikari.dylib&quot;                cFlags &quot;-fpass-plugin=/Users/xxx/llvm-ndk28/ollvm-pass/hikari-build/Hikari.dylib&quot;            &#125;        &#125;    &#125;&#125;
+
+hikari-clang++hikari-clang也要做个wrapper，就是写个shell包一下
+#!/bin/bashset -eROOT=/Users/xxx/llvm-ndk28HIKARI=$ROOT/ollvm-pass/hikari-build/Hikari.dylibCLANG=$ROOT/clang-build/bin/clang++ln -sf $ROOT/policy.json &quot;$(pwd)/policy.json&quot;exec $CLANG \    -fpass-plugin=$HIKARI \    &quot;$@&quot;
+
+hikari-toolchain.cmake，也可放入项目目录 
+set(CMAKE_SYSTEM_NAME Android)set(CMAKE_ANDROID_NDK    /Users/xxx/Library/Android/sdk/ndk/28.2.13676358)set(CMAKE_ANDROID_ARCH_ABI arm64-v8a)set(CMAKE_ANDROID_API 26)include(    $&#123;CMAKE_ANDROID_NDK&#125;/build/cmake/android.toolchain.cmake)set(CMAKE_C_COMPILER    /Users/xxx/llvm-ndk28/bin/hikari-clang)set(CMAKE_CXX_COMPILER    /Users/xxx/llvm-ndk28/bin/hikari-clang++)
+
+填坑：要在policy.json中，顶级节点配置src_root，.&#x2F;gradlew 命令构建不混淆，光这个调试了我3个小时，能编译能构建，就是混淆不够，最后多种尝试，找到了src_root配置。enable-indibran改为了false，否则构建失败，也不折腾了，放弃一项吧。
+
+
+
+总结亲妈都不认识了，自己读肯定是没办法读了，但是AI配合ghidra的mcp，还是能梳理，尽管不能还原，但逻辑上还能猜到，AI还是强。
+]]></content>
+      <categories>
+        <category>移动安全</category>
+        <category>逆向工程</category>
+      </categories>
+      <tags>
+        <tag>Android</tag>
+        <tag>NDK</tag>
+        <tag>LLVM</tag>
+        <tag>OLLVM</tag>
+        <tag>Security</tag>
+        <tag>Cocos</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>探究支付宝android客户端的动态加载</title>
+    <url>/2014/09/29/alipay-dynamic_load/</url>
+    <content><![CDATA[在早期的支付宝android客户端中，也有插件化的功能。大概的做法就是，自定义所有的UI控件，再通过XML文件，仿安卓原生XML的布局文件来搭建布局，再通过自定义的表达式解析器，利用JAVA的反射特性来给具体的控件添加不同的功能。这样也达到了插件化。
+之前写过一篇文章，说的是支付宝的插件化。其实这篇文章很老了，现在的支付宝早已不是这种做法。最近几天忙里偷闲，反编译了一下支付宝的插件化。
+在下资历不高，简单分享一下，大牛看到也不要喷我，在下也是在探索学习中，欢迎交流！
+工具：工欲善其事，必先利其器。因为平时拆包少，对某些好工具也了解不多，基本用了手工的方法来处理的。大家可以用什么APK改之理之类的工具。
+
+apktool：这个大家都知道，反编译利器，我下的是apktool_2.0.0b9版本
+dex2jar：不是必须，但看smali代码太累，用这个工具好受一些
+jd-gui：不解释
+Replace Studio：文本搜索工具，可以搜索某文件夹下的文件是否有某文本，我一直用这个，不知道大家有没有其它好工具推荐。
+notepad++：如果你用记事本也可以
+android环境：这个必须，你看完它的代码了，你起码得自己写的试试吧
+
+
+
+简单拆包分析先copy一份apk出来，改后缀名为zip，直接解压，先瞧瞧里面的内容，发现在&#x2F;lib&#x2F;armeabi&#x2F;下的so文件相当的多，有蹊跷！
+
+出于习惯，立马就拿notepad++打开了，结果发现，在文本的最前边是PK开头的两个字符，哈哈，这绝对的是一个zip文件，我们都知道apk其实就是一个zip，而且，真正的so文件应该是以ELF开头的。随便找一个打开，发现了APK的结构：
+
+该上工具了，一步到位。对支付宝主APK进行拆包，使用apktool d xxx.apk命令，直接拆成smali，再使用dex2jar命令拆成jar包，再保存成java文件。打开AndroidManifest.xml文件，找到application
+com.alipay.mobile.quinox.LauncherApplication
+
+用jd-gui打开jar包，找到该类，查看onCreate方法，找到这段代码
+代码中反射的mPackageInfo其实就是有名的LoadedApk类。
+使用Replace Studio在生成的java文件目录下搜索pathClassloader
+我发现在com.alipay.mobile.quinox.classloader下有两个类继承自该类。
+通过对smali代码的注入log日志的跟踪，JAVA文件和smali文件相互对照（因为不是所有的class都能反编译回来），我大概整理了一些逻辑与类的结构。
+安卓动态加载原理支付宝把一个一个插件称为bundle，在application的onCreate方法中，反射mPackageInfo中的mClassloader字段，该属性是一个pathClassloade，将其替换成自己的PathClassloader（这段代码在dex2jar后的代码中看不到，我是直接读的smali代码）。
+在自定义的PathClassloader中处理，如果是自身dex中的类，则用原pathClassloader加载，如果是bundle，则用bundle的dexfile.loadClass来加载
+
+BundleClassloader：继承自classloader，用于加载具体的某个插件，包含一个DexFile文件引用，重写了loadClass方法，通过调用dexFile.loadClass(“className” , classLoader);
+HostClasloader：继承自PathClassloader，包含一个系统的pathClassloader，也就是加载apk本身的pathClassloader
+BootstrapClassloader：继承自PathClassloader，该类中包含一个map集合，保存着一个一个的BundleClassloader，同时包含一个HostClasloader，该类就是自定义的pathClassloader，通过反射将原来的mClassloader替换成该类。
+OriginClassLoader：继承自classloader，也就是上图中new的c，ClassLoader.class的parent成了该对象。重写了findClass方法，调用了对android原生的类和APK中的类加载做了分发处理，APK中的类调用BootstrapClassloader的loadClass方法返回。
+
+关于资源使用反射创建一个AssetManager对象， 使用getDeclaredMethod后调用addAssetPath方法，先用getApplicationInfo().sourceDir做参数调用该方法，再用bundle的路径调用该方法，这样就能整合到一起。
+//先反射创建一个AssetManager对象 //反射得到addAssetPath//调用addAssetPath并把当前APK的路径传进去，也就是sourceDir//调用addAssetPath并把子包的APK路径传进去//使用下面的代码创建出Resources//用反射替换掉 mPackageInfo 的mResources字段Resources rs = getResources();new Resources(assetManager , rs.getDisplayMetrics(), rs.getConfiguration())
+使用反射替换掉 mPackageInfo 的mResources字段
+代码我只写了一下动态加载activity的代码，具体的资源我没有加载，小伙伴们可以自己试试。
+activity我没有添加，大家可以添加到主工程下，也可以添加的被加载的工程下，不过一定要记得在AndroidManifest.xml里注册
+public class MyApplication extends Application &#123;	private Field field;	@Override	public void onCreate() &#123;		super.onCreate();		Context context = getBaseContext();		Field localField1;		try &#123;			localField1 = context.getClass().getDeclaredField(&quot;mPackageInfo&quot;);			localField1.setAccessible(true);			Object mPackageInfo = localField1.get(context);			field = mPackageInfo.getClass().getDeclaredField(&quot;mClassLoader&quot;);			field.setAccessible(true);			Object mClassLoader = field.get(mPackageInfo);			ClassLoader loader = new MyPathClassLoader(this,					this.getApplicationInfo().sourceDir,					(PathClassLoader) mClassLoader);			field.set(mPackageInfo, loader);		&#125; catch (Exception e) &#123;		&#125;	&#125;&#125;
+
+下面是我的Classloader 比较粗糙
+public class MyPathClassLoader extends PathClassLoader &#123;	private ClassLoader mClassLoader;	private Context context;	public MyPathClassLoader(Context context,String dexPath, PathClassLoader mClassLoader) &#123;				super(dexPath, mClassLoader);		this.mClassLoader = mClassLoader;		this.context = context;	&#125;		@Override	protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException &#123;		File file = new File(&quot;/data/data/com.example.test/lib/libtest.so&quot;);		Class clazz = null;		try &#123;			clazz = mClassLoader.loadClass(name);		&#125; catch (Exception e) &#123;		&#125;		if (clazz != null) &#123;			return clazz;		&#125;		try &#123;			DexFile dexFile = DexFile.loadDex(file.getAbsolutePath(), context					.getDir(&quot;dex&quot;, 0).getAbsolutePath() + &quot;/libtest.so&quot;, 0);			return dexFile.loadClass(name, ClassLoader.getSystemClassLoader());		&#125; catch (IOException e) &#123;			// TODO Auto-generated catch block			e.printStackTrace();		&#125;		return super.findClass(name);	&#125;	&#125;
+
+其它支付宝之前的做法利用自定义表达式解析器，对JAVA程序员的学习成本相当高，后来支付宝就换成了该方法。
+优点：
+
+使用同一个Context，还是同一个应用，相当灵活
+能解决打包时候method ID not in [0, 0xffff]: 65536的问题
+使用反射少
+
+另外，该方法的缺点：
+
+用到的组件必须在manifest.xml中声明，我们并没有突破manifest的验证
+可以通过加载类时，替换掉实际类达到了突破manifest的效果，但是这要求提前占坑，而且各种launchMode必须提前定义好，可以参考360的开源框架，一样的原理
+使用了反射私有API，尽管反射使用的不多。
+资源文件处理，如果bundle中的id和主工程下的id冲突了就悲剧了。支付宝自己修改了aapt的源码，把资源0x7f010001前面的7f改了。所有应用的生成id都是7f打头的，该方法不修改aapt办不到，会给你自动改回来。要办到这一步，就必须使用源码环境，编译自己的aapt。
+
+说明：同是阿里系的淘宝网有一套框架叫atlas，该框架是一套重量级框架，完全突破了manifest的封锁，不同的bundle使用的不同的context。
+后记其实支付宝也突破了manifest文件，采用的是代理的模式。代理有两种实现方式，
+一：注册一个CommonActivity，在各生命周期的方法中调用targetActivity的方法。再利用反射将CommonActivity中的变量赋值到插件中targetActivity中（用遍历就能满足），此方法有个缺陷就是，在插件中的activity中，要慎用this关键字，必要用的时候，得用其它方法取CommonActivity对象。
+另一种就是提前占坑，用classloader替换加载的字节码，方法同我上面讲的类似，需要做的就是每当启动一个插件的activity，就必须得自己维护一个清单文件和插件class的对应关系，而且，各种启动模式，不同的参数，都要有不同的坑位接着。
+
+相关阅读
+动态加载总结篇
+
+]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>动态加载</tag>
+        <tag>插件化</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>android pcm转amr格式</title>
+    <url>/2014/11/10/android_pcm2amr/</url>
+    <content><![CDATA[引言项目中需要将科大讯飞生成的录音传递到服务器上，因为amr格式的文件大小最小，而讯飞生成的文件是pcm格式的，所以需要将pcm转换成amr格式。在网上找了半天资料，发现android系统的源码中包含有一个android.media.AmrInputStream类，其内部分装了将pcm转换为amr的方法。
+用法首先将AmrInputStream复制到工程下，注意包名也不要改动，因为该类调用的是libmedia.so的native方法。
+只要将原来的pcm文件用AmrInputStreamread后生成的字节写入新文件就成了amr格式的了。
+起初我就是这样试的，结果生成的文件一直不能播放，我以为是采样率的问题，后来试了几个参数都不行。
+各种google，百度，终于找到了原因，原来这个只能转内容，而amr文件还需要一个文件头。其文件头为六个字节,分别是0x23 0x21 0x41 0x4D 0x52 0x0A，下面是我写的一个工具类
+
+
+import java.io.FileInputStream;import java.io.FileNotFoundException;import java.io.FileOutputStream;import java.io.IOException;import java.io.OutputStream;import android.media.AmrInputStream;public class Pcm2Amr &#123;		public static void pcm2Amr(String pcmPath , String amrPath) &#123;		try &#123;			FileInputStream fis = new FileInputStream(pcmPath);			AmrInputStream ais = new AmrInputStream(fis);			OutputStream out = new FileOutputStream(amrPath);			byte[] buf = new byte[4096];			int len = -1;			/*			 * 下面的amr的文件头			 * 缺少这几个字节是不行的			 */	        out.write(0x23);	        out.write(0x21);	        out.write(0x41);	        out.write(0x4D);	        out.write(0x52);	        out.write(0x0A);   			while((len = ais.read(buf)) &gt;0)&#123;				out.write(buf,0,len);			&#125;			out.close();			ais.close();		&#125; catch (FileNotFoundException e) &#123;			// TODO Auto-generated catch block			e.printStackTrace();		&#125; catch (IOException e) &#123;			// TODO Auto-generated catch block			e.printStackTrace();		&#125;			&#125;&#125;]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>amr</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用ant打包APK及依赖包最佳解决办法</title>
+    <url>/2014/10/13/ant-apk-with-lib/</url>
+    <content><![CDATA[简介
+过时过时过时!!现在用gradle
+
+最近有小伙伴问ant打包的事，google现在又在推广它的gradle构建工具，但是，目前有许多朋友还是用的ant，而且，在SDK多次更新之后，之前写好的ant文件不适用了，典型的例子就是apkbuilder命令。那么，怎么办呢？？
+好多人在网上搜索写好的打包脚本，并费劲心机的寻找工程依赖的打包方法，其实，android的SDK已经给我们提供了该build.xml文件了，就在/tools/ant/下面，这个脚本引用了tools/lib下的ant-task.jar，封装了好多target，我这里就说说怎么使用该脚本。
+生成ant脚本
+在sdk&#x2F;tools目录下执行下面的命令，注意将命令里面的目录改成你的工程的目录
+android update project -p /dir/to/ur/project 
+
+如果你的工程没问题，就会在目录下生成2个文件，build.xml和local.properties,打开local.properties，可看到其实是一个环境配置
+
+在工程目录新建ant.properties，将下面的配置信息添加到该文件中，注意将keystore的信息改成你的
+key.store=/home/android/android/build-res/safetrip.releasekeykey.alias=androidkey.store.password=passwordkey.alias.password=password
+打包，在工程下使用命令ant release，或者在eclipse中用ant运行
+
+
+
+
+项目依赖怎么办在eclipse中配置好依赖关系，在每个工程下面都执行
+android update project -p /dir/to/ur/project
+生成build.xml文件就可以啦，就是这么简单，因为在project.properties中已经能读取到依赖关系，build.xml会根据这个文件自动依赖并打入包中的。
+批量打包：可以看到生成的build.xml文件在最后是import了sdk中的/tools/ant/build.xml了，我这里打包用的是ant contrib,大家百度一下用法就清楚了。在工程下的build.xml最后加入下面的代码，注意修改清单文件中具体的属性。打包时候，就是执行ant deploy，在deploy的target中，会循环调用release的。
+&lt;condition property=&quot;has.contrib&quot;&gt;    &lt;and&gt;        &lt;isset property=&quot;ant.contrib&quot;/&gt;    &lt;/and&gt;&lt;/condition&gt;&lt;taskdef resource=&quot;net/sf/antcontrib/antcontrib.properties&quot;&gt;	&lt;classpath&gt;		&lt;pathelement location=&quot;$&#123;ant.contrib&#125;&quot;/&gt;	&lt;/classpath&gt;&lt;/taskdef&gt;&lt;target name=&quot;deploy&quot;&gt;    &lt;if condition=&quot;$&#123;has.contrib&#125;&quot;&gt;        &lt;then&gt;            &lt;foreach target=&quot;modify_manifest&quot; list=&quot;$&#123;market_channels&#125;&quot; param=&quot;channel&quot; delimiter=&quot;,&quot;&gt;            &lt;/foreach&gt;        &lt;/then&gt;        &lt;else&gt;            &lt;echo level=&quot;info&quot;&gt;ant contrib not found!&lt;/echo&gt;        &lt;/else&gt;    &lt;/if&gt;&lt;/target&gt;&lt;target name=&quot;modify_manifest&quot;&gt;    &lt;replaceregexp flags=&quot;g&quot; byline=&quot;false&quot;&gt;       &lt;regexp pattern=&#x27;meta-data[^/&gt;]*android:name=&quot;UMENG_CHANNEL&quot;[^/&gt;]*&#x27;/&gt;        &lt;substitution expression=&#x27;meta-data android:value=&quot;$&#123;channel&#125;&quot; android:name=&quot;UMENG_CHANNEL&quot;&#x27;/&gt;         &lt;fileset dir=&quot;&quot; includes=&quot;AndroidManifest.xml&quot;/&gt;    &lt;/replaceregexp&gt;    &lt;property name=&quot;build.deploy&quot; value=&quot;true&quot;/&gt;    &lt;mkdir dir=&quot;$&#123;out.absolute.dir&#125;/out&quot;/&gt;    &lt;property name=&quot;out.final.file&quot; location=&quot;$&#123;out.absolute.dir&#125;/out/$&#123;ant.project.name&#125;_$&#123;channel&#125;.apk&quot;/&gt;    &lt;antcall target=&quot;release&quot;/&gt; &lt;/target&gt;
+
+环境问题因为新的SDK引入了build-tools目录，所以，要保证你的工程所配置的编译版本，所对应的build-tools也存在。
+]]></content>
+      <categories>
+        <category>android打包</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>ant</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>用camera类拍照指定图片大小</title>
+    <url>/2014/08/22/camera-picture-size/</url>
+    <content><![CDATA[拍照在安卓上拍照主要有两种方案:
+
+直接调起系统的照相机拍照片，拍完后，图片会在相册中保存一份，对于程序来说，可以拿到保存照片的路径，从而获取图片。
+自己写SurfaceView调用相机来实现拍照，用该方法会触发一个回调，回调的参数中包含一个字节数组，里面就是图片信息。
+
+这在网上已经有了好多的资料。
+问题按照需求我们采用的是第2种方案，基本的流程就是：拍照–压缩–保存–上传
+本来一切挺顺利，但当我遇上小米。。
+
+
+小米手机在用第2种方式拍照后，默认返回一个176x144分辨率的照片。经查资料发现，原来camera有一个参数叫picture-size，于是给Camera对象加了该参数，代码：
+// 获得相机参数Camera.Parameters parameters = camera.getParameters();parameters.setPictureSize(960, 720);
+当我把这段代码运行到红米上时候，崩了。debug了一下parameters参数，发现是硬件限制了，只支持它支持的尺寸。
+picture-size-values=2560x1920,2048x1536,1600x1200,1280x960,640x480,
+
+解决方法又找资料，找到Camera.Parameters类下的方法getSupportedPictureSizes()，该方法返回一个List，包含所有支持的尺寸。由于太大的也用不上，而且经测试太大会影响拍照速度，太小的尺寸也不可以，所以就直接取了size()的一半为索引的值了。浏览我的文章的小伙伴可以根据取到的值,自己算出最适合自己的尺寸，不要使用我的这个糟方法。
+List&lt;Size&gt; list = parameters.getSupportedPictureSizes();if(list.size() &gt;2)&#123;		Camera.Size size = list.get(list.size()/2);	parameters.setPictureSize(size.width, size.height);&#125;else&#123;	Camera.Size size = list.get(0);	parameters.setPictureSize(size.width, size.height);&#125;// 设置相机参数camera.setParameters(parameters);
+
+说明getSupportedPictureSizes()返回的集合是排好序的，但升序还是降序，也是根据手机来返回的，所以在处理的时候，不能盲目取第一个元素。
+另外，小米手机返回的分辨率太小，就是因为它把最小的那个分辨率给了默认值。176x144，尼玛这么小的图片拿来干嘛？
+]]></content>
+      <categories>
+        <category>android开发</category>
+      </categories>
+      <tags>
+        <tag>android</tag>
+        <tag>相机</tag>
+      </tags>
+  </entry>
+</search>

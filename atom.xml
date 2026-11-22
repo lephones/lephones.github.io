@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>lefo的菜鸡实录</title>
+  <icon>https://www.gravatar.com/avatar/480d7d5ef5660a0927e82173742c59a2</icon>
+  <subtitle>又是一个android开发</subtitle>
+  <link href="https://lefo.me/atom.xml" rel="self"/>
+  
+  <link href="https://lefo.me/"/>
+  <updated>2026-11-22T01:20:24.852Z</updated>
+  <id>https://lefo.me/</id>
+  
+  <author>
+    <name>lefo</name>
+    <email>lefo#lefo.me(#换成@你懂得)</email>
+  </author>
+  
+  <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>说说NX54 新Telnet(无具体方案)</title>
+    <link href="https://lefo.me/2026/09/15/nx54-telnet-r013/"/>
+    <id>https://lefo.me/2026/09/15/nx54-telnet-r013/</id>
+    <published>2026-09-15T04:20:40.000Z</published>
+    <updated>2026-11-22T01:20:24.852Z</updated>
+    
+    
+    <summary type="html">记录 H3C NX54 路由器升级 R013 固件后 Telnet 权限失效的背景分析与后续排查思考，梳理 IPv6 精细化 ip6tables 防火墙需求。</summary>
+    
+    
+    
+    <category term="nx54" scheme="https://lefo.me/categories/nx54/"/>
+    
+    
+    <category term="h3c" scheme="https://lefo.me/tags/h3c/"/>
+    
+    <category term="nx54" scheme="https://lefo.me/tags/nx54/"/>
+    
+    <category term="openwrt" scheme="https://lefo.me/tags/openwrt/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Android NDK 28 自定义 Clang &amp; OLLVM (New Pass Manager) 混淆编译实战指南</title>
+    <link href="https://lefo.me/2026/08/17/ollvm-ndk/"/>
+    <id>https://lefo.me/2026/08/17/ollvm-ndk/</id>
+    <published>2026-08-17T07:55:03.000Z</published>
+    <updated>2026-11-22T01:20:24.852Z</updated>
+    
+    
+    <summary type="html">详解基于 Android NDK 28（LLVM 19 / New Pass Manager）从源码精准克隆编译自定义 Clang 与 Hikari OLLVM 混淆插件的实战指南，解决 macOS 签名与交叉编译难题。</summary>
+    
+    
+    
+    <category term="移动安全" scheme="https://lefo.me/categories/%E7%A7%BB%E5%8A%A8%E5%AE%89%E5%85%A8/"/>
+    
+    <category term="逆向工程" scheme="https://lefo.me/categories/%E7%A7%BB%E5%8A%A8%E5%AE%89%E5%85%A8/%E9%80%86%E5%90%91%E5%B7%A5%E7%A8%8B/"/>
+    
+    
+    <category term="Android" scheme="https://lefo.me/tags/Android/"/>
+    
+    <category term="NDK" scheme="https://lefo.me/tags/NDK/"/>
+    
+    <category term="LLVM" scheme="https://lefo.me/tags/LLVM/"/>
+    
+    <category term="OLLVM" scheme="https://lefo.me/tags/OLLVM/"/>
+    
+    <category term="Security" scheme="https://lefo.me/tags/Security/"/>
+    
+    <category term="Cocos" scheme="https://lefo.me/tags/Cocos/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Android 15/16 Cocos2d-x V8 Crash 问题分析与 GLThread 复用解决方案</title>
+    <link href="https://lefo.me/2026/03/06/cocos2d-issue-fix/"/>
+    <id>https://lefo.me/2026/03/06/cocos2d-issue-fix/</id>
+    <published>2026-03-06T07:45:02.000Z</published>
+    <updated>2026-11-22T01:20:24.852Z</updated>
+    
+    
+    <summary type="html">深入阅读 Android GLSurfaceView 源码，针对 Cocos2d-x 2.x 在 Android 15/16 上频发的 v8::HandleScope::Initialize(v8::Isolate*) 崩溃，提出复用同一 GLThread 的彻底修复方案。</summary>
+    
+    
+    
+    <category term="android" scheme="https://lefo.me/categories/android/"/>
+    
+    
+    <category term="android" scheme="https://lefo.me/tags/android/"/>
+    
+    <category term="cocos" scheme="https://lefo.me/tags/cocos/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Cocos2.x版本 HandleScope::Initialize(v8::Isolate*) 问题分析</title>
+    <link href="https://lefo.me/2026/01/17/cocos2d-issue/"/>
+    <id>https://lefo.me/2026/01/17/cocos2d-issue/</id>
+    <published>2026-01-17T04:30:26.000Z</published>
+    <updated>2026-11-22T01:20:24.852Z</updated>
+    
+    
+    <summary type="html">分析 Cocos2d-x 2.4.15 游戏在 Android 15 以上设备频发 v8::HandleScope::Initialize(v8::Isolate*) Crash 的根因，排除 16KB 页大小问题并定位至 Activity 与线程重建异常。</summary>
+    
+    
+    
+    <category term="android" scheme="https://lefo.me/categories/android/"/>
+    
+    
+    <category term="android" scheme="https://lefo.me/tags/android/"/>
+    
+    <category term="cocos" scheme="https://lefo.me/tags/cocos/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>nx54你别升级了</title>
+    <link href="https://lefo.me/2025/11/04/h3c-no-update/"/>
+    <id>https://lefo.me/2025/11/04/h3c-no-update/</id>
+    <published>2025-11-04T15:49:47.000Z</published>
+    <updated>2026-11-22T01:20:24.852Z</updated>
+    
+    
+    <summary type="html">H3C NX54 路由器升级 R013 新固件避坑提醒：分析新版本禁止降级、封堵 debug 模式与默认关闭 Telnet 对自定义 IPv6 防火墙方案的影响。</summary>
+    
+    
+    
+    <category term="nx54" scheme="https://lefo.me/categories/nx54/"/>
+    
+    
+    <category term="h3c" scheme="https://lefo.me/tags/h3c/"/>
+    
+    <category term="nx54" scheme="https://lefo.me/tags/nx54/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>android打包固定id</title>
+    <link href="https://lefo.me/2025/10/24/public-ids/"/>
+    <id>https://lefo.me/2025/10/24/public-ids/</id>
+    <published>2025-10-24T03:11:27.000Z</published>
+    <updated>2026-11-22T01:20:24.852Z</updated>
+    
+    
+    <summary type="html">记录 Android 多渠道与 AB 面打包过程中通过 public.xml 固定资源 ID（0x7fxxxxxx）的原理与实战配置笔记。</summary>
+    
+    
+    
+    <category term="android" scheme="https://lefo.me/categories/android/"/>
+    
+    
+    <category term="android" scheme="https://lefo.me/tags/android/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>遥遥领先的DNS配置</title>
+    <link href="https://lefo.me/2025/08/18/fk-hw-dns/"/>
+    <id>https://lefo.me/2025/08/18/fk-hw-dns/</id>
+    <published>2025-08-18T15:01:19.000Z</published>
+    <updated>2026-11-22T01:20:24.852Z</updated>
+    
+    
+    <summary type="html">通过网关 tcpdump 抓包排查华为手机在内网透明代理与 Fake IP 环境下 DNS 解析异常走云端通道的问题，并记录定位与解决思路。</summary>
+    
+    
+    
+    <category term="linux" scheme="https://lefo.me/categories/linux/"/>
+    
+    
+    <category term="linux" scheme="https://lefo.me/tags/linux/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>android 14安装CA证书</title>
+    <link href="https://lefo.me/2025/07/31/android-14-install-ca/"/>
+    <id>https://lefo.me/2025/07/31/android-14-install-ca/</id>
+    <published>2025-07-31T09:18:29.000Z</published>
+    <updated>2026-11-22T01:20:24.851Z</updated>
+    
+    
+    <summary type="html">解决 Android 14 及以上模拟器将 CA 证书放入 /system/etc/security/cacerts/ 后仍无法 Charles 抓包的问题，提供完整的脚本配置方案。</summary>
+    
+    
+    
+    <category term="android" scheme="https://lefo.me/categories/android/"/>
+    
+    
+    <category term="android" scheme="https://lefo.me/tags/android/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>mac mini配合linux当服务器使用</title>
+    <link href="https://lefo.me/2025/04/24/macmini/"/>
+    <id>https://lefo.me/2025/04/24/macmini/</id>
+    <published>2025-04-24T15:39:17.000Z</published>
+    <updated>2026-11-22T01:20:24.852Z</updated>
+    
+    
+    <summary type="html">分享将老旧 ARM 开发板（Armbian Linux）配合 Mac mini 打造家庭内网服务器与远程访问环境的折腾记录与网络配置心得。</summary>
+    
+    
+    
+    <category term="linux" scheme="https://lefo.me/categories/linux/"/>
+    
+    
+    <category term="linux" scheme="https://lefo.me/tags/linux/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>GmSSL中的totp</title>
+    <link href="https://lefo.me/2024/12/31/sm3-totp/"/>
+    <id>https://lefo.me/2024/12/31/sm3-totp/</id>
+    <published>2024-12-31T09:40:31.000Z</published>
+    <updated>2026-11-22T01:20:24.851Z</updated>
+    
+    
+    <summary type="html">解析基于时间的一次性动态口令（TOTP）算法原理，并研究使用国密 SM3 算法与 GmSSL 计算 H3C e盾等认证动态口令的实现方式。</summary>
+    
+    
+    
+    <category term="gmssl" scheme="https://lefo.me/categories/gmssl/"/>
+    
+    
+    <category term="gmssl" scheme="https://lefo.me/tags/gmssl/"/>
+    
+    <category term="sm3" scheme="https://lefo.me/tags/sm3/"/>
+    
+    <category term="totp" scheme="https://lefo.me/tags/totp/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>nx54的ipv6配置nas，内网穿透访问，nxginx、DDNS都在这里</title>
+    <link href="https://lefo.me/2024/11/18/nas-ipv6/"/>
+    <id>https://lefo.me/2024/11/18/nas-ipv6/</id>
+    <published>2024-11-18T04:52:33.000Z</published>
+    <updated>2026-11-22T01:20:24.851Z</updated>
+    
+    
+    <summary type="html">H3C NX54 路由器 IPv6 远程访问内网 NAS 实战：详解公网 IPv6 地址变动通知、自动更新路由器防火墙规则、DDNS 与 Nginx 反向代理配置。</summary>
+    
+    
+    
+    <category term="nx54" scheme="https://lefo.me/categories/nx54/"/>
+    
+    
+    <category term="nas" scheme="https://lefo.me/tags/nas/"/>
+    
+    <category term="ipv6" scheme="https://lefo.me/tags/ipv6/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>H3C NX54不关ipv6防火墙，允许外网访问内网</title>
+    <link href="https://lefo.me/2024/11/10/nx54-ip6tables/"/>
+    <id>https://lefo.me/2024/11/10/nx54-ip6tables/</id>
+    <published>2024-11-10T06:51:47.000Z</published>
+    <updated>2026-11-22T01:20:24.851Z</updated>
+    
+    
+    <summary type="html">介绍如何在不关闭 H3C NX54 路由器 IPv6 防火墙的前提下，通过 ip6tables 精准放行指定内网目标 IP 端口，以最小安全风险实现外网访问。</summary>
+    
+    
+    
+    <category term="nx54" scheme="https://lefo.me/categories/nx54/"/>
+    
+    
+    <category term="h3c" scheme="https://lefo.me/tags/h3c/"/>
+    
+    <category term="nx54" scheme="https://lefo.me/tags/nx54/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>如何构建一个pdfium.so</title>
+    <link href="https://lefo.me/2024/05/12/build-pdfium/"/>
+    <id>https://lefo.me/2024/05/12/build-pdfium/</id>
+    <published>2024-05-12T06:50:01.000Z</published>
+    <updated>2026-11-22T01:20:24.851Z</updated>
+    
+    
+    <summary type="html">记录为 Android 项目升级旧版 PdfiumAndroid 库，调研开源方案并从源码自行构建新版 pdfium.so 动态库的完整实践过程。</summary>
+    
+    
+    
+    <category term="android开发" scheme="https://lefo.me/categories/android%E5%BC%80%E5%8F%91/"/>
+    
+    
+    <category term="android" scheme="https://lefo.me/tags/android/"/>
+    
+    <category term="pdfium" scheme="https://lefo.me/tags/pdfium/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>H3C NX54路由器如何永久开telnet，永久关闭ipv6防火墙</title>
+    <link href="https://lefo.me/2024/02/20/nx54-telnet/"/>
+    <id>https://lefo.me/2024/02/20/nx54-telnet/</id>
+    <published>2024-02-20T03:17:40.000Z</published>
+    <updated>2026-11-22T01:20:24.851Z</updated>
+    
+    
+    <summary type="html">分享 H3C NX54 路由器固件分析与折腾经验，详解如何绕过重启恢复限制实现永久开启 Telnet 权限及持久化 IPv6 防火墙配置。</summary>
+    
+    
+    
+    <category term="nx54" scheme="https://lefo.me/categories/nx54/"/>
+    
+    
+    <category term="h3c" scheme="https://lefo.me/tags/h3c/"/>
+    
+    <category term="nx54" scheme="https://lefo.me/tags/nx54/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>重学安卓之Jetpack</title>
+    <link href="https://lefo.me/2024/01/30/jetpack/"/>
+    <id>https://lefo.me/2024/01/30/jetpack/</id>
+    <published>2024-01-30T14:07:12.000Z</published>
+    <updated>2026-11-22T01:20:24.851Z</updated>
+    
+    
+    <summary type="html">重学 Android Jetpack 组件库实用笔记，系统整理 Navigation、Lifecycle、ViewModel 等常用架构组件的核心特点与用法备忘。</summary>
+    
+    
+    
+    <category term="android" scheme="https://lefo.me/categories/android/"/>
+    
+    
+    <category term="android" scheme="https://lefo.me/tags/android/"/>
+    
+    <category term="重学android" scheme="https://lefo.me/tags/%E9%87%8D%E5%AD%A6android/"/>
+    
+    <category term="Jetpack" scheme="https://lefo.me/tags/Jetpack/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>第一次尝试frida</title>
+    <link href="https://lefo.me/2023/10/06/frida/"/>
+    <id>https://lefo.me/2023/10/06/frida/</id>
+    <published>2023-10-06T15:31:26.000Z</published>
+    <updated>2026-11-22T01:20:24.851Z</updated>
+    
+    
+    <summary type="html">Android 开发者的 Frida 动态插桩初体验：对比 Xposed 的优缺点，记录使用 Frida 快速 Hook App 接口与分析签名验证的实战过程。</summary>
+    
+    
+    
+    <category term="android" scheme="https://lefo.me/categories/android/"/>
+    
+    
+    <category term="android" scheme="https://lefo.me/tags/android/"/>
+    
+    <category term="frida" scheme="https://lefo.me/tags/frida/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>重学安卓之kotlin协程</title>
+    <link href="https://lefo.me/2023/08/08/kotlin-coroutine/"/>
+    <id>https://lefo.me/2023/08/08/kotlin-coroutine/</id>
+    <published>2023-08-07T18:03:24.000Z</published>
+    <updated>2026-11-22T01:20:24.851Z</updated>
+    
+    
+    <summary type="html">重学 Android 系列笔记：系统梳理 Kotlin 协程（Coroutines）的核心概念、挂起与恢复原理以及在异步编程中的常见用法。</summary>
+    
+    
+    
+    <category term="kotlin" scheme="https://lefo.me/categories/kotlin/"/>
+    
+    
+    <category term="kotlin" scheme="https://lefo.me/tags/kotlin/"/>
+    
+    <category term="重学android" scheme="https://lefo.me/tags/%E9%87%8D%E5%AD%A6android/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>C++学习笔记</title>
+    <link href="https://lefo.me/2021/08/13/cpp-note/"/>
+    <id>https://lefo.me/2021/08/13/cpp-note/</id>
+    <published>2021-08-13T05:28:05.000Z</published>
+    <updated>2026-11-22T01:20:24.851Z</updated>
+    
+    
+    <summary type="html">C++ 核心语法与面向对象特性学习笔记，涵盖防卫式声明、inline、const、引用传递、操作符重载、拷贝构造、拷贝赋值及 new/delete 内存机制。</summary>
+    
+    
+    
+    <category term="c++" scheme="https://lefo.me/categories/c/"/>
+    
+    
+    <category term="c++" scheme="https://lefo.me/tags/c/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>记一次编译安卓模拟器镜像</title>
+    <link href="https://lefo.me/2021/08/11/make-image/"/>
+    <id>https://lefo.me/2021/08/11/make-image/</id>
+    <published>2021-08-11T13:49:03.000Z</published>
+    <updated>2026-11-22T01:20:24.851Z</updated>
+    
+    
+    <summary type="html">记录修改 Android Framework 源码（如在 TelephonyManager 插入自定义监听逻辑）并编译生成可供 Android 模拟器运行的自定义系统镜像过程。</summary>
+    
+    
+    
+    <category term="android" scheme="https://lefo.me/categories/android/"/>
+    
+    
+    <category term="android" scheme="https://lefo.me/tags/android/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>使用jenkins为android工程打包，支持多包名，改资源（优化方案）</title>
+    <link href="https://lefo.me/2020/09/04/jenkins-android-3/"/>
+    <id>https://lefo.me/2020/09/04/jenkins-android-3/</id>
+    <published>2020-09-04T07:32:15.000Z</published>
+    <updated>2026-11-22T01:20:24.851Z</updated>
+    
+    
+    <summary type="html">Jenkins Android 多包名改资源打包架构优化方案：抛弃难以维护的 Shell/sed 脚本，改用 Gradle 自定义参数实现更优雅的定制化构建。</summary>
+    
+    
+    
+    <category term="android打包" scheme="https://lefo.me/categories/android%E6%89%93%E5%8C%85/"/>
+    
+    
+    <category term="android" scheme="https://lefo.me/tags/android/"/>
+    
+    <category term="jenkins" scheme="https://lefo.me/tags/jenkins/"/>
+    
+  </entry>
+  
+</feed>
